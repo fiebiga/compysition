@@ -29,6 +29,8 @@ from gevent import socket
 from sys import argv
 from os.path import basename
 from os import getpid
+import pickle
+import struct
 
 class Graphite(Actor):
 
@@ -39,6 +41,10 @@ class Graphite(Actor):
         (time, type, source, name, value, unit, (tag1, tag2))
         (1381002603.726132, 'wishbone', 'hostname', 'queue.outbox.in_rate', 0, '', ())
 
+    If the `pickle` option is set to True, each event should be a list of
+    metrics, which will be sent out immediatly. This means the feeding service
+    should take care of buffering. See the wishbone.builtin.flow.tippingbucket
+    module (or use it)
 
 
     Parameters:
@@ -56,9 +62,13 @@ class Graphite(Actor):
         - source(bool): Include the source name in the naming schema.
                         Default: True
 
+        - pickle(bool): Use the pickle format to encode the metrics. The header
+                        will be updated with `['graphite']['pickled'] = True`
+                        Default: False
+
     '''
 
-    def __init__(self, name, prefix='', script=True, pid=False, source=True):
+    def __init__(self, name, prefix='', script=True, pid=False, source=True, pickle=False):
         Actor.__init__(self, name)
         self.name=name
         self.prefix=prefix
@@ -72,15 +82,41 @@ class Graphite(Actor):
             self.pid=''
 
         self.source=source
+        self.pickle = pickle
 
     def preHook(self):
         if self.source == True:
-            self.doConsume=self.__consumeSource
+            self.doGetMetricName = self._getMetricNameSource
         else:
-            self.doConsume=self.__consumeNoSource
+            self.doGetMetricName = self._getMetricNameNoSource
+
+        if self.pickle == True:
+            self.doConsume = self._consumePickle
+        else:
+            self.doConsume = self._consume
 
     def consume(self, event):
-        self.doConsume(event)
+        data = self.doConsume(event)
+        self.queuepool.outbox.put({"header": {"graphite": {"pickled": self.pickle}}, "data": data})
+
+    def _consume(self, event):
+        return "%s %s %s" % (self.doGetMetricName(event["data"]), event["data"][4], event["data"][0])
+
+    def _consumePickle(self, data):
+        ret = []
+        metrics = data["data"]
+        for metric in metrics:
+            metric_name = self.doGetMetricName(metric)
+            ret.append((metric_name, (metric[4], metric[0])))
+        payload = pickle.dumps(ret)
+        header = struct.pack("!L", len(payload))
+        return header + payload
+
+    def _getMetricNameSource(self, metric):
+        return "%s%s%s%s.%s" % (self.prefix, metric[2], self.script_name, self.pid, metric[3])
+
+    def _getMetricNameNoSource(self, metric):
+        return "%s%s%s.%s" % (self.prefix, self.script_name, self.pid, metric[3])
 
     def __consumeSource(self, event):
         self.queuepool.outbox.put({"header":{}, "data":"%s%s%s%s.%s %s %s"%(self.prefix, event["data"][2], self.script_name, self.pid, event["data"][3], event["data"][4], event["data"][0])})
