@@ -92,25 +92,38 @@ class Graphite(Actor):
 
         if self.pickle == True:
             self.doConsume = self._consumePickle
+            self.buffer = []
         else:
             self.doConsume = self._consume
 
     def consume(self, event):
         data = self.doConsume(event)
-        self.queuepool.outbox.put({"header": {"graphite": {"pickled": self.pickle}}, "data": data})
+        # self.queuepool.outbox.put({"header": {"graphite": {"pickled": self.pickle}}, "data": data})
 
     def _consume(self, event):
-        return "%s %s %s" % (self.doGetMetricName(event["data"]), event["data"][4], event["data"][0])
+        data = "%s %s %s" % (self.doGetMetricName(event["data"]), event["data"][4], event["data"][0])
+        self.queuepool.outbox.put({"header": {"graphite": {"pickled": self.pickle}}, "data": data})
+
+    def _consumePickleSingle(self, data):
+        metric = data["data"]
+        metric_name = self.doGetMetricName(metric)
+        self.buffer.append((metric_name, (metric[4], metric[0])))
+        if len(self.buffer) > 128:
+            payload = pickle.dumps(self.buffer)
+            header = struct.pack("!L", len(payload))
+            self.queuepool.outbox.put({"header": {"graphite": {"pickled": self.pickle}}, "data": header + payload})
+            self.buffer = []
 
     def _consumePickle(self, data):
-        ret = []
         metrics = data["data"]
         for metric in metrics:
             metric_name = self.doGetMetricName(metric)
-            ret.append((metric_name, (metric[4], metric[0])))
-        payload = pickle.dumps(ret)
+            self.buffer.append((metric_name, (metric[4], metric[0])))
+
+        payload = pickle.dumps(self.buffer)
         header = struct.pack("!L", len(payload))
-        return header + payload
+        self.queuepool.outbox.put({"header": {"graphite": {"pickled": self.pickle}}, "data": header + payload})
+        self.buffer = []
 
     def _getMetricNameSource(self, metric):
         return "%s%s%s%s.%s" % (self.prefix, metric[2], self.script_name, self.pid, metric[3])
