@@ -1,4 +1,4 @@
-from wishbone import Actor
+from compysition import Actor
 
 
 class ReverseData(Actor):

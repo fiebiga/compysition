@@ -1,4 +1,4 @@
-
+﻿
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -7,7 +7,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>components &mdash; Wishbone 0.4 documentation</title>
+    <title>components &mdash; Compysition 0.4 documentation</title>
     
     <link rel="stylesheet" href="_static/pyramid.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Wishbone 0.4 documentation" href="index.html" />
+    <link rel="top" title="Compysition 0.4 documentation" href="index.html" />
 <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
 <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
 <!--[if lte IE 6]>
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="index.html">Wishbone 0.4 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Compysition 0.4 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -57,10 +57,10 @@
 <div class="section" id="actor">
 <h2>Actor<a class="headerlink" href="#actor" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
-<dt id="wishbone.Actor">
-<em class="property">class </em><tt class="descclassname">wishbone.</tt><tt class="descname">Actor</tt><big>(</big><em>name</em>, <em>setupbasic=True</em>, <em>context_switch=100</em>, <em>limit=0</em><big>)</big><a class="headerlink" href="#wishbone.Actor" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">wishbone.base.BaseActor</span></tt>, <tt class="xref py py-class docutils literal"><span class="pre">wishbone.tools.consumer.Consumer</span></tt></p>
-<p><strong>This baseclass provides the functionality required to build a Wishbone module</strong></p>
+<dt id="compysition.Actor">
+<em class="property">class </em><tt class="descclassname">compysition.</tt><tt class="descname">Actor</tt><big>(</big><em>name</em>, <em>setupbasic=True</em>, <em>context_switch=100</em>, <em>limit=0</em><big>)</big><a class="headerlink" href="#compysition.Actor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">compysition.base.BaseActor</span></tt>, <tt class="xref py py-class docutils literal"><span class="pre">compysition.tools.consumer.Consumer</span></tt></p>
+<p><strong>This baseclass provides the functionality required to build a Compysition module</strong></p>
 <p>Parameters:</p>
 <blockquote>
 <div><ul>
@@ -91,32 +91,32 @@ Default: 0</p>
 </ul>
 </div></blockquote>
 <dl class="method">
-<dt id="wishbone.Actor.block">
-<tt class="descname">block</tt><big>(</big><big>)</big><a class="headerlink" href="#wishbone.Actor.block" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.Actor.block">
+<tt class="descname">block</tt><big>(</big><big>)</big><a class="headerlink" href="#compysition.Actor.block" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convenience function which blocks untill the actor is in stopped state.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.Actor.consume">
-<tt class="descname">consume</tt><big>(</big><em>event</em><big>)</big><a class="headerlink" href="#wishbone.Actor.consume" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.Actor.consume">
+<tt class="descname">consume</tt><big>(</big><em>event</em><big>)</big><a class="headerlink" href="#compysition.Actor.consume" title="Permalink to this definition">¶</a></dt>
 <dd><p>Raises error when user didn&#8217;t define this function in his module.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.Actor.createQueue">
-<tt class="descname">createQueue</tt><big>(</big><em>name</em>, <em>max_size=0</em><big>)</big><a class="headerlink" href="#wishbone.Actor.createQueue" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.Actor.createQueue">
+<tt class="descname">createQueue</tt><big>(</big><em>name</em>, <em>max_size=0</em><big>)</big><a class="headerlink" href="#compysition.Actor.createQueue" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a queue in &lt;self.queuepool&gt; named &lt;name&gt; with a size of &lt;max_size&gt;</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.Actor.deleteQueue">
-<tt class="descname">deleteQueue</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#wishbone.Actor.deleteQueue" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.Actor.deleteQueue">
+<tt class="descname">deleteQueue</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#compysition.Actor.deleteQueue" title="Permalink to this definition">¶</a></dt>
 <dd><p>Deletes the &lt;name&gt; queue from &lt;self.queuepool&gt;.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.Actor.loop">
-<tt class="descname">loop</tt><big>(</big><big>)</big><a class="headerlink" href="#wishbone.Actor.loop" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.Actor.loop">
+<tt class="descname">loop</tt><big>(</big><big>)</big><a class="headerlink" href="#compysition.Actor.loop" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convenience function which returns True until stop() has be been
 called.  A word of caution.  Since we&#8217;re dealing with eventloops,
 if you use a loop which doesn&#8217;t have any gevent aware code in it
@@ -124,8 +124,8 @@ then you&#8217;ll block the event loop.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.Actor.putEvent">
-<tt class="descname">putEvent</tt><big>(</big><em>event</em>, <em>destination</em><big>)</big><a class="headerlink" href="#wishbone.Actor.putEvent" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.Actor.putEvent">
+<tt class="descname">putEvent</tt><big>(</big><em>event</em>, <em>destination</em><big>)</big><a class="headerlink" href="#compysition.Actor.putEvent" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convenience function submits &lt;event&gt; into &lt;destination&gt; queue.
 When this fails due to QueueFull or QueueLocked, the function will
 block untill the error state disappeard and will resubmit the event
@@ -134,26 +134,26 @@ after which it will exit.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.Actor.registerConsumer">
-<tt class="descname">registerConsumer</tt><big>(</big><em>fc</em>, <em>q</em><big>)</big><a class="headerlink" href="#wishbone.Actor.registerConsumer" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.Actor.registerConsumer">
+<tt class="descname">registerConsumer</tt><big>(</big><em>fc</em>, <em>q</em><big>)</big><a class="headerlink" href="#compysition.Actor.registerConsumer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Registers &lt;fc&gt; as a consuming function for the given queue &lt;q&gt;.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.Actor.shutdown">
-<tt class="descname">shutdown</tt><big>(</big><big>)</big><a class="headerlink" href="#wishbone.Actor.shutdown" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.Actor.shutdown">
+<tt class="descname">shutdown</tt><big>(</big><big>)</big><a class="headerlink" href="#compysition.Actor.shutdown" title="Permalink to this definition">¶</a></dt>
 <dd><p>Stops each module by making &lt;self.loop&gt; return False and which unblocks &lt;self.block&gt;</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.Actor.start">
-<tt class="descname">start</tt><big>(</big><big>)</big><a class="headerlink" href="#wishbone.Actor.start" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.Actor.start">
+<tt class="descname">start</tt><big>(</big><big>)</big><a class="headerlink" href="#compysition.Actor.start" title="Permalink to this definition">¶</a></dt>
 <dd><p>Starts to execute all the modules registered &lt;self.consume&gt; functions.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.Actor.stop">
-<tt class="descname">stop</tt><big>(</big><big>)</big><a class="headerlink" href="#wishbone.Actor.stop" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.Actor.stop">
+<tt class="descname">stop</tt><big>(</big><big>)</big><a class="headerlink" href="#compysition.Actor.stop" title="Permalink to this definition">¶</a></dt>
 <dd><p>Stops each module by making &lt;self.loop&gt; return False and which unblocks &lt;self.block&gt;</p>
 </dd></dl>
 
@@ -163,9 +163,9 @@ after which it will exit.</p>
 <div class="section" id="router">
 <h2>Router<a class="headerlink" href="#router" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
-<dt id="wishbone.router.Default">
-<em class="property">class </em><tt class="descclassname">wishbone.router.</tt><tt class="descname">Default</tt><big>(</big><em>interval=10</em>, <em>context_switch=100</em>, <em>rescue=False</em>, <em>uuid=False</em><big>)</big><a class="headerlink" href="#wishbone.router.Default" title="Permalink to this definition">¶</a></dt>
-<dd><p>The default Wishbone router.</p>
+<dt id="compysition.router.Default">
+<em class="property">class </em><tt class="descclassname">compysition.router.</tt><tt class="descname">Default</tt><big>(</big><em>interval=10</em>, <em>context_switch=100</em>, <em>rescue=False</em>, <em>uuid=False</em><big>)</big><a class="headerlink" href="#compysition.router.Default" title="Permalink to this definition">¶</a></dt>
+<dd><p>The default Compysition router.</p>
 <p>A router is responsible to:</p>
 <blockquote>
 <div><ul class="simple">
@@ -205,16 +205,16 @@ to the other. (default False)</p>
 </ul>
 </div></blockquote>
 <dl class="method">
-<dt id="wishbone.router.Default.block">
-<tt class="descname">block</tt><big>(</big><big>)</big><a class="headerlink" href="#wishbone.router.Default.block" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.router.Default.block">
+<tt class="descname">block</tt><big>(</big><big>)</big><a class="headerlink" href="#compysition.router.Default.block" title="Permalink to this definition">¶</a></dt>
 <dd><p>A convenience function which blocks untill all registered
 modules are in a stopped state.</p>
 <p>Becomes unblocked when stop() is called and finisehd.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.router.Default.connect">
-<tt class="descname">connect</tt><big>(</big><em>producer</em>, <em>consumer</em><big>)</big><a class="headerlink" href="#wishbone.router.Default.connect" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.router.Default.connect">
+<tt class="descname">connect</tt><big>(</big><em>producer</em>, <em>consumer</em><big>)</big><a class="headerlink" href="#compysition.router.Default.connect" title="Permalink to this definition">¶</a></dt>
 <dd><p>Connects a producing queue to a consuming queue.</p>
 <p>A separate greenthread consumes the events from the consumer queue and
 submits these to the producer queue. When a non existing queue is
@@ -229,60 +229,60 @@ consumer(string):   The name of the consumnig module queue.</div></blockquote>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.router.Default.doRescue">
-<tt class="descname">doRescue</tt><big>(</big><big>)</big><a class="headerlink" href="#wishbone.router.Default.doRescue" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.router.Default.doRescue">
+<tt class="descname">doRescue</tt><big>(</big><big>)</big><a class="headerlink" href="#compysition.router.Default.doRescue" title="Permalink to this definition">¶</a></dt>
 <dd><p>Runs over each queue to extract any left behind messages.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.router.Default.loop">
-<tt class="descname">loop</tt><big>(</big><big>)</big><a class="headerlink" href="#wishbone.router.Default.loop" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.router.Default.loop">
+<tt class="descname">loop</tt><big>(</big><big>)</big><a class="headerlink" href="#compysition.router.Default.loop" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convenience funtion which returns a bool indicating the router is in running or stop state.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.router.Default.register">
-<tt class="descname">register</tt><big>(</big><em>module</em>, <em>name</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#wishbone.router.Default.register" title="Permalink to this definition">¶</a></dt>
-<dd><p>Registers a Wishbone actor into the router.</p>
+<dt id="compysition.router.Default.register">
+<tt class="descname">register</tt><big>(</big><em>module</em>, <em>name</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#compysition.router.Default.register" title="Permalink to this definition">¶</a></dt>
+<dd><p>Registers a Compysition actor into the router.</p>
 <p>Parameters:</p>
 <blockquote>
-<div>module(module)          A wishbone module.
+<div>module(module)          A compysition module.
 name(string)            The name to assign to the module insance.
 args(list)              Positional arguments to pass to the module.
 kwargs(dict)            Named arguments to pass to the module.</div></blockquote>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.router.Default.registerLogModule">
-<tt class="descname">registerLogModule</tt><big>(</big><em>module</em>, <em>name</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#wishbone.router.Default.registerLogModule" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.router.Default.registerLogModule">
+<tt class="descname">registerLogModule</tt><big>(</big><em>module</em>, <em>name</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#compysition.router.Default.registerLogModule" title="Permalink to this definition">¶</a></dt>
 <dd><p>Registers and connects the module to the router&#8217;s log queue.</p>
 <p>If this method is not called (no module connected to it) the queue is
 automatically connected to a Null module.</p>
 <p>Parameters:</p>
 <blockquote>
-<div>module(module)          A wishbone module.
+<div>module(module)          A compysition module.
 name(string)            The name to assign to the module insance.
 args(list)              Positional arguments to pass to the module.
 kwargs(dict)            Named arguments to pass to the module.</div></blockquote>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.router.Default.registerMetricModule">
-<tt class="descname">registerMetricModule</tt><big>(</big><em>module</em>, <em>name</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#wishbone.router.Default.registerMetricModule" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.router.Default.registerMetricModule">
+<tt class="descname">registerMetricModule</tt><big>(</big><em>module</em>, <em>name</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#compysition.router.Default.registerMetricModule" title="Permalink to this definition">¶</a></dt>
 <dd><p>Registers and connects the module to the router&#8217;s log queue.</p>
 <p>If this method is not called (no module connected to it) the queue is
 automatically connected to a Null module.</p>
 <p>Parameters:</p>
 <blockquote>
-<div>module(module)          A wishbone module.
+<div>module(module)          A compysition module.
 name(string)            The name to assign to the module insance.
 args(list)              Positional arguments to pass to the module.
 kwargs(dict)            Named arguments to pass to the module.</div></blockquote>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.router.Default.start">
-<tt class="descname">start</tt><big>(</big><big>)</big><a class="headerlink" href="#wishbone.router.Default.start" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.router.Default.start">
+<tt class="descname">start</tt><big>(</big><big>)</big><a class="headerlink" href="#compysition.router.Default.start" title="Permalink to this definition">¶</a></dt>
 <dd><p>Starts the router and all registerd modules.</p>
 <p>Executes following steps:</p>
 <blockquote>
@@ -295,8 +295,8 @@ kwargs(dict)            Named arguments to pass to the module.</div></blockquote
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.router.Default.stop">
-<tt class="descname">stop</tt><big>(</big><big>)</big><a class="headerlink" href="#wishbone.router.Default.stop" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.router.Default.stop">
+<tt class="descname">stop</tt><big>(</big><big>)</big><a class="headerlink" href="#compysition.router.Default.stop" title="Permalink to this definition">¶</a></dt>
 <dd><p>Stops the router and all registered modules.</p>
 <p>It stops all the modules except the modules connected
 to the logs or metrics endpoint to ensure these event
@@ -350,7 +350,7 @@ are shutdown in the order they have been registered.</p>
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="index.html">Wishbone 0.4 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Compysition 0.4 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

@@ -1,4 +1,4 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
 
@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Actor &mdash; Wishbone 0.4.9 documentation</title>
+    <title>Actor &mdash; Compysition 0.4.9 documentation</title>
     
     <link rel="stylesheet" href="_static/pyramid.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Wishbone 0.4.9 documentation" href="index.html" />
+    <link rel="top" title="Compysition 0.4.9 documentation" href="index.html" />
     <link rel="next" title="Router" href="router.html" />
     <link rel="prev" title="Introduction" href="introduction.html" />
 <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
@@ -47,7 +47,7 @@
         <li class="right" >
           <a href="introduction.html" title="Introduction"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Wishbone 0.4.9 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Compysition 0.4.9 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -62,14 +62,14 @@
 <h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
 <p>Modules are isolated blocks of code (greenlets) each with their own specific
 functionality. They are created by simply inheriting
-<a class="reference internal" href="#wishbone.Actor" title="wishbone.Actor"><tt class="xref py py-class docutils literal"><span class="pre">wishbone.Actor</span></tt></a> as a baseclass. Modules cannot directly invoke each
+<a class="reference internal" href="#compysition.Actor" title="compysition.Actor"><tt class="xref py py-class docutils literal"><span class="pre">compysition.Actor</span></tt></a> as a baseclass. Modules cannot directly invoke each
 others functionality. Their only means of interaction is by passing messages
-or events to each other&#8217;s <a class="reference internal" href="#wishbone.tools.WishboneQueue" title="wishbone.tools.WishboneQueue"><tt class="xref py py-class docutils literal"><span class="pre">wishbone.tools.WishboneQueue</span></tt></a> queues.
+or events to each other&#8217;s <a class="reference internal" href="#compysition.tools.CompysitionQueue" title="compysition.tools.CompysitionQueue"><tt class="xref py py-class docutils literal"><span class="pre">compysition.tools.CompysitionQueue</span></tt></a> queues.
 Modules typically have, but are not limited to, an inbox and outbox queue.</p>
-<p>Queues always live inside a <a class="reference internal" href="#wishbone.tools.QueuePool" title="wishbone.tools.QueuePool"><tt class="xref py py-class docutils literal"><span class="pre">wishbone.tools.QueuePool</span></tt></a> which,
+<p>Queues always live inside a <a class="reference internal" href="#compysition.tools.QueuePool" title="compysition.tools.QueuePool"><tt class="xref py py-class docutils literal"><span class="pre">compysition.tools.QueuePool</span></tt></a> which,
 besides offering some convenience functions, is nothing more than a container
 to centralize all the queues of the module. Typically, modules consume each
-event entering the inbox queue using the <a class="reference internal" href="#wishbone.Actor.consume" title="wishbone.Actor.consume"><tt class="xref py py-func docutils literal"><span class="pre">wishbone.Actor.consume()</span></tt></a>
+event entering the inbox queue using the <a class="reference internal" href="#compysition.Actor.consume" title="compysition.Actor.consume"><tt class="xref py py-func docutils literal"><span class="pre">compysition.Actor.consume()</span></tt></a>
 function where the event can be processed and after which it is submitted to
 the module&#8217;s outbox queue from where it can be forwarded again to another
 module&#8217;s queue.</p>
@@ -113,7 +113,7 @@ events and optionally converts the first letter into a capital.</p>
 33
 34
 35
-36</pre></div></td><td class="code"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">wishbone</span> <span class="kn">import</span> <span class="n">Actor</span>
+36</pre></div></td><td class="code"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">compysition</span> <span class="kn">import</span> <span class="n">Actor</span>
 
 
 <span class="k">class</span> <span class="nc">ReverseData</span><span class="p">(</span><span class="n">Actor</span><span class="p">):</span>
@@ -157,19 +157,19 @@ events and optionally converts the first letter into a capital.</p>
 name and the <tt class="xref py py-data docutils literal"><span class="pre">setupbasic</span></tt> parameter [21].  The setupbasic parameter
 does nothing than creating an inbox and outbox queue and registring the
 consume() function as the function which is going to process the events
-arriving to inbox by calling the <a class="reference internal" href="#wishbone.Actor.createQueue" title="wishbone.Actor.createQueue"><tt class="xref py py-func docutils literal"><span class="pre">wishbone.Actor.createQueue()</span></tt></a> and
-<a class="reference internal" href="#wishbone.Actor.registerConsumer" title="wishbone.Actor.registerConsumer"><tt class="xref py py-func docutils literal"><span class="pre">wishbone.Actor.registerConsumer()</span></tt></a> in the background.</p>
+arriving to inbox by calling the <a class="reference internal" href="#compysition.Actor.createQueue" title="compysition.Actor.createQueue"><tt class="xref py py-func docutils literal"><span class="pre">compysition.Actor.createQueue()</span></tt></a> and
+<a class="reference internal" href="#compysition.Actor.registerConsumer" title="compysition.Actor.registerConsumer"><tt class="xref py py-func docutils literal"><span class="pre">compysition.Actor.registerConsumer()</span></tt></a> in the background.</p>
 <p>When <tt class="xref py py-data docutils literal"><span class="pre">setupbasic</span></tt> is False you will have to create the required
 queues and register the required consume yourself.</p>
-<p>Wishbone modules can produce log messages [24] using the functions from
-<a class="reference internal" href="#wishbone.tools.QLogging" title="wishbone.tools.QLogging"><tt class="xref py py-class docutils literal"><span class="pre">wishbone.tools.QLogging</span></tt></a>.  Logs are collected by the router and can
+<p>Compysition modules can produce log messages [24] using the functions from
+<a class="reference internal" href="#compysition.tools.QLogging" title="compysition.tools.QLogging"><tt class="xref py py-class docutils literal"><span class="pre">compysition.tools.QLogging</span></tt></a>.  Logs are collected by the router and can
 be forwarded to other modules for further processing, so we don&#8217;t need to
 worry any further about that.</p>
 <p>Our module itself accepts 1 parameter [21] which we can use to modify its
 behaviour and which we can use when registering the module in the router using
-<a class="reference internal" href="router.html#wishbone.router.Default.register" title="wishbone.router.Default.register"><tt class="xref py py-func docutils literal"><span class="pre">wishbone.router.Default.register()</span></tt></a>.</p>
+<a class="reference internal" href="router.html#compysition.router.Default.register" title="compysition.router.Default.register"><tt class="xref py py-func docutils literal"><span class="pre">compysition.router.Default.register()</span></tt></a>.</p>
 <p>In the background, the Actor module takes care of consuming the events
-arriving to the inbox and invoking the <a class="reference internal" href="#wishbone.Actor.consume" title="wishbone.Actor.consume"><tt class="xref py py-func docutils literal"><span class="pre">wishbone.Actor.consume()</span></tt></a> [26]
+arriving to the inbox and invoking the <a class="reference internal" href="#compysition.Actor.consume" title="compysition.Actor.consume"><tt class="xref py py-func docutils literal"><span class="pre">compysition.Actor.consume()</span></tt></a> [26]
 on each one of them.  Events always have following format:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="p">{</span> <span class="s">&quot;header&quot;</span><span class="p">:{},</span> <span class="s">&quot;data&quot;</span><span class="p">:</span> <span class="nb">object</span> <span class="p">}</span>
 </pre></div>
@@ -182,10 +182,10 @@ them into the outbox queue [36] for another module to consume.</p>
 Python module and that you can import it an entrypoint.</p>
 <hr class="docutils" />
 <dl class="class">
-<dt id="wishbone.Actor">
-<em class="property">class </em><tt class="descclassname">wishbone.</tt><tt class="descname">Actor</tt><big>(</big><em>name</em>, <em>setupbasic=True</em><big>)</big><a class="headerlink" href="#wishbone.Actor" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">wishbone.base.BaseActor</span></tt>, <tt class="xref py py-class docutils literal"><span class="pre">wishbone.tools.consumer.Consumer</span></tt></p>
-<p><strong>This baseclass provides the functionality required to build a Wishbone module</strong></p>
+<dt id="compysition.Actor">
+<em class="property">class </em><tt class="descclassname">compysition.</tt><tt class="descname">Actor</tt><big>(</big><em>name</em>, <em>setupbasic=True</em><big>)</big><a class="headerlink" href="#compysition.Actor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">compysition.base.BaseActor</span></tt>, <tt class="xref py py-class docutils literal"><span class="pre">compysition.tools.consumer.Consumer</span></tt></p>
+<p><strong>This baseclass provides the functionality required to build a Compysition module</strong></p>
 <p>Parameters:</p>
 <blockquote>
 <div><ul>
@@ -207,46 +207,46 @@ Default: 100</p>
 </ul>
 </div></blockquote>
 <dl class="method">
-<dt id="wishbone.Actor.block">
-<tt class="descname">block</tt><big>(</big><big>)</big><a class="headerlink" href="#wishbone.Actor.block" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.Actor.block">
+<tt class="descname">block</tt><big>(</big><big>)</big><a class="headerlink" href="#compysition.Actor.block" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convenience function which blocks untill the actor is in stopped state.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.Actor.consume">
-<tt class="descname">consume</tt><big>(</big><em>event</em><big>)</big><a class="headerlink" href="#wishbone.Actor.consume" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.Actor.consume">
+<tt class="descname">consume</tt><big>(</big><em>event</em><big>)</big><a class="headerlink" href="#compysition.Actor.consume" title="Permalink to this definition">¶</a></dt>
 <dd><p>Raises error when user didn&#8217;t define this function in his module.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.Actor.createQueue">
-<tt class="descname">createQueue</tt><big>(</big><em>name</em>, <em>max_size=0</em><big>)</big><a class="headerlink" href="#wishbone.Actor.createQueue" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.Actor.createQueue">
+<tt class="descname">createQueue</tt><big>(</big><em>name</em>, <em>max_size=0</em><big>)</big><a class="headerlink" href="#compysition.Actor.createQueue" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a queue in &lt;self.queuepool&gt; named &lt;name&gt; with a size of &lt;max_size&gt;</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.Actor.deleteQueue">
-<tt class="descname">deleteQueue</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#wishbone.Actor.deleteQueue" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.Actor.deleteQueue">
+<tt class="descname">deleteQueue</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#compysition.Actor.deleteQueue" title="Permalink to this definition">¶</a></dt>
 <dd><p>Deletes the &lt;name&gt; queue from &lt;self.queuepool&gt;.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.Actor.disableConsuming">
-<tt class="descname">disableConsuming</tt><big>(</big><big>)</big><a class="headerlink" href="#wishbone.Actor.disableConsuming" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.Actor.disableConsuming">
+<tt class="descname">disableConsuming</tt><big>(</big><big>)</big><a class="headerlink" href="#compysition.Actor.disableConsuming" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets a flag which makes the router stop executing consume().</p>
 <p>The module will not process further any events at this point until enableConsuming() is called.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.Actor.enableConsuming">
-<tt class="descname">enableConsuming</tt><big>(</big><big>)</big><a class="headerlink" href="#wishbone.Actor.enableConsuming" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.Actor.enableConsuming">
+<tt class="descname">enableConsuming</tt><big>(</big><big>)</big><a class="headerlink" href="#compysition.Actor.enableConsuming" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets a flag which makes the router start executing consume().</p>
 <p>The module will starts/continues to excete the consume() function.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.Actor.loop">
-<tt class="descname">loop</tt><big>(</big><big>)</big><a class="headerlink" href="#wishbone.Actor.loop" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.Actor.loop">
+<tt class="descname">loop</tt><big>(</big><big>)</big><a class="headerlink" href="#compysition.Actor.loop" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convenience function which returns True until stop() has be been
 called.  A word of caution.  Since we&#8217;re dealing with eventloops,
 if you use a loop which doesn&#8217;t have any gevent aware code in it
@@ -254,8 +254,8 @@ then you&#8217;ll block the event loop.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.Actor.putEvent">
-<tt class="descname">putEvent</tt><big>(</big><em>event</em>, <em>destination</em><big>)</big><a class="headerlink" href="#wishbone.Actor.putEvent" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.Actor.putEvent">
+<tt class="descname">putEvent</tt><big>(</big><em>event</em>, <em>destination</em><big>)</big><a class="headerlink" href="#compysition.Actor.putEvent" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convenience function submits &lt;event&gt; into &lt;destination&gt; queue.
 When this fails due to QueueFull or QueueLocked, the function will
 block untill the error state disappeard and will resubmit the event
@@ -264,26 +264,26 @@ after which it will exit.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.Actor.registerConsumer">
-<tt class="descname">registerConsumer</tt><big>(</big><em>fc</em>, <em>q</em><big>)</big><a class="headerlink" href="#wishbone.Actor.registerConsumer" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.Actor.registerConsumer">
+<tt class="descname">registerConsumer</tt><big>(</big><em>fc</em>, <em>q</em><big>)</big><a class="headerlink" href="#compysition.Actor.registerConsumer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Registers &lt;fc&gt; as a consuming function for the given queue &lt;q&gt;.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.Actor.shutdown">
-<tt class="descname">shutdown</tt><big>(</big><big>)</big><a class="headerlink" href="#wishbone.Actor.shutdown" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.Actor.shutdown">
+<tt class="descname">shutdown</tt><big>(</big><big>)</big><a class="headerlink" href="#compysition.Actor.shutdown" title="Permalink to this definition">¶</a></dt>
 <dd><p>Stops each module by making &lt;self.loop&gt; return False and which unblocks &lt;self.block&gt;</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.Actor.start">
-<tt class="descname">start</tt><big>(</big><big>)</big><a class="headerlink" href="#wishbone.Actor.start" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.Actor.start">
+<tt class="descname">start</tt><big>(</big><big>)</big><a class="headerlink" href="#compysition.Actor.start" title="Permalink to this definition">¶</a></dt>
 <dd><p>Starts to execute all the modules registered &lt;self.consume&gt; functions.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.Actor.stop">
-<tt class="descname">stop</tt><big>(</big><big>)</big><a class="headerlink" href="#wishbone.Actor.stop" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.Actor.stop">
+<tt class="descname">stop</tt><big>(</big><big>)</big><a class="headerlink" href="#compysition.Actor.stop" title="Permalink to this definition">¶</a></dt>
 <dd><p>Stops each module by making &lt;self.loop&gt; return False and which unblocks &lt;self.block&gt;</p>
 </dd></dl>
 
@@ -291,35 +291,35 @@ after which it will exit.</p>
 
 <hr class="docutils" />
 <dl class="class">
-<dt id="wishbone.tools.QueuePool">
-<em class="property">class </em><tt class="descclassname">wishbone.tools.</tt><tt class="descname">QueuePool</tt><a class="headerlink" href="#wishbone.tools.QueuePool" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.tools.QueuePool">
+<em class="property">class </em><tt class="descclassname">compysition.tools.</tt><tt class="descname">QueuePool</tt><a class="headerlink" href="#compysition.tools.QueuePool" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="method">
-<dt id="wishbone.tools.QueuePool.dump">
-<tt class="descname">dump</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#wishbone.tools.QueuePool.dump" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.tools.QueuePool.dump">
+<tt class="descname">dump</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#compysition.tools.QueuePool.dump" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convenience function to self.&lt;name&gt;.dump</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.tools.QueuePool.getQueueInstances">
-<tt class="descname">getQueueInstances</tt><big>(</big><big>)</big><a class="headerlink" href="#wishbone.tools.QueuePool.getQueueInstances" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.tools.QueuePool.getQueueInstances">
+<tt class="descname">getQueueInstances</tt><big>(</big><big>)</big><a class="headerlink" href="#compysition.tools.QueuePool.getQueueInstances" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a dict of queue instances from the queuepool.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.tools.QueuePool.listQueues">
-<tt class="descname">listQueues</tt><big>(</big><big>)</big><a class="headerlink" href="#wishbone.tools.QueuePool.listQueues" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.tools.QueuePool.listQueues">
+<tt class="descname">listQueues</tt><big>(</big><big>)</big><a class="headerlink" href="#compysition.tools.QueuePool.listQueues" title="Permalink to this definition">¶</a></dt>
 <dd><p>return the list of queue names from the queuepool.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.tools.QueuePool.messagesLeft">
-<tt class="descname">messagesLeft</tt><big>(</big><big>)</big><a class="headerlink" href="#wishbone.tools.QueuePool.messagesLeft" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.tools.QueuePool.messagesLeft">
+<tt class="descname">messagesLeft</tt><big>(</big><big>)</big><a class="headerlink" href="#compysition.tools.QueuePool.messagesLeft" title="Permalink to this definition">¶</a></dt>
 <dd><p>Checks each queue whether there are any messages left.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.tools.QueuePool.shutdown">
-<tt class="descname">shutdown</tt><big>(</big><big>)</big><a class="headerlink" href="#wishbone.tools.QueuePool.shutdown" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.tools.QueuePool.shutdown">
+<tt class="descname">shutdown</tt><big>(</big><big>)</big><a class="headerlink" href="#compysition.tools.QueuePool.shutdown" title="Permalink to this definition">¶</a></dt>
 <dd><p>Closes all queues in preparation of actor shutdown.</p>
 </dd></dl>
 
@@ -327,9 +327,9 @@ after which it will exit.</p>
 
 <hr class="docutils" />
 <dl class="class">
-<dt id="wishbone.tools.WishboneQueue">
-<em class="property">class </em><tt class="descclassname">wishbone.tools.</tt><tt class="descname">WishboneQueue</tt><big>(</big><em>max_size=0</em><big>)</big><a class="headerlink" href="#wishbone.tools.WishboneQueue" title="Permalink to this definition">¶</a></dt>
-<dd><p>A queue used to organize communication messaging between Wishbone Actors.</p>
+<dt id="compysition.tools.CompysitionQueue">
+<em class="property">class </em><tt class="descclassname">compysition.tools.</tt><tt class="descname">CompysitionQueue</tt><big>(</big><em>max_size=0</em><big>)</big><a class="headerlink" href="#compysition.tools.CompysitionQueue" title="Permalink to this definition">¶</a></dt>
+<dd><p>A queue used to organize communication messaging between Compysition Actors.</p>
 <p>Parameters:</p>
 <blockquote>
 <div><ul>
@@ -342,114 +342,114 @@ after which it will exit.</p>
 </ul>
 </div></blockquote>
 <dl class="method">
-<dt id="wishbone.tools.WishboneQueue.clear">
-<tt class="descname">clear</tt><big>(</big><big>)</big><a class="headerlink" href="#wishbone.tools.WishboneQueue.clear" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.tools.CompysitionQueue.clear">
+<tt class="descname">clear</tt><big>(</big><big>)</big><a class="headerlink" href="#compysition.tools.CompysitionQueue.clear" title="Permalink to this definition">¶</a></dt>
 <dd><p>Clears the queue.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.tools.WishboneQueue.dump">
-<tt class="descname">dump</tt><big>(</big><big>)</big><a class="headerlink" href="#wishbone.tools.WishboneQueue.dump" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.tools.CompysitionQueue.dump">
+<tt class="descname">dump</tt><big>(</big><big>)</big><a class="headerlink" href="#compysition.tools.CompysitionQueue.dump" title="Permalink to this definition">¶</a></dt>
 <dd><p>Dumps and returns the queue in tuple format.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.tools.WishboneQueue.empty">
-<tt class="descname">empty</tt><big>(</big><big>)</big><a class="headerlink" href="#wishbone.tools.WishboneQueue.empty" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.tools.CompysitionQueue.empty">
+<tt class="descname">empty</tt><big>(</big><big>)</big><a class="headerlink" href="#compysition.tools.CompysitionQueue.empty" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns True when queue and unacknowledged is empty otherwise False.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.tools.WishboneQueue.get">
-<tt class="descname">get</tt><big>(</big><big>)</big><a class="headerlink" href="#wishbone.tools.WishboneQueue.get" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.tools.CompysitionQueue.get">
+<tt class="descname">get</tt><big>(</big><big>)</big><a class="headerlink" href="#compysition.tools.CompysitionQueue.get" title="Permalink to this definition">¶</a></dt>
 <dd><p>Gets an element from the queue.</p>
 <p>Blocks when empty until an element is returned.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.tools.WishboneQueue.getLock">
-<tt class="descname">getLock</tt><big>(</big><big>)</big><a class="headerlink" href="#wishbone.tools.WishboneQueue.getLock" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.tools.CompysitionQueue.getLock">
+<tt class="descname">getLock</tt><big>(</big><big>)</big><a class="headerlink" href="#compysition.tools.CompysitionQueue.getLock" title="Permalink to this definition">¶</a></dt>
 <dd><p>Locks getting data from queue.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.tools.WishboneQueue.getUnlock">
-<tt class="descname">getUnlock</tt><big>(</big><big>)</big><a class="headerlink" href="#wishbone.tools.WishboneQueue.getUnlock" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.tools.CompysitionQueue.getUnlock">
+<tt class="descname">getUnlock</tt><big>(</big><big>)</big><a class="headerlink" href="#compysition.tools.CompysitionQueue.getUnlock" title="Permalink to this definition">¶</a></dt>
 <dd><p>Unlocks getting data from queue.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.tools.WishboneQueue.isLocked">
-<tt class="descname">isLocked</tt><big>(</big><big>)</big><a class="headerlink" href="#wishbone.tools.WishboneQueue.isLocked" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.tools.CompysitionQueue.isLocked">
+<tt class="descname">isLocked</tt><big>(</big><big>)</big><a class="headerlink" href="#compysition.tools.CompysitionQueue.isLocked" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns whether the queue is in locked or unlocked state.</p>
 <p>True means locked, False means unlocked.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.tools.WishboneQueue.lock">
-<tt class="descname">lock</tt><big>(</big><big>)</big><a class="headerlink" href="#wishbone.tools.WishboneQueue.lock" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.tools.CompysitionQueue.lock">
+<tt class="descname">lock</tt><big>(</big><big>)</big><a class="headerlink" href="#compysition.tools.CompysitionQueue.lock" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets queue in locked state.</p>
 <p>When in locked state, elements can not be added or consumed.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.tools.WishboneQueue.putLock">
-<tt class="descname">putLock</tt><big>(</big><big>)</big><a class="headerlink" href="#wishbone.tools.WishboneQueue.putLock" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.tools.CompysitionQueue.putLock">
+<tt class="descname">putLock</tt><big>(</big><big>)</big><a class="headerlink" href="#compysition.tools.CompysitionQueue.putLock" title="Permalink to this definition">¶</a></dt>
 <dd><p>Locks putting data in queue.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.tools.WishboneQueue.putUnlock">
-<tt class="descname">putUnlock</tt><big>(</big><big>)</big><a class="headerlink" href="#wishbone.tools.WishboneQueue.putUnlock" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.tools.CompysitionQueue.putUnlock">
+<tt class="descname">putUnlock</tt><big>(</big><big>)</big><a class="headerlink" href="#compysition.tools.CompysitionQueue.putUnlock" title="Permalink to this definition">¶</a></dt>
 <dd><p>Unlocks putting data in queue.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.tools.WishboneQueue.rescue">
-<tt class="descname">rescue</tt><big>(</big><em>data</em><big>)</big><a class="headerlink" href="#wishbone.tools.WishboneQueue.rescue" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.tools.CompysitionQueue.rescue">
+<tt class="descname">rescue</tt><big>(</big><em>data</em><big>)</big><a class="headerlink" href="#compysition.tools.CompysitionQueue.rescue" title="Permalink to this definition">¶</a></dt>
 <dd><p>Puts data to the beginning of the queue overriding the lock.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.tools.WishboneQueue.size">
-<tt class="descname">size</tt><big>(</big><big>)</big><a class="headerlink" href="#wishbone.tools.WishboneQueue.size" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.tools.CompysitionQueue.size">
+<tt class="descname">size</tt><big>(</big><big>)</big><a class="headerlink" href="#compysition.tools.CompysitionQueue.size" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a tuple of the queue and unacknowledged the size of the queue.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.tools.WishboneQueue.stats">
-<tt class="descname">stats</tt><big>(</big><big>)</big><a class="headerlink" href="#wishbone.tools.WishboneQueue.stats" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.tools.CompysitionQueue.stats">
+<tt class="descname">stats</tt><big>(</big><big>)</big><a class="headerlink" href="#compysition.tools.CompysitionQueue.stats" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns statistics of the queue.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.tools.WishboneQueue.unlock">
-<tt class="descname">unlock</tt><big>(</big><big>)</big><a class="headerlink" href="#wishbone.tools.WishboneQueue.unlock" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.tools.CompysitionQueue.unlock">
+<tt class="descname">unlock</tt><big>(</big><big>)</big><a class="headerlink" href="#compysition.tools.CompysitionQueue.unlock" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets queue in unlocked state.</p>
 <p>When in unlocked state, elements can be added or consumed.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.tools.WishboneQueue.waitUntilData">
-<tt class="descname">waitUntilData</tt><big>(</big><big>)</big><a class="headerlink" href="#wishbone.tools.WishboneQueue.waitUntilData" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.tools.CompysitionQueue.waitUntilData">
+<tt class="descname">waitUntilData</tt><big>(</big><big>)</big><a class="headerlink" href="#compysition.tools.CompysitionQueue.waitUntilData" title="Permalink to this definition">¶</a></dt>
 <dd><p>Blocks untill data is available unless queue is locked.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.tools.WishboneQueue.waitUntilFreePlace">
-<tt class="descname">waitUntilFreePlace</tt><big>(</big><big>)</big><a class="headerlink" href="#wishbone.tools.WishboneQueue.waitUntilFreePlace" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.tools.CompysitionQueue.waitUntilFreePlace">
+<tt class="descname">waitUntilFreePlace</tt><big>(</big><big>)</big><a class="headerlink" href="#compysition.tools.CompysitionQueue.waitUntilFreePlace" title="Permalink to this definition">¶</a></dt>
 <dd><p>Blocks until we have at least 1 slot free in the queue.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.tools.WishboneQueue.waitUntilGetAllowed">
-<tt class="descname">waitUntilGetAllowed</tt><big>(</big><big>)</big><a class="headerlink" href="#wishbone.tools.WishboneQueue.waitUntilGetAllowed" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.tools.CompysitionQueue.waitUntilGetAllowed">
+<tt class="descname">waitUntilGetAllowed</tt><big>(</big><big>)</big><a class="headerlink" href="#compysition.tools.CompysitionQueue.waitUntilGetAllowed" title="Permalink to this definition">¶</a></dt>
 <dd><p>Blocks until getting data from the queue is allowed again.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.tools.WishboneQueue.waitUntilPutAllowed">
-<tt class="descname">waitUntilPutAllowed</tt><big>(</big><big>)</big><a class="headerlink" href="#wishbone.tools.WishboneQueue.waitUntilPutAllowed" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.tools.CompysitionQueue.waitUntilPutAllowed">
+<tt class="descname">waitUntilPutAllowed</tt><big>(</big><big>)</big><a class="headerlink" href="#compysition.tools.CompysitionQueue.waitUntilPutAllowed" title="Permalink to this definition">¶</a></dt>
 <dd><p>Blocks until writing data into the queue is allowed again.</p>
 </dd></dl>
 
@@ -457,87 +457,87 @@ after which it will exit.</p>
 
 <hr class="docutils" />
 <dl class="class">
-<dt id="wishbone.tools.QLogging">
-<em class="property">class </em><tt class="descclassname">wishbone.tools.</tt><tt class="descname">QLogging</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#wishbone.tools.QLogging" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generates Wishbone formatted log messages following the Syslog priority
+<dt id="compysition.tools.QLogging">
+<em class="property">class </em><tt class="descclassname">compysition.tools.</tt><tt class="descname">QLogging</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#compysition.tools.QLogging" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates Compysition formatted log messages following the Syslog priority
 definition.</p>
 <p>Generated logs are stored in a local queue &lt;self.logs&gt;.  It is up to an
 external process the consume this queue.</p>
 <dl class="method">
-<dt id="wishbone.tools.QLogging.alert">
-<tt class="descname">alert</tt><big>(</big><em>message</em><big>)</big><a class="headerlink" href="#wishbone.tools.QLogging.alert" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.tools.QLogging.alert">
+<tt class="descname">alert</tt><big>(</big><em>message</em><big>)</big><a class="headerlink" href="#compysition.tools.QLogging.alert" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generates a log message with priority alert(1).</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.tools.QLogging.crit">
-<tt class="descname">crit</tt><big>(</big><em>message</em><big>)</big><a class="headerlink" href="#wishbone.tools.QLogging.crit" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.tools.QLogging.crit">
+<tt class="descname">crit</tt><big>(</big><em>message</em><big>)</big><a class="headerlink" href="#compysition.tools.QLogging.crit" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generates a log message with priority critical(2).</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.tools.QLogging.critical">
-<tt class="descname">critical</tt><big>(</big><em>message</em><big>)</big><a class="headerlink" href="#wishbone.tools.QLogging.critical" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.tools.QLogging.critical">
+<tt class="descname">critical</tt><big>(</big><em>message</em><big>)</big><a class="headerlink" href="#compysition.tools.QLogging.critical" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generates a log message with priority critical(2).</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.tools.QLogging.debug">
-<tt class="descname">debug</tt><big>(</big><em>message</em><big>)</big><a class="headerlink" href="#wishbone.tools.QLogging.debug" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.tools.QLogging.debug">
+<tt class="descname">debug</tt><big>(</big><em>message</em><big>)</big><a class="headerlink" href="#compysition.tools.QLogging.debug" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generates a log message with priority debug(7).</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.tools.QLogging.emerg">
-<tt class="descname">emerg</tt><big>(</big><em>message</em><big>)</big><a class="headerlink" href="#wishbone.tools.QLogging.emerg" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.tools.QLogging.emerg">
+<tt class="descname">emerg</tt><big>(</big><em>message</em><big>)</big><a class="headerlink" href="#compysition.tools.QLogging.emerg" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generates a log message with priority emergency(0).</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.tools.QLogging.emergency">
-<tt class="descname">emergency</tt><big>(</big><em>message</em><big>)</big><a class="headerlink" href="#wishbone.tools.QLogging.emergency" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.tools.QLogging.emergency">
+<tt class="descname">emergency</tt><big>(</big><em>message</em><big>)</big><a class="headerlink" href="#compysition.tools.QLogging.emergency" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generates a log message with priority emergency(0).</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.tools.QLogging.err">
-<tt class="descname">err</tt><big>(</big><em>message</em><big>)</big><a class="headerlink" href="#wishbone.tools.QLogging.err" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.tools.QLogging.err">
+<tt class="descname">err</tt><big>(</big><em>message</em><big>)</big><a class="headerlink" href="#compysition.tools.QLogging.err" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generates a log message with priority error(3).</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.tools.QLogging.error">
-<tt class="descname">error</tt><big>(</big><em>message</em><big>)</big><a class="headerlink" href="#wishbone.tools.QLogging.error" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.tools.QLogging.error">
+<tt class="descname">error</tt><big>(</big><em>message</em><big>)</big><a class="headerlink" href="#compysition.tools.QLogging.error" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generates a log message with priority error(3).</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.tools.QLogging.info">
-<tt class="descname">info</tt><big>(</big><em>message</em><big>)</big><a class="headerlink" href="#wishbone.tools.QLogging.info" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.tools.QLogging.info">
+<tt class="descname">info</tt><big>(</big><em>message</em><big>)</big><a class="headerlink" href="#compysition.tools.QLogging.info" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generates a log message with priority informational(6).</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.tools.QLogging.informational">
-<tt class="descname">informational</tt><big>(</big><em>message</em><big>)</big><a class="headerlink" href="#wishbone.tools.QLogging.informational" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.tools.QLogging.informational">
+<tt class="descname">informational</tt><big>(</big><em>message</em><big>)</big><a class="headerlink" href="#compysition.tools.QLogging.informational" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generates a log message with priority informational(6).</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.tools.QLogging.notice">
-<tt class="descname">notice</tt><big>(</big><em>message</em><big>)</big><a class="headerlink" href="#wishbone.tools.QLogging.notice" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.tools.QLogging.notice">
+<tt class="descname">notice</tt><big>(</big><em>message</em><big>)</big><a class="headerlink" href="#compysition.tools.QLogging.notice" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generates a log message with priority notice(5).</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.tools.QLogging.warn">
-<tt class="descname">warn</tt><big>(</big><em>message</em><big>)</big><a class="headerlink" href="#wishbone.tools.QLogging.warn" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.tools.QLogging.warn">
+<tt class="descname">warn</tt><big>(</big><em>message</em><big>)</big><a class="headerlink" href="#compysition.tools.QLogging.warn" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generates a log message with priority warning(4).</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="wishbone.tools.QLogging.warning">
-<tt class="descname">warning</tt><big>(</big><em>message</em><big>)</big><a class="headerlink" href="#wishbone.tools.QLogging.warning" title="Permalink to this definition">¶</a></dt>
+<dt id="compysition.tools.QLogging.warning">
+<tt class="descname">warning</tt><big>(</big><em>message</em><big>)</big><a class="headerlink" href="#compysition.tools.QLogging.warning" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generates a log message with priority warning(4).</p>
 </dd></dl>
 
@@ -596,7 +596,7 @@ external process the consume this queue.</p>
         <li class="right" >
           <a href="introduction.html" title="Introduction"
              >previous</a> |</li>
-        <li><a href="index.html">Wishbone 0.4.9 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Compysition 0.4.9 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

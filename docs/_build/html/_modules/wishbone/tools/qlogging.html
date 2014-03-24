@@ -1,4 +1,4 @@
-
+﻿
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -7,7 +7,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>wishbone.tools.qlogging &mdash; Wishbone 0.4.4 documentation</title>
+    <title>compysition.tools.qlogging &mdash; Compysition 0.4.4 documentation</title>
     
     <link rel="stylesheet" href="../../../_static/pyramid.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -24,8 +24,8 @@
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
-    <link rel="top" title="Wishbone 0.4.4 documentation" href="../../../index.html" />
-    <link rel="up" title="wishbone.tools" href="../tools.html" />
+    <link rel="top" title="Compysition 0.4.4 documentation" href="../../../index.html" />
+    <link rel="up" title="compysition.tools" href="../tools.html" />
 <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
 <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
 <!--[if lte IE 6]>
@@ -41,10 +41,10 @@
         <li class="right" style="margin-right: 10px">
           <a href="../../../genindex.html" title="General Index"
              accesskey="I">index</a></li>
-        <li><a href="../../../index.html">Wishbone 0.4.4 documentation</a> &raquo;</li>
+        <li><a href="../../../index.html">Compysition 0.4.4 documentation</a> &raquo;</li>
           <li><a href="../../index.html" >Module code</a> &raquo;</li>
-          <li><a href="../../wishbone.html" >wishbone</a> &raquo;</li>
-          <li><a href="../tools.html" accesskey="U">wishbone.tools</a> &raquo;</li> 
+          <li><a href="../../compysition.html" >compysition</a> &raquo;</li>
+          <li><a href="../tools.html" accesskey="U">compysition.tools</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -53,7 +53,7 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <h1>Source code for wishbone.tools.qlogging</h1><div class="highlight"><pre>
+  <h1>Source code for compysition.tools.qlogging</h1><div class="highlight"><pre>
 <span class="c">#!/usr/bin/env python</span>
 <span class="c">#</span>
 <span class="c"># -*- coding: utf-8 -*-</span>
@@ -80,14 +80,14 @@
 <span class="c">#</span>
 
 
-<span class="kn">from</span> <span class="nn">wishbone.tools</span> <span class="kn">import</span> <span class="n">WishboneQueue</span>
+<span class="kn">from</span> <span class="nn">compysition.tools</span> <span class="kn">import</span> <span class="n">CompysitionQueue</span>
 <span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">time</span>
 <span class="kn">from</span> <span class="nn">os</span> <span class="kn">import</span> <span class="n">getpid</span>
 
-<div class="viewcode-block" id="QLogging"><a class="viewcode-back" href="../../../actor.html#wishbone.tools.qlogging.QLogging">[docs]</a><span class="k">class</span> <span class="nc">QLogging</span><span class="p">():</span>
+<div class="viewcode-block" id="QLogging"><a class="viewcode-back" href="../../../actor.html#compysition.tools.qlogging.QLogging">[docs]</a><span class="k">class</span> <span class="nc">QLogging</span><span class="p">():</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logs</span><span class="o">=</span><span class="n">WishboneQueue</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logs</span><span class="o">=</span><span class="n">CompysitionQueue</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="o">=</span><span class="n">name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pid</span><span class="o">=</span><span class="n">getpid</span><span class="p">()</span>
 
@@ -95,33 +95,33 @@
         <span class="c">#print ((level, time(), self.name, message))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logs</span><span class="o">.</span><span class="n">put</span><span class="p">({</span><span class="s">&quot;header&quot;</span><span class="p">:{},</span><span class="s">&quot;data&quot;</span><span class="p">:(</span><span class="n">level</span><span class="p">,</span> <span class="n">time</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">pid</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">message</span><span class="p">)})</span>
 
-<div class="viewcode-block" id="QLogging.emergency"><a class="viewcode-back" href="../../../actor.html#wishbone.tools.qlogging.QLogging.emergency">[docs]</a>    <span class="k">def</span> <span class="nf">emergency</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+<div class="viewcode-block" id="QLogging.emergency"><a class="viewcode-back" href="../../../actor.html#compysition.tools.qlogging.QLogging.emergency">[docs]</a>    <span class="k">def</span> <span class="nf">emergency</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__log</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span></div>
     <span class="n">emerg</span><span class="o">=</span><span class="n">emergency</span>
 
-<div class="viewcode-block" id="QLogging.alert"><a class="viewcode-back" href="../../../actor.html#wishbone.tools.qlogging.QLogging.alert">[docs]</a>    <span class="k">def</span> <span class="nf">alert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+<div class="viewcode-block" id="QLogging.alert"><a class="viewcode-back" href="../../../actor.html#compysition.tools.qlogging.QLogging.alert">[docs]</a>    <span class="k">def</span> <span class="nf">alert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__log</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
 </div>
-<div class="viewcode-block" id="QLogging.critical"><a class="viewcode-back" href="../../../actor.html#wishbone.tools.qlogging.QLogging.critical">[docs]</a>    <span class="k">def</span> <span class="nf">critical</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+<div class="viewcode-block" id="QLogging.critical"><a class="viewcode-back" href="../../../actor.html#compysition.tools.qlogging.QLogging.critical">[docs]</a>    <span class="k">def</span> <span class="nf">critical</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__log</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span></div>
     <span class="n">crit</span><span class="o">=</span><span class="n">critical</span>
 
-<div class="viewcode-block" id="QLogging.error"><a class="viewcode-back" href="../../../actor.html#wishbone.tools.qlogging.QLogging.error">[docs]</a>    <span class="k">def</span> <span class="nf">error</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+<div class="viewcode-block" id="QLogging.error"><a class="viewcode-back" href="../../../actor.html#compysition.tools.qlogging.QLogging.error">[docs]</a>    <span class="k">def</span> <span class="nf">error</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__log</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span></div>
     <span class="n">err</span><span class="o">=</span><span class="n">error</span>
 
-<div class="viewcode-block" id="QLogging.warning"><a class="viewcode-back" href="../../../actor.html#wishbone.tools.qlogging.QLogging.warning">[docs]</a>    <span class="k">def</span> <span class="nf">warning</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+<div class="viewcode-block" id="QLogging.warning"><a class="viewcode-back" href="../../../actor.html#compysition.tools.qlogging.QLogging.warning">[docs]</a>    <span class="k">def</span> <span class="nf">warning</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__log</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span></div>
     <span class="n">warn</span><span class="o">=</span><span class="n">warning</span>
 
-<div class="viewcode-block" id="QLogging.notice"><a class="viewcode-back" href="../../../actor.html#wishbone.tools.qlogging.QLogging.notice">[docs]</a>    <span class="k">def</span> <span class="nf">notice</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+<div class="viewcode-block" id="QLogging.notice"><a class="viewcode-back" href="../../../actor.html#compysition.tools.qlogging.QLogging.notice">[docs]</a>    <span class="k">def</span> <span class="nf">notice</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__log</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
 </div>
-<div class="viewcode-block" id="QLogging.informational"><a class="viewcode-back" href="../../../actor.html#wishbone.tools.qlogging.QLogging.informational">[docs]</a>    <span class="k">def</span> <span class="nf">informational</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+<div class="viewcode-block" id="QLogging.informational"><a class="viewcode-back" href="../../../actor.html#compysition.tools.qlogging.QLogging.informational">[docs]</a>    <span class="k">def</span> <span class="nf">informational</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__log</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span></div>
     <span class="n">info</span><span class="o">=</span><span class="n">informational</span>
 
-<div class="viewcode-block" id="QLogging.debug"><a class="viewcode-back" href="../../../actor.html#wishbone.tools.qlogging.QLogging.debug">[docs]</a>    <span class="k">def</span> <span class="nf">debug</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+<div class="viewcode-block" id="QLogging.debug"><a class="viewcode-back" href="../../../actor.html#compysition.tools.qlogging.QLogging.debug">[docs]</a>    <span class="k">def</span> <span class="nf">debug</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__log</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span></div></div>
 </pre></div>
 
@@ -153,10 +153,10 @@
         <li class="right" style="margin-right: 10px">
           <a href="../../../genindex.html" title="General Index"
              >index</a></li>
-        <li><a href="../../../index.html">Wishbone 0.4.4 documentation</a> &raquo;</li>
+        <li><a href="../../../index.html">Compysition 0.4.4 documentation</a> &raquo;</li>
           <li><a href="../../index.html" >Module code</a> &raquo;</li>
-          <li><a href="../../wishbone.html" >wishbone</a> &raquo;</li>
-          <li><a href="../tools.html" >wishbone.tools</a> &raquo;</li> 
+          <li><a href="../../compysition.html" >compysition</a> &raquo;</li>
+          <li><a href="../tools.html" >compysition.tools</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

@@ -3,26 +3,26 @@ Installation
 ============
 
 
-Wishbone
+Compysition
 --------
 
 Pypi
 '''''
 
-You can install the latest stable version of Wishbone from
-https://pypi.python.org/pypi/wishbone/ by using easy_install or pip:
+You can install the latest stable version of Compysition from
+https://pypi.python.org/pypi/compysition/ by using easy_install or pip:
 
 
 
 .. code-block:: sh
 
-    $ easy_install wishbone
+    $ easy_install compysition
 
 Or
 
 .. code-block:: sh
 
-    $ pip install wishbone
+    $ pip install compysition
 
 All dependencies should be resolved automatically.
 
@@ -31,15 +31,15 @@ From source
 '''''''''''
 
 You can install the latest stable or development version from
-https://github.com/smetj/wishbone
+https://github.com/smetj/compysition
 
 Stable
 ~~~~~~
 
 .. code-block:: sh
 
-    $ git clone https://github.com/smetj/wishbone
-    $ cd wishbone
+    $ git clone https://github.com/smetj/compysition
+    $ cd compysition
     $ cd checkout master #just in case your repo is in another branch
     $ sudo python setup.py install
 
@@ -52,8 +52,8 @@ branch and build from there:
 
 .. code-block:: sh
 
-    $ git clone https://github.com/smetj/wishbone.git
-    $ cd wishbone
+    $ git clone https://github.com/smetj/compysition.git
+    $ cd compysition
     $ git checkout develop
     $ sudo python setup.py install
 
@@ -61,15 +61,15 @@ branch and build from there:
 Verify installation
 '''''''''''''''''''
 
-Once installed you should have the `wishbone` executable available in your search
+Once installed you should have the `compysition` executable available in your search
 path:
 
 .. code-block:: sh
 
-    $ wishbone --help
-    usage: wishbone [-h] {start,debug,stop,kill,list,show} ...
+    $ compysition --help
+    usage: compysition [-h] {start,debug,stop,kill,list,show} ...
 
-    Wishbone bootstrap server.
+    Compysition bootstrap server.
 
     positional arguments:
       {start,debug,stop,kill,list,show}
@@ -84,32 +84,32 @@ Modules
 Builtin modules
 '''''''''''''''
 
-Wishbone comes with a set of builtin modules.  You can verify the available
+Compysition comes with a set of builtin modules.  You can verify the available
 default modules by using the *list* command:
 
 .. code-block:: sh
 
-    $ wishbone list
-    Available Wishbone modules:
+    $ compysition list
+    Available Compysition modules:
     +---------------------------+-------------------+---------+----------------------------------------------------------------------+
     | Group                     | Module            | Version | Description                                                          |
     +---------------------------+-------------------+---------+----------------------------------------------------------------------+
-    | wishbone.builtin.logging  | loglevelfilter    | 0.4.8   | Filters Wishbone log events.                                         |
-    |                           | humanlogformatter | 0.4.8   | Formats Wishbone log events.                                         |
+    | compysition.builtin.logging  | loglevelfilter    | 0.4.8   | Filters Compysition log events.                                         |
+    |                           | humanlogformatter | 0.4.8   | Formats Compysition log events.                                         |
     |                           |                   |         |                                                                      |
-    | wishbone.builtin.metrics  | graphite          | 0.4.8   | Converts the internal metric format to Graphite format.              |
+    | compysition.builtin.metrics  | graphite          | 0.4.8   | Converts the internal metric format to Graphite format.              |
     |                           |                   |         |                                                                      |
-    | wishbone.builtin.flow     | roundrobin        | 0.4.8   | Round-robins incoming events to all connected queues.                |
+    | compysition.builtin.flow     | roundrobin        | 0.4.8   | Round-robins incoming events to all connected queues.                |
     |                           | fanout            | 0.4.8   | Duplicates incoming events to all connected queues.                  |
     |                           | tippingbucket     | 0.4.8   | Event buffer module.                                                 |
     |                           | funnel            | 0.4.8   | Merges incoming events from multiple queues to 1 queue.              |
     |                           | lockbuffer        | 0.4.8   | A module with a fixed size inbox queue.                              |
     |                           |                   |         |                                                                      |
-    | wishbone.builtin.function | header            | 0.4.8   | Adds information to event headers.                                   |
+    | compysition.builtin.function | header            | 0.4.8   | Adds information to event headers.                                   |
     |                           |                   |         |                                                                      |
-    | wishbone.builtin.input    | testevent         | 0.4.8   | Generates a test event at the chosen interval.                       |
+    | compysition.builtin.input    | testevent         | 0.4.8   | Generates a test event at the chosen interval.                       |
     |                           |                   |         |                                                                      |
-    | wishbone.builtin.output   | syslog            | 0.4.8   | Writes log events to syslog.                                         |
+    | compysition.builtin.output   | syslog            | 0.4.8   | Writes log events to syslog.                                         |
     |                           | null              | 0.4.8   | Purges incoming events..                                             |
     |                           | stdout            | 0.4.8   | Prints incoming events to STDOUT.                                    |
     |                           | slow              | 0.4.8   | Processes an incoming event per X seconds.                           |
@@ -121,7 +121,7 @@ module consists out of the group name + the module name.  You can read the detai
 
 .. code-block:: sh
 
-    $ wishbone show wishbone.builtin.input.testevent
+    $ compysition show compysition.builtin.input.testevent
     **Generates a test event at the chosen interval.**
 
         This module is only available for testing purposes and has further hardly any use.
@@ -147,20 +147,20 @@ External modules
 ''''''''''''''''
 
 Not all modules are builtin modules.  There is a collection of modules which
-can be downloaded from https://github.com/smetj/wishboneModules.  The reason
+can be downloaded from https://github.com/smetj/compysitionModules.  The reason
 they are not builtin modules is to limit the number of dependencies for
-Wishbone itself.  All modules are also in 1 repository.  Within time they will
+Compysition itself.  All modules are also in 1 repository.  Within time they will
 be available as separate projects and added to Pypi.
 
 To install an *external* module follow these steps:
 
 .. code-block:: sh
 
-    $ git clone https://github.com/smetj/wishboneModules.git
+    $ git clone https://github.com/smetj/compysitionModules.git
     $ cd wb_output_tcp
     $ python setup.py install
-    $ wishbone show wishbone.output.tcp
-    **A Wishbone IO module which writes data to a TCP socket.**
+    $ compysition show compysition.output.tcp
+    **A Compysition IO module which writes data to a TCP socket.**
 
     Writes data to a tcp socket.
 

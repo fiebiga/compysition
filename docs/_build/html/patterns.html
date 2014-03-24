@@ -1,4 +1,4 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
 
@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Patterns and best practices &mdash; Wishbone 0.4.9 documentation</title>
+    <title>Patterns and best practices &mdash; Compysition 0.4.9 documentation</title>
     
     <link rel="stylesheet" href="_static/pyramid.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Wishbone 0.4.9 documentation" href="index.html" />
+    <link rel="top" title="Compysition 0.4.9 documentation" href="index.html" />
     <link rel="prev" title="Bootstraping on CLI" href="bootstrap.html" />
 <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
 <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="bootstrap.html" title="Bootstraping on CLI"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Wishbone 0.4.9 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Compysition 0.4.9 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -56,7 +56,7 @@
 <h1>Patterns and best practices<a class="headerlink" href="#patterns-and-best-practices" title="Permalink to this headline">¶</a></h1>
 <p>This section discusses some common usage patterns and best practices. Although
 most if not all are strictly spoken not required, they might be helpful in
-building efficient Wishbone solutions.</p>
+building efficient Compysition solutions.</p>
 <div class="section" id="event-headers">
 <h2>Event headers<a class="headerlink" href="#event-headers" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="write-data-to-headers">
@@ -69,7 +69,7 @@ building efficient Wishbone solutions.</p>
 store this under the &lt;self.name&gt; key, which is unique anyway within a router
 instance.</p>
 <p>The &lt;self.name&gt; value of a module is determined when registering the module
-using <a class="reference internal" href="router.html#wishbone.router.Default.register" title="wishbone.router.Default.register"><tt class="xref py py-func docutils literal"><span class="pre">wishbone.router.Default.register()</span></tt></a>.</p>
+using <a class="reference internal" href="router.html#compysition.router.Default.register" title="compysition.router.Default.register"><tt class="xref py py-func docutils literal"><span class="pre">compysition.router.Default.register()</span></tt></a>.</p>
 <p>So when registering a module like this:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">router</span> <span class="o">=</span> <span class="n">Default</span><span class="p">(</span><span class="n">interval</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 <span class="n">router</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">STDOUT</span><span class="p">,</span> <span class="s">&quot;on_screen&quot;</span><span class="p">)</span>
@@ -109,16 +109,16 @@ code will not work anymore.</p>
 <div class="section" id="starting-state">
 <h3>Starting state<a class="headerlink" href="#starting-state" title="Permalink to this headline">¶</a></h3>
 <p>An output module should always start with the <strong>inbox</strong> queue in a
-<a class="reference internal" href="actor.html#wishbone.tools.WishboneQueue.putLock" title="wishbone.tools.WishboneQueue.putLock"><tt class="xref py py-func docutils literal"><span class="pre">wishbone.tools.WishboneQueue.putLock()</span></tt></a> state.  The moment the module
+<a class="reference internal" href="actor.html#compysition.tools.CompysitionQueue.putLock" title="compysition.tools.CompysitionQueue.putLock"><tt class="xref py py-func docutils literal"><span class="pre">compysition.tools.CompysitionQueue.putLock()</span></tt></a> state.  The moment the module
 detects it is capable of sending incoming events to the outside world, it
 should unlock the <strong>inbox</strong> queue using
-<a class="reference internal" href="actor.html#wishbone.tools.WishboneQueue.putUnlock" title="wishbone.tools.WishboneQueue.putUnlock"><tt class="xref py py-func docutils literal"><span class="pre">wishbone.tools.WishboneQueue.putUnlock()</span></tt></a>.</p>
+<a class="reference internal" href="actor.html#compysition.tools.CompysitionQueue.putUnlock" title="compysition.tools.CompysitionQueue.putUnlock"><tt class="xref py py-func docutils literal"><span class="pre">compysition.tools.CompysitionQueue.putUnlock()</span></tt></a>.</p>
 </div>
 <div class="section" id="handle-failed-and-successful-events">
 <h3>Handle failed and successful events<a class="headerlink" href="#handle-failed-and-successful-events" title="Permalink to this headline">¶</a></h3>
 <p>Output modules are responsible to deliver messages to the outside world.
 Preferably we want this to be done as reliably.  When submitting events to the
-outside world (aka outside a Wishbone process.) fails or succeeds we might
+outside world (aka outside a Compysition process.) fails or succeeds we might
 require a specific strategy to deal with that specific situation.</p>
 <p>A possible strategy is have 2 additional queues:</p>
 <blockquote>
@@ -145,7 +145,7 @@ event to disk.</li>
 <ul class="simple">
 <li>Successfully submitted events are discarded</li>
 <li>Unsuccessfully submitted events should be send back to the <cite>inbox</cite> queue
-using <a class="reference internal" href="actor.html#wishbone.tools.WishboneQueue.rescue" title="wishbone.tools.WishboneQueue.rescue"><tt class="xref py py-func docutils literal"><span class="pre">wishbone.tools.WishboneQueue.rescue()</span></tt></a>.</li>
+using <a class="reference internal" href="actor.html#compysition.tools.CompysitionQueue.rescue" title="compysition.tools.CompysitionQueue.rescue"><tt class="xref py py-func docutils literal"><span class="pre">compysition.tools.CompysitionQueue.rescue()</span></tt></a>.</li>
 </ul>
 </div>
 <div class="section" id="retrying-and-monitors">
@@ -153,11 +153,11 @@ using <a class="reference internal" href="actor.html#wishbone.tools.WishboneQueu
 <p>When possible an output module should have a &#8220;monitor&#8221; thread running
 endlessly in a separate greenthread trying to create a valid connection object
 to the outside service.</p>
-<p>This monitor process should be blocked until <a class="reference internal" href="actor.html#wishbone.Actor.consume" title="wishbone.Actor.consume"><tt class="xref py py-func docutils literal"><span class="pre">wishbone.Actor.consume()</span></tt></a>
+<p>This monitor process should be blocked until <a class="reference internal" href="actor.html#compysition.Actor.consume" title="compysition.Actor.consume"><tt class="xref py py-func docutils literal"><span class="pre">compysition.Actor.consume()</span></tt></a>
 fails to submit an event via the connection object.</p>
 <p>During the time the monitor process is retrying to create a valid connection
 object, it should block the <cite>inbox</cite> queue using
-<a class="reference internal" href="actor.html#wishbone.tools.WishboneQueue.putLock" title="wishbone.tools.WishboneQueue.putLock"><tt class="xref py py-func docutils literal"><span class="pre">wishbone.tools.WishboneQueue.putLock()</span></tt></a> since it makes no sense to
+<a class="reference internal" href="actor.html#compysition.tools.CompysitionQueue.putLock" title="compysition.tools.CompysitionQueue.putLock"><tt class="xref py py-func docutils literal"><span class="pre">compysition.tools.CompysitionQueue.putLock()</span></tt></a> since it makes no sense to
 allow events to come into the module  since they can&#8217;t be delivered to the
 outside world anyway.</p>
 </div>
@@ -217,7 +217,7 @@ outside world anyway.</p>
         <li class="right" >
           <a href="bootstrap.html" title="Bootstraping on CLI"
              >previous</a> |</li>
-        <li><a href="index.html">Wishbone 0.4.9 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Compysition 0.4.9 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

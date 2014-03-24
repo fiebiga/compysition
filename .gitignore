@@ -37,3 +37,6 @@ nosetests.xml
 # Sublime
 wishbone.sublime-project
 wishbone.sublime-workspace
+
+# Visual Studio
+*.pyproj

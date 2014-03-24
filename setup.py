@@ -26,7 +26,7 @@ from setuptools import setup, find_packages
 from setuptools.command.test import test as TestCommand
 import sys
 
-PROJECT = 'wishbone'
+PROJECT = 'compysition'
 VERSION = '0.4.9'
 install_requires=['gevent>=1.0dev','argparse','greenlet>=0.3.2','jsonschema','prettytable','python-daemon',"pyyaml"]
 
@@ -50,14 +50,14 @@ setup(
     name=PROJECT,
     version=VERSION,
 
-    description='A Python application framework and CLI tool to build and manage async event pipeline servers with minimal effort.',
+    description='A Python application framework and CLI tool to build and manage async event pipeline servers with minimal effort, forked from the wishbone project',
     long_description=long_description,
 
     author='Jelle Smet',
-    author_email='development@smetj.net',
+    author_email='fiebig.adam@gmail.com',
 
-    url='https://github.com/smetj/wishbone',
-    download_url='https://github.com/smetj/wishbone/tarball/master',
+    url='https://github.com/fiebiga/compysition',
+    download_url='https://github.com/fiebiga/compysition/tarball/master',
 
     classifiers=['Development Status :: 4 - Beta',
                  'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
@@ -74,7 +74,7 @@ setup(
         'testing': ['pytest'],
     },
     platforms=['Linux'],
-    test_suite='wishbone.test.test_wishbone',
+    test_suite='compysition.test.test_compysition',
     cmdclass={'test': PyTest},
     scripts=[],
 
@@ -85,38 +85,38 @@ setup(
     packages=find_packages(),
     zip_safe=False,
     entry_points={
-        'console_scripts': ['wishbone = wishbone.bootstrap:main'],
-        'wishbone.builtin.flow': [
-            'fanout = wishbone.module.fanout:Fanout',
-            'funnel = wishbone.module.funnel:Funnel',
-            'lockbuffer = wishbone.module.lockbuffer:LockBuffer',
-            'roundrobin = wishbone.module.roundrobin:RoundRobin',
-            'tippingbucket = wishbone.module.tippingbucket:TippingBucket'
+        'console_scripts': ['compysition = compysition.bootstrap:main'],
+        'compysition.builtin.flow': [
+            'fanout = compysition.module.fanout:Fanout',
+            'funnel = compysition.module.funnel:Funnel',
+            'lockbuffer = compysition.module.lockbuffer:LockBuffer',
+            'roundrobin = compysition.module.roundrobin:RoundRobin',
+            'tippingbucket = compysition.module.tippingbucket:TippingBucket'
              ],
-        'wishbone.builtin.logging': [
-            'humanlogformatter = wishbone.module.humanlogformatter:HumanLogFormatter',
-            'loglevelfilter = wishbone.module.loglevelfilter:LogLevelFilter'
+        'compysition.builtin.logging': [
+            'humanlogformatter = compysition.module.humanlogformatter:HumanLogFormatter',
+            'loglevelfilter = compysition.module.loglevelfilter:LogLevelFilter'
             ],
-        'wishbone.builtin.metrics': [
-            'graphite = wishbone.module.graphite:Graphite',
+        'compysition.builtin.metrics': [
+            'graphite = compysition.module.graphite:Graphite',
             ],
-        'wishbone.builtin.function': [
-            'header = wishbone.module.header:Header',
+        'compysition.builtin.function': [
+            'header = compysition.module.header:Header',
             ],
-        'wishbone.builtin.input': [
-            'testevent = wishbone.module.testevent:TestEvent'
+        'compysition.builtin.input': [
+            'testevent = compysition.module.testevent:TestEvent'
             ],
-        'wishbone.builtin.output': [
-            'null = wishbone.module.null:Null',
-            'stdout = wishbone.module.stdout:STDOUT',
-            'syslog = wishbone.module.wbsyslog:Syslog',
-            'slow = wishbone.module.slow:Slow',
+        'compysition.builtin.output': [
+            'null = compysition.module.null:Null',
+            'stdout = compysition.module.stdout:STDOUT',
+            'syslog = compysition.module.wbsyslog:Syslog',
+            'slow = compysition.module.slow:Slow',
             ],
-        'wishbone.input': [
+        'compysition.input': [
             ],
-        'wishbone.output': [
+        'compysition.output': [
             ],
-        'wishbone.function': [
+        'compysition.function': [
             ]
     }
 )

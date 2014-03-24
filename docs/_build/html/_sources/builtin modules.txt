@@ -2,7 +2,7 @@
 Builtin Modules
 ===============
 
-Wishbone comes with a set of builtin modules.  Modules are isolated blocks of
+Compysition comes with a set of builtin modules.  Modules are isolated blocks of
 functionality which are connected to each other within a router instance.
 
 There are different types of modules:
@@ -12,35 +12,35 @@ There are different types of modules:
     - flow modules
     - function modules
 
-Wishbone comes with a set of builtin modules which deliver a minimal functionality.
-Thanks to the :class:`wishbone.Actor` class it is easy to create your own modules from scratch.
+Compysition comes with a set of builtin modules which deliver a minimal functionality.
+Thanks to the :class:`compysition.Actor` class it is easy to create your own modules from scratch.
 
 Input modules
 -------------
 
-Input modules take input from the outside world into the Wishbone framework.
-They often have only 1 :class:`wishbone.tools.WishboneQueue` called **outbox**
+Input modules take input from the outside world into the Compysition framework.
+They often have only 1 :class:`compysition.tools.CompysitionQueue` called **outbox**
 in which incoming events go. Input modules are also responsible to format any
-incoming data into the expected Wishbone internal event format.
+incoming data into the expected Compysition internal event format.
 
 Builtin modules:
 
-.. autoclass:: wishbone.module.TestEvent
+.. autoclass:: compysition.module.TestEvent
 
 Output modules
 --------------
 
-Output modules take input from another module registered in the Wishbone
+Output modules take input from another module registered in the Compysition
 router and submit these events to the outside world. They often have only 1
-:class:`wishbone.tools.WishboneQueue` called **inbox** in which events arrive
+:class:`compysition.tools.CompysitionQueue` called **inbox** in which events arrive
 destined to go out. They typically act as TCP, AMQP or other network protocol
 clients.
 
 Builtin modules:
 
-.. autoclass:: wishbone.module.Syslog
-.. autoclass:: wishbone.module.Null
-.. autoclass:: wishbone.module.STDOUT
+.. autoclass:: compysition.module.Syslog
+.. autoclass:: compysition.module.Null
+.. autoclass:: compysition.module.STDOUT
 
 Flow modules
 ------------
@@ -53,11 +53,11 @@ when transiting the module.
 
 Builtin modules:
 
-.. autoclass:: wishbone.module.RoundRobin
-.. autoclass:: wishbone.module.Fanout
-.. autoclass:: wishbone.module.Funnel
-.. autoclass:: wishbone.module.TippingBucket
-.. autoclass:: wishbone.module.LockBuffer
+.. autoclass:: compysition.module.RoundRobin
+.. autoclass:: compysition.module.Fanout
+.. autoclass:: compysition.module.Funnel
+.. autoclass:: compysition.module.TippingBucket
+.. autoclass:: compysition.module.LockBuffer
 
 Function modules
 ----------------
@@ -68,7 +68,7 @@ module.
 
 Builtin modules:
 
-.. autoclass:: wishbone.module.Header
+.. autoclass:: compysition.module.Header
 
 
 

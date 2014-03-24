@@ -4,7 +4,7 @@ Patterns and best practices
 
 This section discusses some common usage patterns and best practices. Although
 most if not all are strictly spoken not required, they might be helpful in
-building efficient Wishbone solutions.
+building efficient Compysition solutions.
 
 Event headers
 -------------
@@ -23,7 +23,7 @@ store this under the <self.name> key, which is unique anyway within a router
 instance.
 
 The <self.name> value of a module is determined when registering the module
-using :py:func:`wishbone.router.Default.register`.
+using :py:func:`compysition.router.Default.register`.
 
 So when registering a module like this:
 
@@ -73,17 +73,17 @@ Starting state
 ~~~~~~~~~~~~~~
 
 An output module should always start with the **inbox** queue in a
-:py:func:`wishbone.tools.WishboneQueue.putLock` state.  The moment the module
+:py:func:`compysition.tools.CompysitionQueue.putLock` state.  The moment the module
 detects it is capable of sending incoming events to the outside world, it
 should unlock the **inbox** queue using
-:py:func:`wishbone.tools.WishboneQueue.putUnlock`.
+:py:func:`compysition.tools.CompysitionQueue.putUnlock`.
 
 Handle failed and successful events
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Output modules are responsible to deliver messages to the outside world.
 Preferably we want this to be done as reliably.  When submitting events to the
-outside world (aka outside a Wishbone process.) fails or succeeds we might
+outside world (aka outside a Compysition process.) fails or succeeds we might
 require a specific strategy to deal with that specific situation.
 
 A possible strategy is have 2 additional queues:
@@ -112,7 +112,7 @@ Whenever this pattern is *not* used, the expected behavior should be:
 
 - Successfully submitted events are discarded
 - Unsuccessfully submitted events should be send back to the `inbox` queue
-  using :py:func:`wishbone.tools.WishboneQueue.rescue`.
+  using :py:func:`compysition.tools.CompysitionQueue.rescue`.
 
 
 
@@ -123,11 +123,11 @@ When possible an output module should have a "monitor" thread running
 endlessly in a separate greenthread trying to create a valid connection object
 to the outside service.
 
-This monitor process should be blocked until :py:func:`wishbone.Actor.consume`
+This monitor process should be blocked until :py:func:`compysition.Actor.consume`
 fails to submit an event via the connection object.
 
 During the time the monitor process is retrying to create a valid connection
 object, it should block the `inbox` queue using
-:py:func:`wishbone.tools.WishboneQueue.putLock` since it makes no sense to
+:py:func:`compysition.tools.CompysitionQueue.putLock` since it makes no sense to
 allow events to come into the module  since they can't be delivered to the
 outside world anyway.

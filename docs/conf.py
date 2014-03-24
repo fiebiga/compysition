@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Wishbone documentation build configuration file, created by
+# Compysition documentation build configuration file, created by
 # sphinx-quickstart on Wed Aug  7 21:08:21 2013.
 #
 # This file is execfile()d with the current directory set to its containing dir.
@@ -41,11 +41,11 @@ for mod_name in MOCK_MODULES:
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #sys.path.insert(0, os.path.abspath('.'))
 
-# sys.path.insert(0, os.path.abspath('../wishbone'))
-# sys.path.insert(0, os.path.abspath('../wishbone/module'))
-# sys.path.insert(0, os.path.abspath('../wishbone/tools'))
-# sys.path.insert(0, os.path.abspath('../wishbone/errors'))
-# sys.path.insert(0, os.path.abspath('../wishbone/router'))
+# sys.path.insert(0, os.path.abspath('../compysition'))
+# sys.path.insert(0, os.path.abspath('../compysition/module'))
+# sys.path.insert(0, os.path.abspath('../compysition/tools'))
+# sys.path.insert(0, os.path.abspath('../compysition/errors'))
+# sys.path.insert(0, os.path.abspath('../compysition/router'))
 
 # -- General configuration -----------------------------------------------------
 
@@ -75,7 +75,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Wishbone'
+project = u'Compysition'
 copyright = u'2013, Jelle Smet'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -199,7 +199,7 @@ html_static_path = ['_static']
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'Wishbonedoc'
+htmlhelp_basename = 'Compysitiondoc'
 
 
 # -- Options for LaTeX output --------------------------------------------------
@@ -218,7 +218,7 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'Wishbone.tex', u'Wishbone Documentation',
+  ('index', 'Compysition.tex', u'Compysition Documentation',
    u'Jelle Smet', 'manual'),
 ]
 
@@ -248,7 +248,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'wishbone', u'Wishbone Documentation',
+    ('index', 'compysition', u'Compysition Documentation',
      [u'Jelle Smet'], 1)
 ]
 
@@ -262,8 +262,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'Wishbone', u'Wishbone Documentation',
-   u'Jelle Smet', 'Wishbone', 'One line description of project.',
+  ('index', 'Compysition', u'Compysition Documentation',
+   u'Jelle Smet', 'Compysition', 'One line description of project.',
    'Miscellaneous'),
 ]
 

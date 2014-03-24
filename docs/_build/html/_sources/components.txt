@@ -6,7 +6,7 @@ components
 Actor
 -----
 
-.. autoclass:: wishbone.Actor
+.. autoclass:: compysition.Actor
     :show-inheritance:
     :inherited-members:
 
@@ -15,5 +15,5 @@ Actor
 Router
 ------
 
-.. autoclass:: wishbone.router.Default
+.. autoclass:: compysition.router.Default
     :members:

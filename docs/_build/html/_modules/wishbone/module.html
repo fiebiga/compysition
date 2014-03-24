@@ -1,4 +1,4 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
 
@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>wishbone.module &mdash; Wishbone 0.4.9 documentation</title>
+    <title>compysition.module &mdash; Compysition 0.4.9 documentation</title>
     
     <link rel="stylesheet" href="../../_static/pyramid.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -23,8 +23,8 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Wishbone 0.4.9 documentation" href="../../index.html" />
-    <link rel="up" title="wishbone" href="../wishbone.html" />
+    <link rel="top" title="Compysition 0.4.9 documentation" href="../../index.html" />
+    <link rel="up" title="compysition" href="../compysition.html" />
 <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
 <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
 <!--[if lte IE 6]>
@@ -40,9 +40,9 @@
         <li class="right" style="margin-right: 10px">
           <a href="../../genindex.html" title="General Index"
              accesskey="I">index</a></li>
-        <li><a href="../../index.html">Wishbone 0.4.9 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Compysition 0.4.9 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Module code</a> &raquo;</li>
-          <li><a href="../wishbone.html" accesskey="U">wishbone</a> &raquo;</li> 
+          <li><a href="../compysition.html" accesskey="U">compysition</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -51,7 +51,7 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <h1>Source code for wishbone.module</h1><div class="highlight"><pre>
+  <h1>Source code for compysition.module</h1><div class="highlight"><pre>
 <span class="c">#!/usr/bin/env python</span>
 <span class="c">#</span>
 <span class="c"># -*- coding: utf-8 -*-</span>
@@ -77,19 +77,19 @@
 <span class="c">#</span>
 <span class="c">#</span>
 
-<span class="kn">from</span> <span class="nn">wishbone.module.null</span> <span class="kn">import</span> <span class="n">Null</span>
-<span class="kn">from</span> <span class="nn">wishbone.module.graphite</span> <span class="kn">import</span> <span class="n">Graphite</span>
-<span class="kn">from</span> <span class="nn">wishbone.module.stdout</span> <span class="kn">import</span> <span class="n">STDOUT</span>
-<span class="kn">from</span> <span class="nn">wishbone.module.loglevelfilter</span> <span class="kn">import</span> <span class="n">LogLevelFilter</span>
-<span class="kn">from</span> <span class="nn">wishbone.module.fanout</span> <span class="kn">import</span> <span class="n">Fanout</span>
-<span class="kn">from</span> <span class="nn">wishbone.module.funnel</span> <span class="kn">import</span> <span class="n">Funnel</span>
-<span class="kn">from</span> <span class="nn">wishbone.module.header</span> <span class="kn">import</span> <span class="n">Header</span>
-<span class="kn">from</span> <span class="nn">wishbone.module.tippingbucket</span> <span class="kn">import</span> <span class="n">TippingBucket</span>
-<span class="kn">from</span> <span class="nn">wishbone.module.lockbuffer</span> <span class="kn">import</span> <span class="n">LockBuffer</span>
-<span class="kn">from</span> <span class="nn">wishbone.module.humanlogformatter</span> <span class="kn">import</span> <span class="n">HumanLogFormatter</span>
-<span class="kn">from</span> <span class="nn">wishbone.module.wbsyslog</span> <span class="kn">import</span> <span class="n">Syslog</span>
-<span class="kn">from</span> <span class="nn">wishbone.module.testevent</span> <span class="kn">import</span> <span class="n">TestEvent</span>
-<span class="kn">from</span> <span class="nn">wishbone.module.roundrobin</span> <span class="kn">import</span> <span class="n">RoundRobin</span>
+<span class="kn">from</span> <span class="nn">compysition.module.null</span> <span class="kn">import</span> <span class="n">Null</span>
+<span class="kn">from</span> <span class="nn">compysition.module.graphite</span> <span class="kn">import</span> <span class="n">Graphite</span>
+<span class="kn">from</span> <span class="nn">compysition.module.stdout</span> <span class="kn">import</span> <span class="n">STDOUT</span>
+<span class="kn">from</span> <span class="nn">compysition.module.loglevelfilter</span> <span class="kn">import</span> <span class="n">LogLevelFilter</span>
+<span class="kn">from</span> <span class="nn">compysition.module.fanout</span> <span class="kn">import</span> <span class="n">Fanout</span>
+<span class="kn">from</span> <span class="nn">compysition.module.funnel</span> <span class="kn">import</span> <span class="n">Funnel</span>
+<span class="kn">from</span> <span class="nn">compysition.module.header</span> <span class="kn">import</span> <span class="n">Header</span>
+<span class="kn">from</span> <span class="nn">compysition.module.tippingbucket</span> <span class="kn">import</span> <span class="n">TippingBucket</span>
+<span class="kn">from</span> <span class="nn">compysition.module.lockbuffer</span> <span class="kn">import</span> <span class="n">LockBuffer</span>
+<span class="kn">from</span> <span class="nn">compysition.module.humanlogformatter</span> <span class="kn">import</span> <span class="n">HumanLogFormatter</span>
+<span class="kn">from</span> <span class="nn">compysition.module.wbsyslog</span> <span class="kn">import</span> <span class="n">Syslog</span>
+<span class="kn">from</span> <span class="nn">compysition.module.testevent</span> <span class="kn">import</span> <span class="n">TestEvent</span>
+<span class="kn">from</span> <span class="nn">compysition.module.roundrobin</span> <span class="kn">import</span> <span class="n">RoundRobin</span>
 </pre></div>
 
           </div>
@@ -120,9 +120,9 @@
         <li class="right" style="margin-right: 10px">
           <a href="../../genindex.html" title="General Index"
              >index</a></li>
-        <li><a href="../../index.html">Wishbone 0.4.9 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Compysition 0.4.9 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Module code</a> &raquo;</li>
-          <li><a href="../wishbone.html" >wishbone</a> &raquo;</li> 
+          <li><a href="../compysition.html" >compysition</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

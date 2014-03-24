@@ -1,4 +1,4 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
 
@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Wishbone &mdash; Wishbone 0.4.9 documentation</title>
+    <title>Compysition &mdash; Compysition 0.4.9 documentation</title>
     
     <link rel="stylesheet" href="_static/pyramid.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Wishbone 0.4.9 documentation" href="#" />
+    <link rel="top" title="Compysition 0.4.9 documentation" href="#" />
     <link rel="next" title="Installation" href="installation.html" />
 <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
 <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="installation.html" title="Installation"
              accesskey="N">next</a> |</li>
-        <li><a href="#">Wishbone 0.4.9 documentation</a> &raquo;</li> 
+        <li><a href="#">Compysition 0.4.9 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -52,17 +52,17 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="wishbone">
-<h1>Wishbone<a class="headerlink" href="#wishbone" title="Permalink to this headline">¶</a></h1>
-<p><a class="reference external" href="https://github.com/smetj/wishbone">https://github.com/smetj/wishbone</a></p>
+  <div class="section" id="compysition">
+<h1>Compysition<a class="headerlink" href="#compysition" title="Permalink to this headline">¶</a></h1>
+<p><a class="reference external" href="https://github.com/smetj/compysition">https://github.com/smetj/compysition</a></p>
 <p>A Python library to build and CLI tool to manage asynchronous coroutine based
 event pipeline servers with minimal effort.</p>
 <p>Works on python 2.6+, 2.7+ including Python 3 and PyPy 2.0.2</p>
 <img alt="_images/intro.png" class="align-right" src="_images/intro.png" />
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wishbone.router</span> <span class="kn">import</span> <span class="n">Default</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wishbone.module</span> <span class="kn">import</span> <span class="n">TestEvent</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wishbone.module</span> <span class="kn">import</span> <span class="n">RoundRobin</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">wishbone.module</span> <span class="kn">import</span> <span class="n">STDOUT</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">compysition.router</span> <span class="kn">import</span> <span class="n">Default</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">compysition.module</span> <span class="kn">import</span> <span class="n">TestEvent</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">compysition.module</span> <span class="kn">import</span> <span class="n">RoundRobin</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">compysition.module</span> <span class="kn">import</span> <span class="n">STDOUT</span>
 <span class="go">&gt;&gt;&gt;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">router</span><span class="o">=</span><span class="n">Default</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">router</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">TestEvent</span><span class="p">,</span> <span class="s">&quot;input&quot;</span><span class="p">)</span>
@@ -88,32 +88,32 @@ event pipeline servers with minimal effort.</p>
 <span class="go">I am number two: test</span>
 </pre></div>
 </div>
-<p>This example we initialize the <a class="reference internal" href="router.html#wishbone.router.Default" title="wishbone.router.Default"><tt class="xref py py-class docutils literal"><span class="pre">wishbone.router.Default</span></tt></a> router to
-create a simple setup in which we connect the <a class="reference internal" href="modules.html#wishbone.module.TestEvent" title="wishbone.module.TestEvent"><tt class="xref py py-class docutils literal"><span class="pre">TestEvent</span></tt></a> input
+<p>This example we initialize the <a class="reference internal" href="router.html#compysition.router.Default" title="compysition.router.Default"><tt class="xref py py-class docutils literal"><span class="pre">compysition.router.Default</span></tt></a> router to
+create a simple setup in which we connect the <a class="reference internal" href="modules.html#compysition.module.TestEvent" title="compysition.module.TestEvent"><tt class="xref py py-class docutils literal"><span class="pre">TestEvent</span></tt></a> input
 module, which does nothing more than generating the word &#8220;test&#8221; every second,
-to the <a class="reference internal" href="modules.html#wishbone.module.RoundRobin" title="wishbone.module.RoundRobin"><tt class="xref py py-class docutils literal"><span class="pre">wishbone.module.RoundRobin</span></tt></a> module which on its turn
-roundrobins the incoming events to 2 <a class="reference internal" href="modules.html#wishbone.module.STDOUT" title="wishbone.module.STDOUT"><tt class="xref py py-class docutils literal"><span class="pre">wishbone.module.STDOUT</span></tt></a> module
+to the <a class="reference internal" href="modules.html#compysition.module.RoundRobin" title="compysition.module.RoundRobin"><tt class="xref py py-class docutils literal"><span class="pre">compysition.module.RoundRobin</span></tt></a> module which on its turn
+roundrobins the incoming events to 2 <a class="reference internal" href="modules.html#compysition.module.STDOUT" title="compysition.module.STDOUT"><tt class="xref py py-class docutils literal"><span class="pre">compysition.module.STDOUT</span></tt></a> module
 instances which print all incoming events to STDOUT.</p>
 <div class="section" id="bootstrapping">
 <h2>Bootstrapping<a class="headerlink" href="#bootstrapping" title="Permalink to this headline">¶</a></h2>
-<p>Wishbone comes with a CLI tool to easily bootstrap a server using a YAML
+<p>Compysition comes with a CLI tool to easily bootstrap a server using a YAML
 formatted config file.  Following file creates exactly the same environment as
 the above example:</p>
 <div class="highlight-yaml"><div class="highlight"><pre><span class="nn">---</span>
 <span class="l-Scalar-Plain">modules</span><span class="p-Indicator">:</span>
   <span class="l-Scalar-Plain">input</span><span class="p-Indicator">:</span>
-    <span class="l-Scalar-Plain">module</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">wishbone.builtin.input.testevent</span>
+    <span class="l-Scalar-Plain">module</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">compysition.builtin.input.testevent</span>
 
   <span class="l-Scalar-Plain">mixing</span><span class="p-Indicator">:</span>
-    <span class="l-Scalar-Plain">module</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">wishbone.builtin.flow.roundrobin</span>
+    <span class="l-Scalar-Plain">module</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">compysition.builtin.flow.roundrobin</span>
 
   <span class="l-Scalar-Plain">output1</span><span class="p-Indicator">:</span>
-    <span class="l-Scalar-Plain">module</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">wishbone.builtin.output.stdout</span>
+    <span class="l-Scalar-Plain">module</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">compysition.builtin.output.stdout</span>
     <span class="l-Scalar-Plain">arguments</span><span class="p-Indicator">:</span>
       <span class="l-Scalar-Plain">prefix</span><span class="p-Indicator">:</span> <span class="s">&quot;I</span><span class="nv"> </span><span class="s">am</span><span class="nv"> </span><span class="s">number</span><span class="nv"> </span><span class="s">one:</span><span class="nv"> </span><span class="s">&quot;</span>
 
   <span class="l-Scalar-Plain">output2</span><span class="p-Indicator">:</span>
-    <span class="l-Scalar-Plain">module</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">wishbone.builtin.output.stdout</span>
+    <span class="l-Scalar-Plain">module</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">compysition.builtin.output.stdout</span>
     <span class="l-Scalar-Plain">arguments</span><span class="p-Indicator">:</span>
       <span class="l-Scalar-Plain">prefix</span><span class="p-Indicator">:</span> <span class="s">&quot;I</span><span class="nv"> </span><span class="s">am</span><span class="nv"> </span><span class="s">number</span><span class="nv"> </span><span class="s">two:</span><span class="nv"> </span><span class="s">&quot;</span>
 
@@ -124,9 +124,9 @@ the above example:</p>
 <span class="nn">...</span>
 </pre></div>
 </div>
-<p>Bootstrapping the environment is just a matter of invoking the <strong>wishbone</strong>
+<p>Bootstrapping the environment is just a matter of invoking the <strong>compysition</strong>
 executable with the &#8211;config parameter pointing to the bootstrap file.</p>
-<div class="highlight-sh"><pre>[smetj@indigo ~]$ wishbone debug --config test.yaml
+<div class="highlight-sh"><pre>[smetj@indigo ~]$ compysition debug --config test.yaml
 2013-08-09T23:13:39 pid-13797 informational Router: Queue one does not exist in module mixing.  Autocreate queue.
 2013-08-09T23:13:39 pid-13797 informational Router: Queue two does not exist in module mixing.  Autocreate queue.
 2013-08-09T23:13:39 pid-13797 informational Router: Starting.
@@ -146,11 +146,11 @@ I am number one: test
 ^C2013-08-09T23:13:47 pid-13797 informational Router: Received SIGINT. Shutting down.
 2013-08-09T23:13:47 pid-13797 informational Router: Stopping.
 2013-08-09T23:13:47 pid-13797 informational output2: Shutdown
-2013-08-09T23:13:48 pid-13797 warning output2: Queue &lt;wishbone.tools.wishbonequeue.WishboneQueue instance at 0x2101a28&gt; locked.
+2013-08-09T23:13:48 pid-13797 warning output2: Queue &lt;compysition.tools.compysitionqueue.CompysitionQueue instance at 0x2101a28&gt; locked.
 2013-08-09T23:13:48 pid-13797 informational output1: Shutdown
-2013-08-09T23:13:48 pid-13797 warning output1: Queue &lt;wishbone.tools.wishbonequeue.WishboneQueue instance at 0x2101680&gt; locked.
+2013-08-09T23:13:48 pid-13797 warning output1: Queue &lt;compysition.tools.compysitionqueue.CompysitionQueue instance at 0x2101680&gt; locked.
 2013-08-09T23:13:48 pid-13797 informational mixing: Shutdown
-2013-08-09T23:13:48 pid-13797 warning mixing: Queue &lt;wishbone.tools.wishbonequeue.WishboneQueue instance at 0x2101098&gt; locked.
+2013-08-09T23:13:48 pid-13797 warning mixing: Queue &lt;compysition.tools.compysitionqueue.CompysitionQueue instance at 0x2101098&gt; locked.
 2013-08-09T23:13:49 pid-13797 informational input: Shutdown
 [smetj@indigo ~]$</pre>
 </div>
@@ -158,7 +158,7 @@ I am number one: test
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="installation.html#wishbone">Wishbone</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#compysition">Compysition</a></li>
 <li class="toctree-l2"><a class="reference internal" href="installation.html#modules">Modules</a></li>
 </ul>
 </li>
@@ -218,7 +218,7 @@ I am number one: test
         <div class="sphinxsidebarwrapper">
   <h3><a href="#">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">Wishbone</a><ul>
+<li><a class="reference internal" href="#">Compysition</a><ul>
 <li><a class="reference internal" href="#bootstrapping">Bootstrapping</a><ul>
 </ul>
 </li>
@@ -256,7 +256,7 @@ I am number one: test
         <li class="right" >
           <a href="installation.html" title="Installation"
              >next</a> |</li>
-        <li><a href="#">Wishbone 0.4.9 documentation</a> &raquo;</li> 
+        <li><a href="#">Compysition 0.4.9 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
