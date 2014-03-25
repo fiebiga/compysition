@@ -21,7 +21,11 @@ fast, and fully concurrent manner
 
 **Compysition is currently new and in pre-Beta release. It will be undergoing many deep changes in the coming months**
 
-Example
+Full Circle WSGI Example
+-------
+
+
+One-way messaging example
 -------
 
 .. image:: docs/intro.png
