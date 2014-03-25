@@ -19,6 +19,8 @@ fast, and fully concurrent manner
 .. _0mq: http://zeromq.org/
 .. _Wishbone: https://github.com/smetj/wishbone
 
+**Compysition is currently new and in pre-Beta release. It will be undergoing many deep changes in the coming months**
+
 Example
 -------
 
