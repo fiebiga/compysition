@@ -31,6 +31,7 @@ and concurrent way. All steps and executions are spun up as spawned greenlet on 
     :align: center
     
 .. code-block:: python
+
 	from compysition.router import Default
 	from compysition.module import WSGI
 	from compysition.module import BasicAuth
