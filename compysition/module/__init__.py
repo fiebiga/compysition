@@ -31,7 +31,6 @@ from compysition.module.wsgi import WSGI
 from compysition.module.echodata import EchoData
 from compysition.module.basicauth import BasicAuth
 from compysition.module.transformer import Transformer
-from compysition.module.pahtc800 import Pahtc800
 from compysition.module.xmlaggregator import XMLAggregator
 
 """
