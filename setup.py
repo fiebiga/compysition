@@ -53,7 +53,7 @@ setup(
     description='A Python application framework and CLI tool to build and manage async event pipeline servers with minimal effort, forked from the wishbone project',
     long_description=long_description,
 
-    author='Jelle Smet',
+    author='Adam Fiebig',
     author_email='fiebig.adam@gmail.com',
 
     url='https://github.com/fiebiga/compysition',
