@@ -4,7 +4,7 @@ Compysition
 What?
 -----
 
-The **compysition** project is built upon the origina work of the Wishbone_ project, which is described as follows:
+The **compysition** project is built upon the original work of the Wishbone_ project, which is described as follows:
 ::
 
 	A Python application framework and CLI tool build and manage async event
