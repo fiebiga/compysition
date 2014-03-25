@@ -24,7 +24,8 @@ fast, and fully concurrent manner
 Full Circle WSGI Example
 -------
 
-**TODO**
+.. image:: docs/examples/full_circle_wsgi_example.png
+    :align: center
 
 One-way messaging example
 -------
