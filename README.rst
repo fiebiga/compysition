@@ -1,11 +1,19 @@
-WishBone
+Compysition
+<Based on the Wishbone Project>
 ========
 
 What?
 -----
 
-A Python application framework and CLI tool build and manage async event
+The original project, Wishbone, is described as a Python application framework and CLI tool build and manage async event
 pipeline servers with minimal effort.
+
+We have created compysition to build off the simple way in which this project managed message flow across multiple
+modules. Compysition also expands upon this module registration module to provide abstracted multi-process communication
+via 0mq_, as well as the ability for full cyclical communication for in-process request/response behavior in a lightweight,
+fast, and fully concurrent manner
+
+.. _0mg: http://zeromq.org/
 
 Example
 -------
@@ -15,10 +23,10 @@ Example
 
 .. code-block:: python
 
-    >>> from wishbone.router import Default
-    >>> from wishbone.module import TestEvent
-    >>> from wishbone.module import RoundRobin
-    >>> from wishbone.module import STDOUT
+    >>> from compysition.router import Default
+    >>> from compysition.module import TestEvent
+    >>> from compysition.module import RoundRobin
+    >>> from compysition.module import STDOUT
     >>>
     >>> router=Default()
     >>> router.register(TestEvent, "input")
@@ -49,24 +57,24 @@ Installing
 
 Through Pypi:
 
-	$ easy_install wishbone
+	$ easy_install compysition
 
 Or the latest development branch from Github:
 
-	$ git clone git@github.com:smetj/wishbone.git
+	$ git clone git@github.com:fiebiga/compysition.git
 
-	$ cd wishbone
+	$ cd compysition
 
 	$ sudo python setup.py install
 
 
-Documentation
+Original Wishbone Project: Documentation
 -------------
 
 https://wishbone.readthedocs.org/en/latest/index.html
 
 
-Modules
+Other Available Modules <Original Wishbone Project>
 -------
 
 https://github.com/smetj/wishboneModules
@@ -74,6 +82,4 @@ https://github.com/smetj/wishboneModules
 Support
 -------
 
-Drop me an email or post a message on:
-
-https://groups.google.com/forum/?fromgroups#!forum/python-wishbone
+You may email myself at fiebig.adam@gmail.com
