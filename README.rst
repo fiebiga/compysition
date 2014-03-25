@@ -27,6 +27,9 @@ Full Circle WSGI Example
 For the example below, we want to execute an XML transformation on a request and send it back to the client in a fast
 and concurrent way. All steps and executions are spun up as spawned greenlet on the router
     
+.. image:: docs/examples/full_circle_wsgi_example.png
+    :align: center
+    
 .. code-block:: python
 
 	from compysition.router import Default
