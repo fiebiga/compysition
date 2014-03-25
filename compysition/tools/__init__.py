@@ -4,7 +4,7 @@
 #
 #  __init__.py
 #
-#  Copyright 2013 Jelle Smet <development@smetj.net>
+#  Copyright 2014 Adam Fiebig <fiebig.adam@gmail.com>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -23,6 +23,16 @@
 #
 #
 
+"""
+Compysition Specific
+"""
+
+from compysition.tools.managedqueue import ManagedQueue
+
+
+"""
+All code below here was included in original wishbone project by smetj <development@smetj.net>
+"""
 from compysition.tools.compysitionqueue import CompysitionQueue
 from compysition.tools.queuefunctions import QueueFunctions
 from compysition.tools.loopcontextswitcher import LoopContextSwitcher

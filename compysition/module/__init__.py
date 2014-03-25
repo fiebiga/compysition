@@ -4,7 +4,7 @@
 #
 #  __init__.py
 #
-#  Copyright 2013 Jelle Smet <development@smetj.net>
+#  Copyright 2014 Adam Fiebig <fiebig.adam@gmail.com>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -23,6 +23,20 @@
 #
 #
 
+"""
+Compysition Specific
+"""
+
+from compysition.module.wsgi import WSGI
+from compysition.module.echodata import EchoData
+from compysition.module.basicauth import BasicAuth
+from compysition.module.transformer import Transformer
+from compysition.module.pahtc800 import Pahtc800
+from compysition.module.xmlaggregator import XMLAggregator
+
+"""
+All code below here was included in original wishbone project by smetj <development@smetj.net>
+"""
 from compysition.module.null import Null
 from compysition.module.graphite import Graphite
 from compysition.module.stdout import STDOUT
