@@ -1,20 +1,23 @@
 Compysition
-<Based on the Wishbone Project>
-
 ========
 
 What?
 -----
 
-The original project, Wishbone, is described as a Python application framework and CLI tool build and manage async event
-pipeline servers with minimal effort.
+The **compysition** project is built upon the origina work of the Wishbone_ project, which is described as follows:
+::
 
-We have created compysition to build off the simple way in which this project managed message flow across multiple
+	A Python application framework and CLI tool build and manage async event
+	pipeline servers with minimal effort.
+
+
+We have created **compysition** to build off the simple way in which Wishbone_ managed message flow across multiple
 modules. Compysition also expands upon this module registration module to provide abstracted multi-process communication
 via 0mq_, as well as the ability for full cyclical communication for in-process request/response behavior in a lightweight,
 fast, and fully concurrent manner
 
-.. _0mg: http://zeromq.org/
+.. _0mq: http://zeromq.org/
+.. _Wishbone: https://github.com/smetj/wishbone
 
 Example
 -------
