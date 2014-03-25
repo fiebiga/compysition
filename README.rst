@@ -90,17 +90,17 @@ One-way messaging example
     	router.start()
     	router.block()
     	
-    Output: 
-    I am number one: test
-    I am number two: test
-    I am number one: test
-    I am number two: test
-    I am number one: test
-    I am number two: test
-    I am number one: test
-    I am number two: test
-    I am number one: test
-    I am number two: test
+    	Output: 
+    	I am number one: test
+    	I am number two: test
+    	I am number one: test
+    	I am number two: test
+    	I am number one: test
+    	I am number two: test
+    	I am number one: test
+    	I am number two: test
+    	I am number one: test
+	I am number two: test
 
 
 Installing
