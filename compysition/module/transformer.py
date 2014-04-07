@@ -60,6 +60,7 @@ class Transformer(Actor):
             self.logging.info("Combined subjects: {}".format(etree.tostring(root)))
             event['data'][self.key] = etree.tostring(self.template(root))
             self.queuepool.outbox.put(event)
+            print(event)
         except KeyError:
             self.logging.info("{} could not find the form subject {} in event {}".format(self.name, self.subjects, event))
             event['header'].get(self.caller, {}).update({'status': '400 Bad Request'})
