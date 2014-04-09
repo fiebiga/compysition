@@ -26,6 +26,7 @@ from pprint import pformat
 from lxml import etree
 import os
 import pdb
+import gevent
 
 class Transformer(Actor):
     '''**Sample module which reverses incoming events.**
@@ -53,14 +54,16 @@ class Transformer(Actor):
 
     def consume(self, event):
         #pdb.set_trace()
+        print("Starting Transform")
         try:
             root = etree.Element(self.name)
             for key in self.subjects:
+                print("Appending with key {0}".format(key))
                 root.append(etree.XML(event['data'][key]))
             self.logging.info("Combined subjects: {}".format(etree.tostring(root)))
+            print("Adding {0} Key to template")
             event['data'][self.key] = etree.tostring(self.template(root))
             self.queuepool.outbox.put(event)
-            print(event)
         except KeyError:
             self.logging.info("{} could not find the form subject {} in event {}".format(self.name, self.subjects, event))
             event['header'].get(self.caller, {}).update({'status': '400 Bad Request'})

@@ -28,6 +28,8 @@ Compysition Specific
 """
 
 from compysition.tools.managedqueue import ManagedQueue
+from compysition.tools.formatter import Formatter
+from compysition.tools.patterns import Singleton
 
 
 """

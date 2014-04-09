@@ -27,6 +27,7 @@ from gevent import Greenlet
 from gevent.event import Event
 from gevent.lock import Semaphore
 from compysition.errors import QueueLocked, SetupError, QueueFull
+import traceback
 
 class Consumer():
 
@@ -139,6 +140,7 @@ class Consumer():
                     fc(event)
                 except Exception as err:
                     self.logging.warn("Problem executing %s. Sleeping for a second. Reason: %s"%(str(fc),err))
+                    traceback.print_exc()
                     q.rescue(event)
                     sleep(1)
 
