@@ -26,7 +26,6 @@ from pprint import pformat
 from lxml import etree
 import os
 import pdb
-import gevent
 
 class Transformer(Actor):
     '''**Sample module which reverses incoming events.**
@@ -54,13 +53,13 @@ class Transformer(Actor):
 
     def consume(self, event):
         #pdb.set_trace()
-        print("Starting Transform")
         try:
             root = etree.Element(self.name)
             for key in self.subjects:
-                print("Appending with key {0}".format(key))
-                root.append(etree.XML(event['data'][key]))
-            self.logging.info("Combined subjects: {}".format(etree.tostring(root)))
+                try:
+                    root.append(etree.XML(event['data'][key]))
+                except:
+                    self.logging.warn("Subject {0} did not exist in submitted event. Subject was not appended".format(key))
             print("Adding {0} Key to template")
             event['data'][self.key] = etree.tostring(self.template(root))
             self.queuepool.outbox.put(event)
@@ -69,6 +68,10 @@ class Transformer(Actor):
             event['header'].get(self.caller, {}).update({'status': '400 Bad Request'})
             event['data'] = "Malformed Request"
             self.queuepool.errors.put(event)
+
+        f = open('{0}_event'.format(self.key),'w')
+        f.write(b"{0}".format(event)) # python will convert \n to os.linesep
+        f.close() # you can omit in most cases as the destructor will call if
 
     def transform(self, etree_element):
         return self.template(etree_element)
