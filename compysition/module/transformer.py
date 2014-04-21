@@ -60,7 +60,11 @@ class Transformer(Actor):
                     root.append(etree.XML(event['data'][key]))
                 except:
                     self.logging.warn("Subject {0} did not exist in submitted event. Subject was not appended".format(key))
-            print("Adding {0} Key to template")
+
+            f = open('{0}_event_root.txt'.format(self.key),'w')
+            f.write(b"{0}".format(etree.tostring(root))) # python will convert \n to os.linesep
+            f.close() # you can omit in most cases as the destructor will call if
+            print("Adding {0} Key to template".format(self.key))
             event['data'][self.key] = etree.tostring(self.template(root))
             self.queuepool.outbox.put(event)
         except KeyError:
@@ -69,7 +73,7 @@ class Transformer(Actor):
             event['data'] = "Malformed Request"
             self.queuepool.errors.put(event)
 
-        f = open('{0}_event'.format(self.key),'w')
+        f = open('{0}_event.txt'.format(self.key),'w')
         f.write(b"{0}".format(event)) # python will convert \n to os.linesep
         f.close() # you can omit in most cases as the destructor will call if
 

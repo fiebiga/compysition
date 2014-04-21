@@ -49,3 +49,4 @@ from compysition.module.humanlogformatter import HumanLogFormatter
 from compysition.module.wbsyslog import Syslog
 from compysition.module.testevent import TestEvent
 from compysition.module.roundrobin import RoundRobin
+from compysition.module.slow import Slow
