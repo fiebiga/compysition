@@ -45,180 +45,161 @@ class Director(object):
         print("Loaded actors: {0}".format(self.actors))
 
 
+import Tkinter as tk
+
+class SampleApp(tk.Tk):
+    '''Illustrate how to drag items on a Tkinter canvas'''
+
+    def __init__(self, *args, **kwargs):
+        tk.Tk.__init__(self, *args, **kwargs)
+
+        # create a canvas
+        self.canvas = tk.Canvas(width=400, height=400)
+        self.canvas.pack(fill="both", expand=True)
+
+        # this data is used to keep track of an 
+        # item being dragged
+        self._drag_data = {"x": 0, "y": 0, "item": None}
+
+        # create a couple movable objects
+        self._create_token((100, 100), "white")
+        self._create_token((200, 100), "black")
+
+        # add bindings for clicking, dragging and releasing over
+        # any object with the "token" tag
+        self.canvas.tag_bind("token", "<ButtonPress-1>", self.OnTokenButtonPress)
+        self.canvas.tag_bind("token", "<ButtonRelease-1>", self.OnTokenButtonRelease)
+        self.canvas.tag_bind("token", "<B1-Motion>", self.OnTokenMotion)
+
+    def _create_token(self, coord, color):
+        '''Create a token at the given coordinate in the given color'''
+        (x,y) = coord
+        self.canvas.create_oval(x-25, y-25, x+25, y+25, 
+                                outline=color, fill=color, tags="token")
+
+    def OnTokenButtonPress(self, event):
+        '''Being drag of an object'''
+        # record the item and its location
+        self._drag_data["item"] = self.canvas.find_closest(event.x, event.y)[0]
+        self._drag_data["x"] = event.x
+        self._drag_data["y"] = event.y
+
+    def OnTokenButtonRelease(self, event):
+        '''End drag of an object'''
+        # reset the drag information
+        self._drag_data["item"] = None
+        self._drag_data["x"] = 0
+        self._drag_data["y"] = 0
+
+    def OnTokenMotion(self, event):
+        '''Handle dragging of an object'''
+        # compute how much this object has moved
+        delta_x = event.x - self._drag_data["x"]
+        delta_y = event.y - self._drag_data["y"]
+        # move the object the appropriate amount
+        self.canvas.move(self._drag_data["item"], delta_x, delta_y)
+        # record the new position
+        self._drag_data["x"] = event.x
+        self._drag_data["y"] = event.y
 
 
-"""A wrapper to show line numbers for Tkinter Text widgets.
+class DirectorGrid(tk.Frame):
 
-Features:
-
- - Line numbers are displayed in a seperate Text widget.
-  
- - Line number display is entirely automatic.
-  
- - Text in the main Text widget can be manipulated normally,
-   without regard to line numbers.
-
- - Line numbers are displayed correctly for wrapped lines.
-  
-Drawbacks:
-
- - The height of each line in the main Text widget must all
-   be the same.
-
- - The height of the lines in the line number display Text
-   widget must be the same as for the main Text widget.
-
- - There is a slight delay in line numbers catching up with reality.
-   This is most noticable when fast scrolling is taking place.
-
-"""
-
-__version__ = 0.2
-__date__    = "2009-07-25"
-__author__  = "robert@pytrash.co.uk"
-__licence__ = "Public Domain"
+    rows = None # The number of grid-square rows
+    columns = None # The number of grid-square columns
+    size = None # The size, in pixels, of each side of a grid square
+    color1 = None # Color1 of the grid
+    color2 = None # Color2 of the grid
 
 
-__changelog__ = (
+    def __init__(self, parent, rows=8, columns=8, size=32, color1="white", color2="white"):
+        '''size is the size of a square, in pixels'''
 
-('2009-07-25', '0.2', 'PyTrash',
+        self.rows = rows
+        self.columns = columns
+        self.size = size
+        self.color1 = color1
+        self.color2 = color2
+        self.pieces = {}
 
-"""Fixed bugs, improved efficiency, added PanedWindow to demo."""),
+        canvas_width = columns * size
+        canvas_height = rows * size
 
-('2009-07-24', '0.1', 'PyTrash',
+        tk.Frame.__init__(self, parent)
+        self.canvas = tk.Canvas(self, borderwidth=0, highlightthickness=0,
+                                width=canvas_width, height=canvas_height, background="bisque")
+        self.canvas.pack(side="top", fill="both", expand=True, padx=2, pady=2)
 
-"""Initial version."""),
- 
-)
+        # this binding will cause a refresh if the user interactively
+        # changes the window size
+        self.canvas.bind("<Configure>", self.refresh)
 
+    def addpiece(self, name, image, row=0, column=0):
+        '''Add a piece to the playing board'''
+        self.canvas.create_image(0,0, image=image, tags=(name, "piece"), anchor="c")
+        self.placepiece(name, row, column)
 
-from Tkinter import *
+    def placepiece(self, name, row, column):
+        '''Place a piece at the given row/column'''
+        self.pieces[name] = (row, column)
+        x0 = (column * self.size) + int(self.size/2)
+        y0 = (row * self.size) + int(self.size/2)
+        self.canvas.coords(name, x0, y0)
 
-root = Tk()
-
-class EditorClass(object):
-
-    UPDATE_PERIOD = 100 #ms
-
-    editors = []
-    updateId = None
-
-    def __init__(self, master):
-        
-        self.__class__.editors.append(self)
-
-        self.lineNumbers = ''
-
-        # A frame to hold the three components of the widget.
-        self.frame = Frame(master, bd=2, relief=SUNKEN)
-
-        # The widgets vertical scrollbar
-        self.vScrollbar = Scrollbar(self.frame, orient=VERTICAL)
-        self.vScrollbar.pack(fill='y', side=RIGHT)
-
-        # The Text widget holding the line numbers.
-        self.lnText = Text(self.frame,
-                width = 4,
-                padx = 4,
-                highlightthickness = 0,
-                takefocus = 0,
-                bd = 0,
-                background = 'lightgrey',
-                foreground = 'magenta',
-                state='disabled'
-        )
-        self.lnText.pack(side=LEFT, fill='y')
-
-        # The Main Text Widget
-        self.text = Text(self.frame,
-                width=16,
-                bd=0,
-                padx = 4,
-                undo=True,
-                background = 'white'
-        )
-        self.text.pack(side=LEFT, fill=BOTH, expand=1)
-
-        self.text.config(yscrollcommand=self.vScrollbar.set)
-        self.vScrollbar.config(command=self.text.yview)
-
-        if self.__class__.updateId is None:
-            self.updateAllLineNumbers()
-   
-    def getLineNumbers(self):
-        
-        x = 0
-        line = '0'
-        col= ''
-        ln = ''
-        
-        # assume each line is at least 6 pixels high
-        step = 6
-        
-        nl = '\n'
-        lineMask = '    %s\n'
-        indexMask = '@0,%d'
-        
-        for i in range(0, self.text.winfo_height(), step):
-            
-            ll, cc = self.text.index( indexMask % i).split('.')
-
-            if line == ll:
-                if col != cc:
-                    col = cc
-                    ln += nl
-            else:
-                line, col = ll, cc
-                ln += (lineMask % line)[-5:]
-
-        return ln
-
-    def updateLineNumbers(self):
-
-        tt = self.lnText
-        ln = self.getLineNumbers()
-        if self.lineNumbers != ln:
-            self.lineNumbers = ln
-            tt.config(state='normal')
-            tt.delete('1.0', END)
-            tt.insert('1.0', self.lineNumbers)
-            tt.config(state='disabled')
-        
-    @classmethod
-    def updateAllLineNumbers(cls):
-
-        if len(cls.editors) < 1:
-            cls.updateId = None
-            return
-        
-        for ed in cls.editors:
-            ed.updateLineNumbers()
-        
-        cls.updateId = ed.text.after(
-            cls.UPDATE_PERIOD,
-            cls.updateAllLineNumbers)
+    def refresh(self, event):
+        '''Redraw the board, possibly in response to window being resized'''
+        xsize = int((event.width-1) / self.columns)
+        ysize = int((event.height-1) / self.rows)
+        self.size = min(xsize, ysize)
+        self.canvas.delete("square")
+        color = self.color2
+        for row in range(self.rows):
+            color = self.color1 if color == self.color2 else self.color2
+            for col in range(self.columns):
+                x1 = (col * self.size)
+                y1 = (row * self.size)
+                x2 = x1 + self.size
+                y2 = y1 + self.size
+                self.canvas.create_rectangle(x1, y1, x2, y2, outline="black", fill=color, tags="square")
+                color = self.color1 if color == self.color2 else self.color2
+        for name in self.pieces:
+            self.placepiece(name, self.pieces[name][0], self.pieces[name][1])
+        self.canvas.tag_raise("piece")
+        self.canvas.tag_lower("square")
 
 
-def demo(noOfEditors, noOfLines):
+# image comes from the silk icon set which is under a Creative Commons
+# license. For more information see http://www.famfamfam.com/lab/icons/silk/
+imagedata = '''
+    R0lGODlhEAAQAOeSAKx7Fqx8F61/G62CILCJKriIHM+HALKNMNCIANKKANOMALuRK7WOVLWPV9eR
+    ANiSANuXAN2ZAN6aAN+bAOCcAOKeANCjKOShANKnK+imAOyrAN6qSNaxPfCwAOKyJOKyJvKyANW0
+    R/S1APW2APW3APa4APe5APm7APm8APq8AO28Ke29LO2/LO2/L+7BM+7BNO6+Re7CMu7BOe7DNPHA
+    P+/FOO/FO+jGS+/FQO/GO/DHPOjBdfDIPPDJQPDISPDKQPDKRPDIUPHLQ/HLRerMV/HMR/LNSOvH
+    fvLOS/rNP/LPTvLOVe/LdfPRUfPRU/PSU/LPaPPTVPPUVfTUVvLPe/LScPTWWfTXW/TXXPTXX/XY
+    Xu/SkvXZYPfVdfXaY/TYcfXaZPXaZvbWfvTYe/XbbvHWl/bdaPbeavvadffea/bebvffbfbdfPvb
+    e/fgb/Pam/fgcvfgePTbnfbcl/bfivfjdvfjePbemfjelPXeoPjkePbfmvffnvbfofjlgffjkvfh
+    nvjio/nnhvfjovjmlvzlmvrmpvrrmfzpp/zqq/vqr/zssvvvp/vvqfvvuPvvuvvwvfzzwP//////
+    ////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////yH+FUNyZWF0ZWQgd2l0aCBU
+    aGUgR0lNUAAh+QQBCgD/ACwAAAAAEAAQAAAIzAD/CRxIsKDBfydMlBhxcGAKNIkgPTLUpcPBJIUa
+    +VEThswfPDQKokB0yE4aMFiiOPnCJ8PAE20Y6VnTQMsUBkWAjKFyQaCJRYLcmOFipYmRHzV89Kkg
+    kESkOme8XHmCREiOGC/2TBAowhGcAyGkKBnCwwKAFnciCAShKA4RAhyK9MAQwIMMOQ8EdhBDKMuN
+    BQMEFPigAsoRBQM1BGLjRIiOGSxWBCmToCCMOXSW2HCBo8qWDQcvMMkzCNCbHQga/qMgAYIDBQZU
+    yxYYEAA7
+'''
 
-    pane = PanedWindow(root, orient=HORIZONTAL, opaqueresize=True)
-
-    for e in range(noOfEditors):
-        ed = EditorClass(root)
-        pane.add(ed.frame)
-
-    s = 'line ................................... %s'
-    s = '\n'.join( s%i for i in xrange(1, noOfLines+1) )
-    
-    for ed in EditorClass.editors:
-        ed.text.insert(END, s)
-
-    pane.pack(fill='both', expand=1)
-
-    root.title("Example - Line Numbers For Text Widgets")
 
 
-if __name__ == '__main__':
-
-    demo(3, 9999)
-    mainloop()
+if __name__ == "__main__":
+    #app = SampleApp() 
+    #app.mainloop()
+    root = tk.Tk()
+    grid = DirectorGrid(root)
+    grid.pack(side="top", fill="both", expand="true", padx=4, pady=4)
+    player1 = tk.PhotoImage(data=imagedata)
+    board.addpiece("player1", player1, 0,0)
+    root.mainloop()

@@ -137,7 +137,7 @@ class Consumer():
                 q.waitUntilGetAllowed()
             else:
                 try:
-                    fc(event)
+                    fc(event, q.name)
                 except Exception as err:
                     self.logging.warn("Problem executing %s. Sleeping for a second. Reason: %s"%(str(fc),err))
                     traceback.print_exc()
@@ -152,7 +152,7 @@ class Consumer():
         self.createQueue('outbox')
         self.registerConsumer(self.consume, self.queuepool.inbox)
 
-    def consume(self, event):
+    def consume(self, event, *args, **kwargs):
         '''Raises error when user didn't define this function in his module.'''
 
         raise SetupError("You should define a consume function.")
