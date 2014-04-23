@@ -62,17 +62,23 @@ class Fanout(Actor):
             self.do = self.__consumeDeep
 
     def preHook(self):
-        destination_queues = self.queuepool.getQueueInstances()
-        del(destination_queues["inbox"])
-        del(destination_queues["outbox"])
-        self.destination_queues = [destination_queues[queue] for queue in destination_queues.keys()]
+        dest_queues = self.queuepool.getQueueInstances()
+        del(dest_queues["inbox"])
+        del(dest_queues["outbox"])
+        #for queue in dest_queues.keys():
+        for queue in self.destination_queues.keys():
+            print self.queuepool.getQueueInstances()[queue].name
 
-    def consume(self, event):
+        self.dest_queues = [dest_queues[queue] for queue in dest_queues.keys()]
+
+    def consume(self, event, *args, **kwargs):
         self.do(event)
 
     def __consumeNoDeep(self, event):
-        for queue in self.destination_queues:
-            queue.put(event)
+        self.send_event(event)
+        #for queue in self.dest_queues:
+        #    print("Fanned Name: {0}. ID: {1}".format(queue.name, queue))
+        #    queue.put(event)
 
     def __consumeDeep(self, event):
         for queue in self.destination_queues:

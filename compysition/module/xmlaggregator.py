@@ -44,7 +44,7 @@ class XMLAggregator(Actor):
         self.root = self.subjects.pop()
         self.logging.info("Initialized with: {}".format(self.subjects))
 
-    def consume(self, event):
+    def consume(self, event, *args, **kwargs):
         #pdb.set_trace()
         root_tag = etree.XML(event['data'][self.root])
         for subject in self.subjects:

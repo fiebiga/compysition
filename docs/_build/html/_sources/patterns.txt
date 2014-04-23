@@ -62,7 +62,7 @@ Consider following example module:
             else:
                 self.key=key
 
-        def consume(self, event):
+        def consume(self, event, *args, **kwargs):
             print event["header"][self.key]["one"]
 
 

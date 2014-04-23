@@ -42,7 +42,7 @@ class LogLevelFilter(Actor):
         self.name=name
         self.max_level=max_level
 
-    def consume(self, event):
+    def consume(self, event, *args, **kwargs):
 
         if event["data"][0] <= self.max_level:
             self.queuepool.outbox.put(event)

@@ -4,7 +4,9 @@
 #
 #  default.py
 #
-#  Copyright 2013 Jelle Smet <development@smetj.net>
+#  Copyright 2014 Adam Fiebig <fiebig.adam@gmail.com>
+# 
+#  Original code based on Wishbone Project by Jelle Smet <development@smetj.net>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -20,7 +22,6 @@
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #  MA 02110-1301, USA.
-#
 #
 
 from compysition.tools import QLogging
@@ -128,7 +129,7 @@ class Default():
 
         self.__exit.wait()
 
-    def connect(self, producer, consumer):
+    def connect(self, producer, consumer, type="EVENT"):
         '''Connects a producing queue to a consuming queue.
 
         A separate greenthread consumes the events from the consumer queue and
@@ -145,42 +146,47 @@ class Default():
 
             - consumer(str):   The name of the consuming module queue.
 
+            - type (str):      Defaults to EVENT. If "ERROR" will designate the queue as an error queue
+
         '''
 
         try:
             (producer_module, producer_queue) = producer.split(".")
         except ValueError:
-            raise Exception("A queue name should have format 'module.queue'. Got '%s' instead"%(producer))
+            raise Exception("A queue name should have format 'module.queue'. Got '{0}' instead".format(producer))
 
         try:
             (consumer_module, consumer_queue) = consumer.split(".")
         except ValueError:
-            raise Exception("A queue name should have format 'module.queue'. Got '%s' instead"%(consumer))
+            raise Exception("A queue name should have format 'module.queue'. Got '{0}' instead".format(consumer))
 
         try:
             self.__modules[producer_module]
         except:
-            raise Exception ("There is no module registered with name %s"%(producer_module))
+            raise Exception ("There is no module registered with name {0}".format(producer_module))
 
         try:
             self.__modules[consumer_module]
         except:
-            raise Exception ("There is no module registered with name %s"%(consumer_module))
+            raise Exception ("There is no module registered with name {0}".format(consumer_module))
+
+        if not (type == "EVENT" or type == "ERROR"):
+            raise Exception("Queue outbox type must either be 'EVENT' or 'ERROR'")
 
         self.__modules[producer_module]["children"].append(consumer_module)
         self.__modules[consumer_module]["parents"].append(producer_module)
 
         if not self.__modules.has_key(producer_module):
-            raise Exception("There is no Compysition module registered with name '%s'"%(producer_module))
+            raise Exception("There is no Compysition module registered with name '{0}'".format(producer_module))
         if not self.__modules.has_key(consumer_module):
-            raise Exception("There is no Compysition module registered with name '%s'"%(consumer_module))
+            raise Exception("There is no Compysition module registered with name '{0}'".format(consumer_module))
 
         while True:
             try:
                 producer_queue_instance = getattr(self.__modules[producer_module]["instance"].queuepool, producer_queue)
                 break
             except:
-                self.logging.info("Queue %s does not exist in module %s.  Autocreate queue."%(producer_queue, producer_module))
+                self.logging.info("Queue {0} does not exist in module {1}.  Autocreate queue.".format(producer_queue, producer_module))
                 self.__modules[producer_module]["instance"].createQueue(producer_queue)
 
         while True:
@@ -188,14 +194,22 @@ class Default():
                 consumer_queue_instance = getattr(self.__modules[consumer_module]["instance"].queuepool, consumer_queue)
                 break
             except :
-                self.logging.info("Queue %s does not exist in module %s.  Autocreate queue."%(consumer_queue, consumer_module))
+                self.logging.info("Queue {0} does not exist in module {1}.  Autocreate queue.".format(consumer_queue, consumer_module))
                 self.__modules[consumer_module]["instance"].createQueue(consumer_queue)
 
         if self.__modules[consumer_module]["connections"].has_key(consumer_queue):
-            raise QueueOccupied("Queue %s of module %s is already connected."%(consumer_queue, consumer_module))
+            raise QueueOccupied("Queue {0} of module {1} is already connected.".format(consumer_queue, consumer_module))
 
         if self.__modules[producer_module]["connections"].has_key(producer_queue):
-            raise QueueOccupied("Queue %s of module %s is already connected."%(producer_queue, producer_module))
+            raise QueueOccupied("Queue {0} of module {1} is already connected.".format(producer_queue, producer_module))
+
+
+        # Register the new queue on the consumer as a consumer queue
+        self.__modules[consumer_module]["instance"].registerConsumer(self.__modules[consumer_module]["instance"].consume, getattr(self.__modules[consumer_module]["instance"].queuepool, consumer_queue))
+
+        # Register the new queue on the producer as a destination queue
+        self.__modules[producer_module]["instance"].register_destination(getattr(self.__modules[producer_module]["instance"].queuepool, producer_queue))
+
 
         self.__modules[consumer_module]["connections"]={}
 
@@ -260,11 +274,11 @@ class Default():
         '''
 
         self.__modules[name] = {"instance":None, "fwd_logs":None, "fwd_metrics":None, "connections":{}, "children":[], "parents":[]}
-        self.__modules[name]["instance"]=module(name, *args, **kwargs)
+        self.__modules[name]["instance"]= module(name, *args, **kwargs)
         self.__modules[name]["instance"].getContextSwitcher=self.getContextSwitcher
 
-        self.__modules[name]["fwd_logs"] = spawn (self.__forwardLogs, self.__modules[name]["instance"].logging.logs, self.logs)
-        self.__modules[name]["fwd_metrics"] = spawn (self.__gatherMetrics, self.__modules[name]["instance"])
+        self.__modules[name]["fwd_logs"] = spawn(self.__forwardLogs, self.__modules[name]["instance"].logging.logs, self.logs)
+        self.__modules[name]["fwd_metrics"] = spawn(self.__gatherMetrics, self.__modules[name]["instance"])
 
     def registerLogModule(self, module, name, *args, **kwargs):
         '''Registers and connects the module to the router's log queue.
@@ -283,13 +297,13 @@ class Default():
         self.__logmodule = name
 
         self.__modules[name] = {"instance":None, "fwd_logs":None, "fwd_metrics":None, "connections":{}, "children": [], "parents":[]}
-        self.__modules[name]["instance"]=module(name, *args, **kwargs)
-        self.__modules[name]["instance"].getContextSwitcher=self.getContextSwitcher
+        self.__modules[name]["instance"] = module(name, *args, **kwargs)
+        self.__modules[name]["instance"].getContextSwitcher = self.getContextSwitcher
 
-        self.__modules[name]["fwd_logs"] = spawn (self.__forwardLogs, self.__modules[name]["instance"].logging.logs, self.logs)
-        self.__modules[name]["fwd_metrics"] = spawn (self.__gatherMetrics, self.__modules[name]["instance"])
+        self.__modules[name]["fwd_logs"] = spawn(self.__forwardLogs, self.__modules[name]["instance"].logging.logs, self.logs)
+        self.__modules[name]["fwd_metrics"] = spawn(self.__gatherMetrics, self.__modules[name]["instance"])
 
-        self.__modules[name]["connections"]["inbox"] = spawn (self.__forwardEvents, self.logs, self.__modules[name]["instance"].queuepool.inbox)
+        self.__modules[name]["connections"]["inbox"] = spawn(self.__forwardEvents, self.logs, self.__modules[name]["instance"].queuepool.inbox)
 
     def registerMetricModule(self, module, name, *args, **kwargs):
         '''Registers and connects the module to the router's log queue.
@@ -307,12 +321,12 @@ class Default():
 
         self.__metricmodule = name
         self.__modules[name] = {"instance":None, "fwd_logs":None, "fwd_metrics":None, "connections":{}, "children": [], "parents": []}
-        self.__modules[name]["instance"]=module(name, *args, **kwargs)
-        self.__modules[name]["instance"].getContextSwitcher=self.getContextSwitcher
+        self.__modules[name]["instance"] = module(name, *args, **kwargs)
+        self.__modules[name]["instance"].getContextSwitcher = self.getContextSwitcher
 
-        self.__modules[name]["fwd_logs"] = spawn (self.__forwardLogs, self.__modules[name]["instance"].logging.logs, self.logs)
-        self.__modules[name]["fwd_metrics"] = spawn (self.__gatherMetrics, self.__modules[name]["instance"])
-        self.__modules[name]["connections"]["inbox"] = spawn (self.__forwardEvents, self.metrics, self.__modules[name]["instance"].queuepool.inbox)
+        self.__modules[name]["fwd_logs"] = spawn(self.__forwardLogs, self.__modules[name]["instance"].logging.logs, self.logs)
+        self.__modules[name]["fwd_metrics"] = spawn(self.__gatherMetrics, self.__modules[name]["instance"])
+        self.__modules[name]["connections"]["inbox"] = spawn(self.__forwardEvents, self.metrics, self.__modules[name]["instance"].queuepool.inbox)
 
     def start(self):
         '''Starts the router and all registerd modules.
@@ -335,9 +349,9 @@ class Default():
         for module in self.__modules:
             try:
                 self.__modules[module]["instance"].preHook()
-                self.logging.debug("Prehook found for module %s and executed."%(module))
+                self.logging.debug("Prehook found for module {0} and executed.".format(module))
             except AttributeError:
-                self.logging.debug("Prehook not found for module %s."%(module))
+                self.logging.debug("Prehook not found for module {0}.".format(module))
 
             self.__modules[module]["instance"].start()
 
@@ -362,9 +376,9 @@ class Default():
             else:
                 try:
                     self.__modules[module]["instance"].postHook()
-                    self.logging.debug("Posthook found for module %s and executed."%(module))
+                    self.logging.debug("Posthook found for module {0} and executed.".format(module))
                 except AttributeError:
-                    self.logging.debug("Posthook not found for module %s."%(module))
+                    self.logging.debug("Posthook not found for module {0}.".format(module))
 
                 self.__modules[module]["instance"].stop()
                 while self.__modules[module]["instance"].logging.logs.size() > 0:
@@ -411,7 +425,7 @@ class Default():
                         source.putUnlock()
                 else:
                     self.logging.warn("Invalid event format.")
-                    self.logging.debug("Invalid event format. %s"%(event))
+                    self.logging.debug("Invalid event format. {0}".format(event))
 
 
     def __gatherMetrics(self, module):
@@ -430,15 +444,15 @@ class Default():
             now = time()
             if hasattr(module, "metrics"):
                 for fn in module.metrics:
-                    metric=(now, "compysition", self.hostname, "function.%s.%s.total_time"%(module.name, fn), module.metrics[fn]["total_time"], '',())
+                    metric=(now, "compysition", self.hostname, "function.{0}.{1}.total_time".format(module.name, fn), module.metrics[fn]["total_time"], '',())
                     self.metrics.put({"header":{}, "data":metric})
-                    metric=(now, "compysition", self.hostname, "function.%s.%s.hits"%(module.name, fn), module.metrics[fn]["hits"], '',())
+                    metric=(now, "compysition", self.hostname, "function.{0}.{1}.hits".format(module.name, fn), module.metrics[fn]["hits"], '',())
                     self.metrics.put({"header":{}, "data":metric})
 
             for queue in module.queuepool.listQueues():
                 stats = getattr(module.queuepool, queue).stats()
                 for item in stats:
-                    metric=(now, "compysition", self.hostname, "queue.%s.%s.%s"%(module.name, queue, item), stats[item], '', ())
+                    metric=(now, "compysition", self.hostname, "queue.{0}.{1}.{2}".format(module.name, queue, item), stats[item], '', ())
                     self.metrics.put({"header":{}, "data":metric})
             sleep(self.interval)
 
@@ -461,7 +475,7 @@ class Default():
                         source.rescue(event)
                 else:
                     self.logging.warn("Invalid event format.")
-                    self.logging.debug("Invalid event format. %s"%(event))
+                    self.logging.debug("Invalid event format. {0}".format(event))
 
     def __signal_handler(self):
 
@@ -524,19 +538,19 @@ class Default():
         """
 
         if "enableThrottling" in dir(self.__modules[module]["instance"]) and "disableThrottling" in dir(self.__modules[module]["instance"]):
-            self.logging.debug("Module %s is identified to overflow module %s. Enable throttling."%(module, child_name))
+            self.logging.debug("Module {0} is identified to overflow module {1}. Enable throttling.".format(module, child_name))
             while self.loop():
                 if child_size() > self.__throttle_threshold:
                     try:
                         self.__modules[module]["instance"].enableThrottling()
                     except Exception as err:
-                        self.logging.err("Executing enableThrottling() in module %s generated an error.  Reason: %s."%(module, err))
+                        self.logging.err("Executing enableThrottling() in module {0} generated an error.  Reason: {1}.".format(module, err))
                         break
                 else:
                     try:
                         self.__modules[module]["instance"].disableThrottling()
-                        self.logging.debug("Throttling on module %s is not required anymore. Exiting."%(module))
+                        self.logging.debug("Throttling on module {0} is not required anymore. Exiting.".format(module))
                     except Exception as err:
-                        self.logging.err("Executing disableThrottling() in module %s generated an error.  Reason: %s."%(module, err))
+                        self.logging.err("Executing disableThrottling() in module {0} generated an error.  Reason: {1}.".format(module, err))
                     break
                 sleep(1)

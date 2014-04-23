@@ -69,7 +69,7 @@ class HumanLogFormatter(Actor):
         else:
             self.colorize = self.doNoColorize
 
-    def consume(self, event):
+    def consume(self, event, *args, **kwargs):
         log = ("%s %s %s %s: %s"%(
                 strftime("%Y-%m-%dT%H:%M:%S", localtime(event["data"][1])),
                 "pid-%s"%(event["data"][2]),

@@ -51,7 +51,7 @@ class Transformer(Actor):
 
         self.createQueue('errors')
 
-    def consume(self, event):
+    def consume(self, event, *args, **kwargs):
         #pdb.set_trace()
         try:
             root = etree.Element(self.name)

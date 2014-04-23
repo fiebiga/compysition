@@ -79,7 +79,7 @@ class Graphite(Actor):
         else:
             self.doConsume=self.__consumeNoSource
 
-    def consume(self, event):
+    def consume(self, event, *args, **kwargs):
         self.doConsume(event)
 
     def __consumeSource(self, event):

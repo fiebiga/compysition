@@ -67,7 +67,7 @@ class Header(Actor):
         else:
             self.addHeader=self.__doPrintf
 
-    def consume(self, event):
+    def consume(self, event, *args, **kwargs):
         event=self.addHeader(event)
         self.queuepool.outbox.put(event)
 

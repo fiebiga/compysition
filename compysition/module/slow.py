@@ -62,7 +62,7 @@ class Slow(Actor):
         if self.interval > 0:
             spawn (self.flush)
 
-    def consume(self, event):
+    def consume(self, event, *args, **kwargs):
         sleep(self.interval)
 
     def flush(self):

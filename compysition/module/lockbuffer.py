@@ -50,5 +50,5 @@ class LockBuffer(Actor):
         self.createQueue("outbox")
         self.registerConsumer(self.consume, self.queuepool.inbox)
 
-    def consume(self,event):
+    def consume(self, event, *args, **kwargs):
         self.queuepool.outbox.put(event)

@@ -31,20 +31,20 @@ class QueueFunctions(object):
         from compysition.tools import QueuePool
         self.queuepool=QueuePool()
 
-    def createQueue(self, name, max_size=0):
+    def createQueue(self, name, max_size=0, type="EVENT"):
         '''Creates a queue in <self.queuepool> named <name> with a size of <max_size>'''
 
         try:
-            setattr(self.queuepool, name, CompysitionQueue(max_size))
-            self.logging.info('Created module queue named %s with max_size %s.'%(name, max_size))
+            setattr(self.queuepool, name, CompysitionQueue(max_size, name, type=type))
+            self.logging.info('Created module {0} queue named {1} with max_size {2}.'.format(type, name, max_size))
         except Exception as err:
-            self.logging.warn('I could not create the queue named %s. Reason: %s'%(name, err))
+            self.logging.warn('I could not create the queue named {0}. Reason: {1}'.format(name, err))
 
     def deleteQueue(self, name):
         '''Deletes the <name> queue from <self.queuepool>.'''
 
         try:
             del self.queuepool.__dict__[name]
-            self.logging.info('Deleted module queue named %s.'%(name))
+            self.logging.info('Deleted module queue named {0}.'.format(name))
         except Exception as err:
-            self.logging.warn('Problem deleting queue %s.  Reason: %s.'%(name, err))
+            self.logging.warn('Problem deleting queue {0}.  Reason: {1}.'.format(name, err))

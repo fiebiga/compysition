@@ -101,7 +101,8 @@ class STDOUT(Actor):
         self.prefix=prefix
         self.format=Format(complete, counter, pid)
 
-    def consume(self,event):
+    def consume(self, event, *args, **kwargs):
         #todo(smet) This should work in a gevent context but it doesn't. Bug?
         #sys.stdout.write(self.format.do(event))
-        print("%s%s"%(self.prefix,self.format.do(event)))
+        print("STDOUT Origin: {0}".format(kwargs.get('origin')))
+        print("{0}{1}".format(self.prefix, self.format.do(event)))

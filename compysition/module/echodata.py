@@ -44,7 +44,7 @@ class EchoData(Actor):
         self.logging.info("Initialized")
         self.key = key or self.name
 
-    def consume(self, event):
+    def consume(self, event, *args, **kwargs):
         self.logging.info("Got request with headers: {0}".format(event['header']))
         self.logging.info("Got request with data: {0}".format(event['data']))
         xml = event['data']['XML']

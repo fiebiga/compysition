@@ -32,16 +32,19 @@ import traceback
 class Consumer():
 
     def __init__(self, setupbasic=True):
-        self.__doConsumes=[]
-        self.__block=Event()
+        self.__doConsumes = []
+        self.__block = Event()
         self.__block.clear()
+
+        self.destination_queues = {}
 
         if setupbasic == True:
             self.__setupBasic()
-        self.__greenlet=[]
-        self.metrics={}
 
-        self.__enable_consuming=Event()
+        self.__greenlet = []
+        self.metrics = {}
+
+        self.__enable_consuming = Event()
         self.__enable_consuming.set()
 
     def start(self):
@@ -69,10 +72,16 @@ class Consumer():
 
         self.__block.wait()
 
-    def registerConsumer(self, fc, q):
+    def register_destination(self, queue):
+        """ Registers the queue as a destination queue for the module, and adding it
+        to the list of queues to send outbox events to"""
+        print("Registered {0} as a destination".format(queue.name))
+        self.destination_queues[queue.name] = queue
+
+    def registerConsumer(self, fc, queue):
         '''Registers <fc> as a consuming function for the given queue <q>.'''
 
-        self.__doConsumes.append((fc, q))
+        self.__doConsumes.append((fc, queue))
 
     def loop(self):
         '''Convenience function which returns True until stop() has be been
@@ -81,6 +90,19 @@ class Consumer():
         then you'll block the event loop.'''
 
         return not self.__block.isSet()
+
+    def send_event(self, event, destination="ALL"):
+        """ Funtion to wrap the functionality of sending to all connected outboxes.
+        This functionality can be altered by specifying a destination queue name instead with the
+        'destination' arg
+        """
+
+        all_queues = self.queuepool.getQueueInstances()
+
+        #for queue in self.queuepool.getQueueInstances().values():
+        for queue in self.destination_queues.keys():
+            print("Trying to put in {0}".format(queue))
+            self.putEvent(event, all_queues[queue])
 
     def putEvent(self, event, destination):
         '''Convenience function submits <event> into <destination> queue.
@@ -94,6 +116,7 @@ class Consumer():
         while self.loop():
             try:
                 destination.put(event)
+                print("Putting on {0}".format(destination.name))
                 break
             except QueueLocked:
                 destination.waitUntilPutAllowed()
@@ -137,7 +160,9 @@ class Consumer():
                 q.waitUntilGetAllowed()
             else:
                 try:
-                    fc(event, q.name)
+                    fc(event, origin=q.name)
+                except TypeError:
+                    self.logging.warn("You must define a consume function as consume(self, event, *args, **kwargs)")
                 except Exception as err:
                     self.logging.warn("Problem executing %s. Sleeping for a second. Reason: %s"%(str(fc),err))
                     traceback.print_exc()
@@ -153,6 +178,8 @@ class Consumer():
         self.registerConsumer(self.consume, self.queuepool.inbox)
 
     def consume(self, event, *args, **kwargs):
-        '''Raises error when user didn't define this function in his module.'''
+        """Raises error when user didn't define this function in his module.
+        Due to the nature of *args and **kwargs in determining method definition, another check is put in place
+        in 'router/default.py' to ensure that *args and **kwargs is defined"""
 
-        raise SetupError("You should define a consume function.")
+        raise SetupError("You must define a consume function as consume(self, event, *args, **kwargs)")

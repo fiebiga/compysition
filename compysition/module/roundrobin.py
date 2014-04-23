@@ -66,7 +66,7 @@ class RoundRobin(Actor):
         else:
             self.chooseQueue=self.__chooseRandomQueue
 
-    def consume(self, event):
+    def consume(self, event, *args, **kwargs):
         queue = self.chooseQueue()
         try:
             queue.put(event)

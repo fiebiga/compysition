@@ -47,7 +47,7 @@ class BasicAuth(Actor):
 
         self.createQueue('errors')
 
-    def consume(self, event):
+    def consume(self, event, *args, **kwargs):
         self.logging.info("Got event with headers: {}".format(event['header']))
         try:
             self.logging.info("Trying to extract authorization data")

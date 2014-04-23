@@ -77,7 +77,7 @@ class TippingBucket(Actor):
         self.buff_header={}
         spawn(self.reaper)
 
-    def consume(self,event):
+    def consume(self, event, *args, **kwargs):
 
         self.buff_events+=1
 

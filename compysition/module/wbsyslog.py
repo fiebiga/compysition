@@ -55,7 +55,7 @@ class Syslog(Actor):
     def preHook(self):
         syslog.openlog("%s(%s)"%(os.path.basename(sys.argv[0]), os.getpid()))
 
-    def consume(self, event):
+    def consume(self, event, *args, **kwargs):
         syslog.syslog(event["data"][0], "%s: %s"%(event["data"][3], event["data"][4]))
 
     def postHook(self):

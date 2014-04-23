@@ -23,7 +23,7 @@ class ReverseData(Actor):
         self.capitalize=capitalize
         self.logging.info("Initialized")
 
-    def consume(self, event):
+    def consume(self, event, *args, **kwargs):
 
         data = event["data"]
 

@@ -39,8 +39,10 @@ class CompysitionQueue():
                             Default: 0
     '''
 
-    def __init__(self, max_size=0):
+    def __init__(self, max_size=0, name='unnamed', type="EVENT"):
         self.max_size = max_size
+        self.name = name
+        self.type = type
         self.__q=deque()
         self.__in=0
         self.__out=0

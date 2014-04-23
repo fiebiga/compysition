@@ -63,7 +63,11 @@ class TestEvent(Actor):
         self.throttle=Event()
         self.throttle.set()
 
+    def consume(self, event, *args, **kwargs):
+        print("THIS SHOULDNT HAVE BEEN CALLED")
+
     def preHook(self):
+        print(self.queuepool.getQueueInstances())
         spawn(self.go)
 
     def go(self):
@@ -71,7 +75,8 @@ class TestEvent(Actor):
         while switcher():
             self.throttle.wait()
             try:
-                self.queuepool.outbox.put({"header":{},"data":"test"})
+                self.send_event({"header":{},"data":"test"}, "outbox")
+                #self.queuepool.outbox.put({"header":{},"data":"test"})
             except (QueueFull, QueueLocked):
                 self.queuepool.outbox.waitUntilPutAllowed()
             self.sleep(self.interval)

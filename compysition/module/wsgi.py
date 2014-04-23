@@ -111,7 +111,7 @@ class WSGI(Actor):
             start_response('404 Not Found', message['header'][self.key]['http'])
             return "A problem occurred processing your request. Reason: %s"%(err)
 
-    def consume(self, event):
+    def consume(self, event, *args, **kwargs):
         #pdb.set_trace()
         self.logging.info("Consuming event: {}".format(event))
         header = event['header'][self.key]

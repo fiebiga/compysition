@@ -53,7 +53,7 @@ class Funnel(Actor):
         for queue in self.source_queues:
             self.registerConsumer(self.consume, queue)
 
-    def consume(self, event):
+    def consume(self, event, *args, **kwargs):
         try:
             self.queuepool.outbox.put(event)
         except:
