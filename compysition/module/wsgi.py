@@ -113,6 +113,7 @@ class WSGI(Actor):
 
     def consume(self, event, *args, **kwargs):
         #pdb.set_trace()
+        print("Received Response from origin: {0}".format(kwargs.get('origin')))
         self.logging.info("Consuming event: {}".format(event))
         header = event['header'][self.key]
         request_id = header['request_id']

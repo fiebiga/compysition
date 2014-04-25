@@ -28,6 +28,7 @@ from gevent.event import Event
 from gevent.lock import Semaphore
 from compysition.errors import QueueLocked, SetupError, QueueFull
 import traceback
+from copy import deepcopy
 
 class Consumer():
 
@@ -102,7 +103,7 @@ class Consumer():
         #for queue in self.queuepool.getQueueInstances().values():
         for queue in self.destination_queues.keys():
             print("Trying to put in {0}".format(queue))
-            self.putEvent(event, all_queues[queue])
+            self.putEvent(deepcopy(event), all_queues[queue])
 
     def putEvent(self, event, destination):
         '''Convenience function submits <event> into <destination> queue.

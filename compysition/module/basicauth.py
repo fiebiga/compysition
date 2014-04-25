@@ -57,7 +57,7 @@ class BasicAuth(Actor):
             self.logging.info("User: {}, Password: {}".format(user, password))
             if user == 'testuser' and password == 'testpassword':
                 self.logging.info("Authorization successful")
-                self.queuepool.outbox.put(event)
+                self.send_event(event)
             else:
                 message = "Authorization Failed for user {}".format(user)
                 self.logging.info(message)

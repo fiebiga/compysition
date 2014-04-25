@@ -1,0 +1,3 @@
+
+class MatchedEvent(object):
+    pass

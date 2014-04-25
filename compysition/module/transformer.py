@@ -55,18 +55,20 @@ class Transformer(Actor):
         #pdb.set_trace()
         try:
             root = etree.Element(self.name)
-            for key in self.subjects:
-                try:
-                    root.append(etree.XML(event['data'][key]))
-                except:
-                    self.logging.warn("Subject {0} did not exist in submitted event. Subject was not appended".format(key))
+            #for key in self.subjects:
+            #    try:
+            #        root.append(etree.XML(event['data'][key]))
+            #    except:
+            #        self.logging.warn("Subject {0} did not exist in submitted event. Subject was not appended".format(key))
 
             f = open('{0}_event_root.txt'.format(self.key),'w')
             f.write(b"{0}".format(etree.tostring(root))) # python will convert \n to os.linesep
             f.close() # you can omit in most cases as the destructor will call if
             print("Adding {0} Key to template".format(self.key))
-            event['data'][self.key] = etree.tostring(self.template(root))
-            self.queuepool.outbox.put(event)
+            #event['data'][self.key] = etree.tostring(self.template(root))
+            event['data'] = etree.tostring(self.template(root))
+            #self.queuepool.outbox.put(event)
+            self.send_event(event)
         except KeyError:
             self.logging.info("{} could not find the form subject {} in event {}".format(self.name, self.subjects, event))
             event['header'].get(self.caller, {}).update({'status': '400 Bad Request'})
