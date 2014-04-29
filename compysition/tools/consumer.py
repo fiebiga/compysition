@@ -37,7 +37,8 @@ class Consumer():
         self.__block = Event()
         self.__block.clear()
 
-        self.destination_queues = {}
+        self.destination_queues = {} # All queues that this consumer can broadcast to
+        self.inbox_queues = {} # All queues that can submit events to this consumer
 
         if setupbasic == True:
             self.__setupBasic()
@@ -81,7 +82,7 @@ class Consumer():
 
     def registerConsumer(self, fc, queue):
         '''Registers <fc> as a consuming function for the given queue <q>.'''
-
+        self.inbox_queues[queue.name] = queue
         self.__doConsumes.append((fc, queue))
 
     def loop(self):

@@ -23,9 +23,7 @@
 #  MA 02110-1301, USA.
 
 from compysition import Actor
-from lxml import etree
-import pdb
-from copy import deepcopy
+from compysition.tools.xmlmatcher import MatchedEvent
 
 class XMLMatcher(Actor):
     '''**Holds event data until a matching request id, then appends the match to the specified xpath of the XML in the data.**
@@ -50,31 +48,24 @@ class XMLMatcher(Actor):
     }
     '''
     
-    def __init__(self, name, xpath=None, *args, **kwargs):
+    def __init__(self, name, *args, **kwargs):
         Actor.__init__(self, name)
-        self.xpath = xpath
         self.events = {}
         self.key = kwargs.get('key', self.name)
-        self.logging.info("Initialized with: {}".format(self.xpath))
 
     def consume(self, event, *args, **kwargs):
-        #pdb.set_trace()
+        print self.events
         request_id = event['header']['wsgi']['request_id']
+        inbox_origin = kwargs.get('origin', None)
         waiting_event = self.events.get(request_id, None)
         if waiting_event:
-            print("Found Waiting Event")
-            if self.xpath is not None:
-                xml = etree.fromstring(str(waiting_event['data']['XML']))
-                #xml.xpath(self.xpath).append(etree.XML(str(event['data']['XML'])))
-                xml.append(etree.XML(str(event['data']['XML'])))
-                event['data'] = etree.tostring(xml, pretty_print=True)
-            else:
-                xml = etree.fromstring(str(waiting_event['data']['XML']))
-                second_xml = etree.fromstring(str(event['data']['XML']))
-                new_xml = etree.tostring(xml) + etree.tostring(second_xml)
-                event['data'] = new_xml
-            print event['data']
-            self.send_event(event)
+            waiting_event.report_inbox(inbox_origin, event['data'])
+            if waiting_event.all_inboxes_reported():
+                event['data'] = waiting_event.get_aggregate_xml()
+                self.send_event(event)
+                del self.events[request_id]
         else:
-            print "Sending event {0} to outbox.".format(request_id)
-            self.events.update({request_id: deepcopy(event)})
+            print("Created Event")
+            self.events[request_id] = MatchedEvent(self.key, self.inbox_queues.keys())
+            self.events.get(request_id).report_inbox(inbox_origin, event['data'])
+

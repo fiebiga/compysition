@@ -83,7 +83,7 @@ class TestEvent(Actor):
         switcher = self.getContextSwitcher(100)
 
         if self.delay > 0:
-            gevent.sleep(self.delay)
+            self.doSleep(self.delay)
 
         while switcher():
             self.throttle.wait()
