@@ -3,7 +3,9 @@
 #
 #       testevent.py
 #
-#       Copyright 2013 Jelle Smet development@smetj.net
+#       Copyright 2014 Adam Fiebig fiebig.adam@gmail.com
+#
+#       Original testevent.py created by Jelle Smet <development@smetj.net>
 #
 #       This program is free software; you can redistribute it and/or modify
 #       it under the terms of the GNU General Public License as published by
@@ -20,7 +22,6 @@
 #       Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #       MA 02110-1301, USA.
 #
-#
 
 from compysition import Actor
 from compysition.errors import QueueLocked, QueueFull, SetupError
@@ -35,7 +36,7 @@ class TestEvent(Actor):
 
     Events have following format:
 
-        { "header":{}, "data":"test" }
+        { "header":header_value, "data":data_value }
 
     Parameters:
 
@@ -44,17 +45,26 @@ class TestEvent(Actor):
         - interval (float):         The interval in seconds between each generated event.
                                     Should have a value > 0.
                                     default: 1
+        - data_value (str):         Allows specification of test event data content
+                                    default: "test"
+        - header_value (str):       Allows specification of test event header content
+                                    default: Empty Dict {}
+        - delay (float):            The interval in seconds to wait after preHook is called
+                                    to generate the first event. Should have a value of >= 0
+                                    default: 0
 
     Queues:
 
         - outbox:    Contains the generated events.
     '''
 
-    def __init__(self, name, interval=1):
+    def __init__(self, name, data_value="test", header_value={}, interval=1, delay=0):
         Actor.__init__(self, name, setupbasic=False)
-        self.createQueue("outbox")
         self.name = name
-        self.interval=interval
+        self.interval = interval
+        self.delay = delay
+        self.data_value = data_value or "test"
+        self.header_value = header_value or {}
         if interval == 0:
             self.sleep = self.doNoSleep
         else:
@@ -67,16 +77,18 @@ class TestEvent(Actor):
         print("THIS SHOULDNT HAVE BEEN CALLED")
 
     def preHook(self):
-        print(self.queuepool.getQueueInstances())
         spawn(self.go)
 
     def go(self):
         switcher = self.getContextSwitcher(100)
+
+        if self.delay > 0:
+            gevent.sleep(self.delay)
+
         while switcher():
             self.throttle.wait()
             try:
-                self.send_event({"header":{},"data":"test"}, "outbox")
-                #self.queuepool.outbox.put({"header":{},"data":"test"})
+                self.send_event({"header":self.header_value,"data":self.data_value})
             except (QueueFull, QueueLocked):
                 self.queuepool.outbox.waitUntilPutAllowed()
             self.sleep(self.interval)
