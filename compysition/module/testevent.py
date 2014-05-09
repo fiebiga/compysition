@@ -24,6 +24,7 @@
 #
 
 from compysition import Actor
+from uuid import uuid4 as uuid
 from compysition.errors import QueueLocked, QueueFull, SetupError
 from gevent import sleep, spawn
 from gevent.event import Event
@@ -88,6 +89,8 @@ class TestEvent(Actor):
         while switcher():
             self.throttle.wait()
             try:
+                event = {"header":self.header_value,"data":self.data_value}
+                event['header']['event_id'] = uuid()
                 self.send_event({"header":self.header_value,"data":self.data_value})
             except (QueueFull, QueueLocked):
                 self.queuepool.outbox.waitUntilPutAllowed()

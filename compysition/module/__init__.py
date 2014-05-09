@@ -34,6 +34,7 @@ from compysition.module.transformer import Transformer
 from compysition.module.xmlaggregator import XMLAggregator
 from compysition.module.xmlmatcher import XMLMatcher
 from compysition.module.tagaggregator import TagAggregator
+from compysition.module.xmlfilter import XMLFilter
 
 """
 All code below here was included in original wishbone project by smetj <development@smetj.net>

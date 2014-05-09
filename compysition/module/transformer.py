@@ -4,7 +4,7 @@
 #
 #  transformer.py
 #
-#  Copyright 2014 James Hulett <james.hulett@cuanswers.com>
+#  Copyright 2014 Adam Fiebig <fiebig.adam@gmail.com>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -32,7 +32,10 @@ class Transformer(Actor):
 
     Parameters:
 
-        - name (str):       The instance name.
+        - name (str):               The instance name.
+        - xslt_path (str):          The path to the xslt to apply
+        - add_to_header (Boolean):  If this option is specified, the results of the transform will be added to the
+                                        data header instead of replacing the event['data'] field
 
     Queues:
 
@@ -40,43 +43,36 @@ class Transformer(Actor):
         - outbox:   Outgoing events.
     '''
 
-    def __init__(self, name, xslt_path, *args, **kwargs):
+    def __init__(self, name, xslt_path, add_to_header=False, *args, **kwargs):
         Actor.__init__(self, name, setupbasic=True)
         self.logging.info("Initialized")
-        self.subjects = args or ('XML',)
+        self.subjects = args or None
+        self.add_to_header = add_to_header or kwargs.get('add_to_header', False) or False
         self.key = kwargs.get('key', None) or self.name
         self.caller = 'wsgi'
 
         self.template = self.load_template(xslt_path)
-
         self.createQueue('errors')
 
     def consume(self, event, *args, **kwargs):
-        #pdb.set_trace()
+        f = open('{0}_transform_inbox.txt'.format(self.key),'w')
+        f.write(b"{0}".format(event['data'])) # python will convert \n to os.linesep
+        f.close() # you can omit in most cases as the destructor will call if
         try:
             root = etree.Element(self.name)
-            #for key in self.subjects:
-            #    try:
-            #        root.append(etree.XML(event['data'][key]))
-            #    except:
-            #        self.logging.warn("Subject {0} did not exist in submitted event. Subject was not appended".format(key))
+            original_xml = etree.fromstring(event['data'])
+            root.append(original_xml)
+            transformed_xml = self.transform(root)
+            event['data'] = etree.tostring(transformed_xml)
 
-            f = open('{0}_event_root.txt'.format(self.key),'w')
-            f.write(b"{0}".format(etree.tostring(root))) # python will convert \n to os.linesep
-            f.close() # you can omit in most cases as the destructor will call if
-            print("Adding {0} Key to template".format(self.key))
-            #event['data'][self.key] = etree.tostring(self.template(root))
-            event['data'] = etree.tostring(self.template(root))
-            #self.queuepool.outbox.put(event)
             self.send_event(event)
         except KeyError:
-            self.logging.info("{} could not find the form subject {} in event {}".format(self.name, self.subjects, event))
             event['header'].get(self.caller, {}).update({'status': '400 Bad Request'})
             event['data'] = "Malformed Request"
             self.queuepool.errors.put(event)
 
-        f = open('{0}_event.txt'.format(self.key),'w')
-        f.write(b"{0}".format(event)) # python will convert \n to os.linesep
+        f = open('{0}_transform_outbox.txt'.format(self.key),'w')
+        f.write(b"{0}".format(event['data'])) # python will convert \n to os.linesep
         f.close() # you can omit in most cases as the destructor will call if
 
     def transform(self, etree_element):
@@ -87,11 +83,3 @@ class Transformer(Actor):
             return etree.XSLT(etree.parse(path))
         except Exception as e:
             self.logging.error("Unable to load XSLT at {}:{}".format(path, e))
-
-    def load_templates(self):
-        directory = os.path.join(os.path.dirname(os.path.abspath(__file__)), self.__class__.__name__.lower(), self.service.lower())
-        for file_name in os.listdir(directory):
-            base_name = os.path.splitext(file_name)[0]
-            file_path = os.path.join(directory, file_name)
-            xslt = etree.XSLT(etree.parse(file_path))
-            self.templates.update({base_name: xslt})

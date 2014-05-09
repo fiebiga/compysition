@@ -49,23 +49,26 @@ class XMLMatcher(Actor):
     '''
     
     def __init__(self, name, *args, **kwargs):
-        Actor.__init__(self, name)
+        Actor.__init__(self, name, setupbasic=False)
         self.events = {}
         self.key = kwargs.get('key', self.name)
 
     def consume(self, event, *args, **kwargs):
-        print self.events
-        request_id = event['header']['wsgi']['request_id']
+        request_id = event['header']['event_id']
         inbox_origin = kwargs.get('origin', None)
         waiting_event = self.events.get(request_id, None)
         if waiting_event:
             waiting_event.report_inbox(inbox_origin, event['data'])
+            print("All Inboxes reported? {0}".format(waiting_event.all_inboxes_reported()))
+            print("Inboxes: {0}".format(waiting_event.inboxes_reported))
             if waiting_event.all_inboxes_reported():
                 event['data'] = waiting_event.get_aggregate_xml()
+                f = open('{0}_matcher_event.txt'.format(self.key),'w')
+                f.write(b"{0}".format(event['data'])) # python will convert \n to os.linesep
+                f.close() # you can omit in most cases as the destructor will call if
                 self.send_event(event)
                 del self.events[request_id]
         else:
-            print("Created Event")
             self.events[request_id] = MatchedEvent(self.key, self.inbox_queues.keys())
             self.events.get(request_id).report_inbox(inbox_origin, event['data'])
 

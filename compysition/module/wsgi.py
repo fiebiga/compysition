@@ -101,6 +101,7 @@ class WSGI(Actor):
         }
         try:
             message.update({"data":request.input})
+            message['header']['event_id'] = message['header']['wsgi']['request_id'] # event_id is required for certain modules to track same event
             if env['PATH_INFO'] == '/':
                 self.queuepool.outbox.put(message)
             else:
