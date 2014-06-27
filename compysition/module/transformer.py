@@ -55,7 +55,7 @@ class Transformer(Actor):
         self.createQueue('errors')
 
     def consume(self, event, *args, **kwargs):
-        f = open('{0}_transform_inbox.txt'.format(self.key),'w')
+        f = open('logs/{0}_transform_inbox.txt'.format(self.key),'w')
         f.write(b"{0}".format(event['data'])) # python will convert \n to os.linesep
         f.close() # you can omit in most cases as the destructor will call if
         try:
@@ -71,7 +71,7 @@ class Transformer(Actor):
             event['data'] = "Malformed Request"
             self.queuepool.errors.put(event)
 
-        f = open('{0}_transform_outbox.txt'.format(self.key),'w')
+        f = open('logs/{0}_transform_outbox.txt'.format(self.key),'w')
         f.write(b"{0}".format(event['data'])) # python will convert \n to os.linesep
         f.close() # you can omit in most cases as the destructor will call if
 

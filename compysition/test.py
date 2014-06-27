@@ -1,17 +1,13 @@
-from compysition.router import Default
-from compysition.module import TestEvent
-from compysition.module import RoundRobin
-from compysition.module import STDOUT
+import StringIO, hashlib, base64
+from lxml import etree
+from re import sub
+import OpenSSL.crypto as crypto
+from OpenSSL.test.util import b as crypto_b
 
-router=Default()
-router.register(TestEvent, "input")
-router.register(RoundRobin, "mixing")
-router.register(STDOUT, "output1", prefix="I am number one: ")
-router.register(STDOUT, "output2", prefix="I am number two: ")
+xml = open('digest_body_x509.txt').read()
 
-router.connect("input.outbox", "mixing.inbox")
-router.connect("mixing.one", "output1.inbox")
-router.connect("mixing.two", "output2.inbox")
+shaval = hashlib.sha1(xml).digest()
+done = base64.standard_b64encode(shaval)
 
-router.start()
-router.block()
+print shava1
+print done
