@@ -45,6 +45,25 @@ class QueuePool():
         #return {name:self.__dict__[name] for name in self.__dict__.keys()}
         return dict((name, self.__dict__[name]) for name in self.__dict__.keys())
 
+    def getErrorQueueInstances(self):
+        '''Return a dict of error queue instances from the queuepool.'''
+        return self.__get_queue_instances(type="ERROR")
+
+    def getEventQueueInstances(self):
+        '''Return a dict of event queue instances from the queuepool.'''
+        return self.__get_queue_instances(type="EVENT")
+
+    def __get_queue_instances(self, type="EVENT"):
+        #return {name:self.__dict__[name] for name in self.__dict__.keys()}
+        all_queues = dict((name, self.__dict__[name]) for name in self.__dict__.keys())
+        filtered_queues = {}
+
+        for key in all_queues:
+            if all_queues[key].type == type:
+                filtered_queues[key] = all_queues[key]
+
+        return filtered_queues
+
     def messagesLeft(self):
         '''Checks each queue whether there are any messages left.'''
         qs=[]

@@ -77,7 +77,7 @@ class Consumer():
     def register_destination(self, queue):
         """ Registers the queue as a destination queue for the module, and adding it
         to the list of queues to send outbox events to"""
-        print("Registered {0} as a destination".format(queue.name))
+        print("Registered {0} as an {1} destination".format(queue.name, queue.type))
         self.destination_queues[queue.name] = queue
 
     def registerConsumer(self, fc, queue):
@@ -99,12 +99,22 @@ class Consumer():
         'destination' arg
         """
 
-        all_queues = self.queuepool.getQueueInstances()
+        queues = self.queuepool.getEventQueueInstances()
+        self.__send_event(event, queues)
 
-        #for queue in self.queuepool.getQueueInstances().values():
-        for queue in self.destination_queues.keys():
-            print("Trying to put in {0}".format(queue))
-            self.putEvent(deepcopy(event), all_queues[queue])
+    def send_error(self, event, destination="ALL"):
+        """ Funtion to wrap the functionality of sending to all connected outboxes.
+        This functionality can be altered by specifying a destination queue name instead with the
+        'destination' arg
+        """
+
+        queues = self.queuepool.getErrorQueueInstances()
+        self.__send_event(event, queues)
+
+    def __send_event(self, event, queues):
+        for queue in queues.keys():
+            self.putEvent(deepcopy(event), queues[queue])
+
 
     def putEvent(self, event, destination):
         '''Convenience function submits <event> into <destination> queue.
@@ -118,7 +128,6 @@ class Consumer():
         while self.loop():
             try:
                 destination.put(event)
-                print("Putting on {0}".format(destination.name))
                 break
             except QueueLocked:
                 destination.waitUntilPutAllowed()

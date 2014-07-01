@@ -187,7 +187,7 @@ class Default():
                 break
             except:
                 self.logging.info("Queue {0} does not exist in module {1}.  Autocreate queue.".format(producer_queue, producer_module))
-                self.__modules[producer_module]["instance"].createQueue(producer_queue)
+                self.__modules[producer_module]["instance"].createQueue(producer_queue, type=type)
 
         while True:
             try:
@@ -195,7 +195,7 @@ class Default():
                 break
             except :
                 self.logging.info("Queue {0} does not exist in module {1}.  Autocreate queue.".format(consumer_queue, consumer_module))
-                self.__modules[consumer_module]["instance"].createQueue(consumer_queue)
+                self.__modules[consumer_module]["instance"].createQueue(consumer_queue, type=type)
 
         if self.__modules[consumer_module]["connections"].has_key(consumer_queue):
             raise QueueOccupied("Queue {0} of module {1} is already connected.".format(consumer_queue, consumer_module))
