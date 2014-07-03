@@ -38,12 +38,13 @@ class TagAggregator(Actor):
 
     def consume(self, event, *args, **kwargs):
         new_data = ""
-        for key in event['data']:
-            data = event['data'].get(key)
-            if data is not None:
-                new_data += data
+        if isinstance(event['data'], dict):
+            for key in event['data']:
+                data = event['data'].get(key)
+                if data is not None:
+                    new_data += data
 
-        if new_data != "":
-            event['data'] = new_data
+            if new_data != "":
+                event['data'] = new_data
 
         self.send_event(event)
