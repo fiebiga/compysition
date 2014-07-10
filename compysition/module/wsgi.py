@@ -80,7 +80,8 @@ class WSGI(Actor):
         self.default_status = "200 OK"
 
     def preHook(self):
-        spawn(self.__serve)
+        pass
+        #spawn(self.__serve)
 
     def application(self, env, start_response):
         response_queue = ManagedQueue()
