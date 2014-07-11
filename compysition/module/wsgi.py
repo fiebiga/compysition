@@ -85,6 +85,9 @@ class WSGI(Actor):
 
     def application(self, env, start_response):
         self.logging.info('UCI Received Message')
+        f = open('/lcl/dev/logs/uci/wsgi_application.txt','w')
+        f.write(str(event['data'])) # python will convert \n to os.linesep
+        f.close() # you can omit in most cases as the destructor will call if
         response_queue = ManagedQueue()
         self.responders.update({response_queue.label: start_response})
         request = Request(env)
