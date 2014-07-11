@@ -554,3 +554,10 @@ class Default():
                         self.logging.err("Executing disableThrottling() in module {0} generated an error.  Reason: {1}.".format(module, err))
                     break
                 sleep(1)
+
+    def getInstance(self, instance_name):
+        module = self.__modules.get(instance_name)
+        if module is not None:
+            return module.get("instance")
+        else:
+            return None
