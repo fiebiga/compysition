@@ -84,6 +84,7 @@ class WSGI(Actor):
         #spawn(self.__serve)
 
     def application(self, env, start_response):
+        self.logging.info('UCI Received Message')
         response_queue = ManagedQueue()
         self.responders.update({response_queue.label: start_response})
         request = Request(env)
@@ -104,9 +105,10 @@ class WSGI(Actor):
             message.update({"data":request.input})
             message['header']['event_id'] = message['header']['wsgi']['request_id'] # event_id is required for certain modules to track same event
             if env['PATH_INFO'] == '/':
+                self.logging.info("Putting received message on outbox {0}".format(env['PATH_INFO']))
                 self.queuepool.outbox.put(message)
             else:
-                print("Putting received message on outbox {0}".format(env['PATH_INFO'].lstrip('/')))
+                self.logging.info("Putting received message on outbox {0}".format(env['PATH_INFO'].lstrip('/')))
                 getattr(self.queuepool, env['PATH_INFO'].lstrip('/')).put(message)
             start_response(self.default_status, message['header'][self.key]['http'])
             return response_queue
