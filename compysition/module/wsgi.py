@@ -106,6 +106,7 @@ class WSGI(Actor):
             if env['PATH_INFO'] == '/':
                 self.queuepool.outbox.put(message)
             else:
+                print("Putting received message on outbox {0}".format(env['PATH_INFO'].lstrip('/')))
                 getattr(self.queuepool, env['PATH_INFO'].lstrip('/')).put(message)
             start_response(self.default_status, message['header'][self.key]['http'])
             return response_queue
