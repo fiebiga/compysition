@@ -58,8 +58,8 @@ class Graphite(Actor):
 
     '''
 
-    def __init__(self, name, prefix='', script=True, pid=False, source=True):
-        Actor.__init__(self, name)
+    def __init__(self, name, prefix='', script=True, pid=False, source=True, *args, **kwargs):
+        Actor.__init__(self, name, *args, **kwargs)
         self.name=name
         self.prefix=prefix
         if script == True:

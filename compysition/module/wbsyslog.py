@@ -48,8 +48,8 @@ class Syslog(Actor):
             - inbox: incoming events
     '''
 
-    def __init__(self, name):
-        Actor.__init__(self, name)
+    def __init__(self, name, *args, **kwargs):
+        Actor.__init__(self, name, *args, **kwargs)
         self.name=name
 
     def preHook(self):

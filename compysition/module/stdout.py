@@ -93,8 +93,8 @@ class STDOUT(Actor):
         - inbox:    Incoming events.
     '''
 
-    def __init__(self, name, complete=False, counter=False, prefix="", pid=False):
-        Actor.__init__(self, name)
+    def __init__(self, name, complete=False, counter=False, prefix="", pid=False, *args, **kwargs):
+        Actor.__init__(self, name, *args, **kwargs)
         self.deleteQueue("outbox")
         self.complete=complete
         self.counter=counter

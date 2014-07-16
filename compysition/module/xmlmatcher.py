@@ -49,7 +49,7 @@ class XMLMatcher(Actor):
     '''
     
     def __init__(self, name, *args, **kwargs):
-        Actor.__init__(self, name, setupbasic=False)
+        Actor.__init__(self, name, *args, **kwargs)
         self.events = {}
         self.key = kwargs.get('key', self.name)
 
@@ -69,6 +69,6 @@ class XMLMatcher(Actor):
                 self.send_event(event)
                 del self.events[request_id]
         else:
-            self.events[request_id] = MatchedEvent(self.key, self.inbox_queues.keys())
+            self.events[request_id] = MatchedEvent(self.key, self.inbound_queues.keys())
             self.events.get(request_id).report_inbox(inbox_origin, event['data'])
 

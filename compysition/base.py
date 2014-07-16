@@ -28,9 +28,9 @@ from compysition.tools import QLogging
 from compysition.tools import Consumer
 
 class BaseActor(QueueFunctions):
-    def __init__(self, name):
+    def __init__(self, name, *args, **kwargs):
         self.name=name
-        QueueFunctions.__init__(self)
+        QueueFunctions.__init__(self, *args, **kwargs)
         self.logging=QLogging(name)
         self.logging.info("Initiated")
 
@@ -49,6 +49,6 @@ class Actor(BaseActor, Consumer):
                                     Default: 100
 
     '''
-    def __init__(self, name,  setupbasic=True):
-        BaseActor.__init__(self, name)
-        Consumer.__init__(self, setupbasic=setupbasic)
+    def __init__(self, name, *args, **kwargs):
+        BaseActor.__init__(self, name, *args, **kwargs)
+        Consumer.__init__(self, name, *args, **kwargs)

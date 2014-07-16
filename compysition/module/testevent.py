@@ -59,8 +59,8 @@ class TestEvent(Actor):
         - outbox:    Contains the generated events.
     '''
 
-    def __init__(self, name, data_value="test", header_value={}, interval=1, delay=0):
-        Actor.__init__(self, name, setupbasic=False)
+    def __init__(self, name, data_value="test", header_value={}, interval=1, delay=0, *args, **kwargs):
+        Actor.__init__(self, name, *args, **kwargs)
         self.name = name
         self.interval = interval
         self.delay = delay

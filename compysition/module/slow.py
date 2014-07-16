@@ -52,8 +52,8 @@ class Slow(Actor):
         - inbox:    outgoing events
     '''
 
-    def __init__(self, name, interval=1, flush=0):
-        Actor.__init__(self, name)
+    def __init__(self, name, interval=1, flush=0, *args, **kwargs):
+        Actor.__init__(self, name, *args, **kwargs)
         self.name=name
         self.interval=interval
         self.flush_interval=flush

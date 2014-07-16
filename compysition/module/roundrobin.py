@@ -49,8 +49,8 @@ class RoundRobin(Actor):
         inbox:  Incoming events
     '''
 
-    def __init__(self, name, randomize=False):
-        Actor.__init__(self, name)
+    def __init__(self, name, randomize=False, *args, **kwargs):
+        Actor.__init__(self, name, *args, **kwargs)
         self.deleteQueue("outbox")
         self.randomize=randomize
 

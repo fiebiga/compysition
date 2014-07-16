@@ -50,8 +50,8 @@ class HumanLogFormatter(Actor):
 
     '''
 
-    def __init__(self, name, colorize=True):
-        Actor.__init__(self, name)
+    def __init__(self, name, colorize=True, *args, **kwargs):
+        Actor.__init__(self, name, *args, **kwargs)
         self.name=name
         self.levels={0:"emergency",1:"alert",2:"critical",3:"error",4:"warning",5:"notice",6:"informational",7:"debug"}
         self.colors={

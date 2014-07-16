@@ -73,12 +73,17 @@ class Default():
                                     than <throttle_threshold> messages.
                                     default: 5000
 
+        - enable_trace(bool):   This will print to the standard logger every outbox and inbox execution
+                                to determine where event flow blockages are occurring
+                                Default: False
+
     '''
 
-    def __init__(self, interval=1, context_switch=100, rescue=False, uuid=False, throttle=True, throttle_threshold=15000):
+    def __init__(self, interval=1, context_switch=100, rescue=False, uuid=False, throttle=True, throttle_threshold=15000, enable_trace=False, *args, **kwargs):
         self.interval=interval
         self.context_switch=context_switch
         self.rescue=rescue
+        self.enable_trace = enable_trace
 
         signal(2, self.__signal_handler)
         self.logging=QLogging("Router")
@@ -207,10 +212,6 @@ class Default():
         # Register the new queue on the consumer as a consumer queue
         self.__modules[consumer_module]["instance"].registerConsumer(self.__modules[consumer_module]["instance"].consume, getattr(self.__modules[consumer_module]["instance"].queuepool, consumer_queue))
 
-        # Register the new queue on the producer as a destination queue
-        self.__modules[producer_module]["instance"].register_destination(getattr(self.__modules[producer_module]["instance"].queuepool, producer_queue))
-
-
         self.__modules[consumer_module]["connections"]={}
 
         self.__modules[consumer_module]["connections"][consumer_queue]=producer_queue
@@ -273,6 +274,10 @@ class Default():
             kwargs(dict)                Named arguments to pass to the module.
         '''
 
+        trace = kwargs.get('enable_trace', None)
+        if trace is None:
+            kwargs['enable_trace'] = self.enable_trace
+
         self.__modules[name] = {"instance":None, "fwd_logs":None, "fwd_metrics":None, "connections":{}, "children":[], "parents":[]}
         self.__modules[name]["instance"]= module(name, *args, **kwargs)
         self.__modules[name]["instance"].getContextSwitcher=self.getContextSwitcher
@@ -297,7 +302,7 @@ class Default():
         self.__logmodule = name
 
         self.__modules[name] = {"instance":None, "fwd_logs":None, "fwd_metrics":None, "connections":{}, "children": [], "parents":[]}
-        self.__modules[name]["instance"] = module(name, *args, **kwargs)
+        self.__modules[name]["instance"] = module(name, setupbasic=True, *args, **kwargs)
         self.__modules[name]["instance"].getContextSwitcher = self.getContextSwitcher
 
         self.__modules[name]["fwd_logs"] = spawn(self.__forwardLogs, self.__modules[name]["instance"].logging.logs, self.logs)
@@ -321,7 +326,7 @@ class Default():
 
         self.__metricmodule = name
         self.__modules[name] = {"instance":None, "fwd_logs":None, "fwd_metrics":None, "connections":{}, "children": [], "parents": []}
-        self.__modules[name]["instance"] = module(name, *args, **kwargs)
+        self.__modules[name]["instance"] = module(name, setupbasic=True, *args, **kwargs)
         self.__modules[name]["instance"].getContextSwitcher = self.getContextSwitcher
 
         self.__modules[name]["fwd_logs"] = spawn(self.__forwardLogs, self.__modules[name]["instance"].logging.logs, self.logs)

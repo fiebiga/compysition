@@ -44,8 +44,8 @@ class LockBuffer(Actor):
         - outbox:   Outgoing events.
     '''
 
-    def __init__(self, name, size=100):
-        Actor.__init__(self, name, setupbasic=False)
+    def __init__(self, name, size=100, *args, **kwargs):
+        Actor.__init__(self, name, *args, **kwargs)
         self.createQueue("inbox", size)
         self.createQueue("outbox")
         self.registerConsumer(self.consume, self.queuepool.inbox)

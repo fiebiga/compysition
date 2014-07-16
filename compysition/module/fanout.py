@@ -54,8 +54,8 @@ class Fanout(Actor):
         inbox:  Incoming events
     '''
 
-    def __init__(self, name, clone=False):
-        Actor.__init__(self, name)
+    def __init__(self, name, clone=False, *args, **kwargs):
+        Actor.__init__(self, name, *args, **kwargs)
         if clone == False:
             self.do = self.__consumeNoDeep
         else:

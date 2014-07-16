@@ -42,8 +42,8 @@ class Funnel(Actor):
 
     '''
 
-    def __init__(self, name):
-        Actor.__init__(self, name)
+    def __init__(self, name, *args, **kwargs):
+        Actor.__init__(self, name, *args, **kwargs)
 
     def preHook(self):
         source_queues = self.queuepool.getQueueInstances()

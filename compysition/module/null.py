@@ -41,8 +41,8 @@ class Null(Actor):
         - inbox:    incoming events
     '''
 
-    def __init__(self, name):
-        Actor.__init__(self, name)
+    def __init__(self, name, *args, **kwargs):
+        Actor.__init__(self, name, *args, **kwargs)
 
     def consume(self, event, *args, **kwargs):
         pass

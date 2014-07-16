@@ -28,20 +28,23 @@ from gevent.event import Event
 from gevent.lock import Semaphore
 from compysition.errors import QueueLocked, SetupError, QueueFull
 import traceback
+import time
 from copy import deepcopy
 
 class Consumer():
 
-    def __init__(self, setupbasic=True):
+    def __init__(self, name, setupbasic=False, enable_trace=False, *args, **kwargs):
         self.__doConsumes = []
         self.__block = Event()
         self.__block.clear()
+        self.name = name
 
-        self.destination_queues = {} # All queues that this consumer can broadcast to
-        self.inbox_queues = {} # All queues that can submit events to this consumer
+        self.inbound_queues = {} # All queues that can submit events to this consumer
 
         if setupbasic == True:
             self.__setupBasic()
+
+        self.enable_trace = enable_trace
 
         self.__greenlet = []
         self.metrics = {}
@@ -74,15 +77,9 @@ class Consumer():
 
         self.__block.wait()
 
-    def register_destination(self, queue):
-        """ Registers the queue as a destination queue for the module, and adding it
-        to the list of queues to send outbox events to"""
-        print("Registered {0} as an {1} destination".format(queue.name, queue.type))
-        self.destination_queues[queue.name] = queue
-
     def registerConsumer(self, fc, queue):
         '''Registers <fc> as a consuming function for the given queue <q>.'''
-        self.inbox_queues[queue.name] = queue
+        self.inbound_queues[queue.name] = (queue)
         self.__doConsumes.append((fc, queue))
 
     def loop(self):
@@ -113,7 +110,10 @@ class Consumer():
 
     def __send_event(self, event, queues):
         for queue in queues.keys():
-            self.putEvent(deepcopy(event), queues[queue])
+            if queues[queue] not in self.inbound_queues.values():
+                self.putEvent(deepcopy(event), queues[queue])
+                if self.enable_trace:
+                    print "Module {0} putting event on queue {1}".format(self.name, queue)
 
 
     def putEvent(self, event, destination):
@@ -172,6 +172,8 @@ class Consumer():
             else:
                 try:
                     fc(event, origin=q.name)
+                    if self.enable_trace:
+                        print "Module {0} received event on queue {1}".format(self.name, q.name)
                 except TypeError:
                     self.logging.warn("You must define a consume function as consume(self, event, *args, **kwargs)")
                 except Exception as err:

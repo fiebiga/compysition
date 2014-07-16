@@ -63,9 +63,9 @@ class TippingBucket(Actor):
         - outbox:   Outgoing events.
     '''
 
-    def __init__(self, name, age=0, size=0, events=0, predefined_header=None):
+    def __init__(self, name, age=0, size=0, events=0, predefined_header=None, *args, **kwargs):
 
-        Actor.__init__(self, name)
+        Actor.__init__(self, name, *args, **kwargs)
         self.age = age
         self.size = size
         self.events = events

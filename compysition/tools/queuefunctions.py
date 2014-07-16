@@ -27,7 +27,7 @@ from compysition.tools import CompysitionQueue
 
 class QueueFunctions(object):
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         from compysition.tools import QueuePool
         self.queuepool=QueuePool()
 

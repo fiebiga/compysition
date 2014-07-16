@@ -34,7 +34,7 @@ class TagAggregator(Actor):
     '''
 
     def __init__(self, name, *args, **kwargs):
-        Actor.__init__(self, name, setupbasic=True)
+        Actor.__init__(self, name, *args, **kwargs)
 
     def consume(self, event, *args, **kwargs):
         new_data = ""

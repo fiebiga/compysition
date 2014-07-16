@@ -39,7 +39,7 @@ class XMLAggregator(Actor):
     '''
     
     def __init__(self, name, *args, **kwargs):
-        Actor.__init__(self, name)
+        Actor.__init__(self, name, *args, **kwargs)
         self.subjects = list(args)
         self.root = self.subjects.pop()
         self.logging.info("Initialized with: {}".format(self.subjects))

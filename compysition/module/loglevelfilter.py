@@ -37,8 +37,8 @@ class LogLevelFilter(Actor):
                             Default: 6
     '''
 
-    def __init__(self, name, max_level=6):
-        Actor.__init__(self, name)
+    def __init__(self, name, max_level=6, *args, **kwargs):
+        Actor.__init__(self, name, *args, **kwargs)
         self.name=name
         self.max_level=max_level
 

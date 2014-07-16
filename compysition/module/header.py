@@ -52,8 +52,8 @@ class Header(Actor):
 
     '''
 
-    def __init__(self, name, key=None, header={}, expr=None):
-        Actor.__init__(self, name)
+    def __init__(self, name, key=None, header={}, expr=None, *args, **kwargs):
+        Actor.__init__(self, name, *args, **kwargs)
         if key == None:
             self.key=name
         else:

@@ -38,8 +38,8 @@ class BasicAuth(Actor):
         - outbox:   Outgoing events.
     '''
 
-    def __init__(self, name, capitalize=False, key=None):
-        Actor.__init__(self, name, setupbasic=True)
+    def __init__(self, name, capitalize=False, key=None, *args, **kwargs):
+        Actor.__init__(self, name, *args, **kwargs)
         self.capitalize=capitalize
         self.logging.info("Initialized")
         self.key = key or self.name

@@ -44,7 +44,7 @@ class Transformer(Actor):
     '''
 
     def __init__(self, name, xslt_path, add_to_header=False, *args, **kwargs):
-        Actor.__init__(self, name, setupbasic=True)
+        Actor.__init__(self, name, *args, **kwargs)
         self.logging.info("Initialized")
         self.subjects = args or None
         self.add_to_header = add_to_header or kwargs.get('add_to_header', False) or False

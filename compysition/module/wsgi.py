@@ -54,6 +54,10 @@ class WSGI(Actor):
         - delimiter(str):   The delimiter between multiple events.
                             Default: None
 
+        - run_server(bool): Specify whether or not to run a WSGI server on the specified
+                            port and address
+                            Default: False
+
     Queues:
 
         - outbox:   Events coming from the outside world and submitted to /
@@ -67,8 +71,8 @@ class WSGI(Actor):
     '''
 
 
-    def __init__(self, name, address="0.0.0.0", port=8080, keyfile=None, certfile=None, delimiter=None, key=None):
-        Actor.__init__(self, name)
+    def __init__(self, name, address="0.0.0.0", port=8080, keyfile=None, certfile=None, delimiter=None, key=None, run_server=False, *args, **kwargs):
+        Actor.__init__(self, name, *args, **kwargs)
         self.name=name
         self.address=address
         self.port=port
@@ -78,10 +82,11 @@ class WSGI(Actor):
         self.key = key or self.name
         self.responders = {}
         self.default_status = "200 OK"
+        self.run_server = run_server
 
     def preHook(self):
-        pass
-        #spawn(self.__serve)
+        if self.run_server:
+            spawn(self.__serve)
 
     def application(self, env, start_response):
         self.logging.info('UCI Received Message')

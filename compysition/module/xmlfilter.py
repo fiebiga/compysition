@@ -51,7 +51,7 @@ class XMLFilter(Actor):
     '''
     
     def __init__(self, name, xpath, value=None, whitelist=True, *args, **kwargs):
-        Actor.__init__(self, name, setupbasic=False)
+        Actor.__init__(self, name, *args, **kwargs)
         self.xpath = xpath
         self.value = value
         self.whitelist = whitelist
