@@ -95,7 +95,6 @@ class STDOUT(Actor):
 
     def __init__(self, name, complete=False, counter=False, prefix="", pid=False, *args, **kwargs):
         Actor.__init__(self, name, *args, **kwargs)
-        self.deleteQueue("outbox")
         self.complete=complete
         self.counter=counter
         self.prefix=prefix
