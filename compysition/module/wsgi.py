@@ -58,6 +58,11 @@ class WSGI(Actor):
                             port and address
                             Default: False
 
+        - base_path(str):   The path the use as the base when stripping out an outbox path.
+                            Example:    base_path="/foo"
+                                        Incoming Path Info = "/foo/bar"
+                                        Outbox Used: "bar"
+
     Queues:
 
         - outbox:   Events coming from the outside world and submitted to /
@@ -71,7 +76,7 @@ class WSGI(Actor):
     '''
 
 
-    def __init__(self, name, address="0.0.0.0", port=8080, keyfile=None, certfile=None, delimiter=None, key=None, run_server=False, *args, **kwargs):
+    def __init__(self, name, base_path='/', address="0.0.0.0", port=8080, keyfile=None, certfile=None, delimiter=None, key=None, run_server=False, *args, **kwargs):
         Actor.__init__(self, name, *args, **kwargs)
         self.name=name
         self.address=address
@@ -109,12 +114,13 @@ class WSGI(Actor):
         try:
             message.update({"data":request.input})
             message['header']['event_id'] = message['header']['wsgi']['request_id'] # event_id is required for certain modules to track same event
-            if env['PATH_INFO'] == '/':
+            if env['PATH_INFO'] == self.base_path:
                 self.logging.info("Putting received message on outbox {0}".format(env['PATH_INFO']))
                 self.queuepool.outbox.put(message)
             else:
-                self.logging.info("Putting received message on outbox {0}".format(env['PATH_INFO'].lstrip('/')))
-                getattr(self.queuepool, env['PATH_INFO'].lstrip('/')).put(message)
+                outbox_path = env['PATH_INFO'].lstrip("{0}/".format(self.base_path)).split('/')[0]
+                self.logging.info("Putting received message on outbox {0}".format(outbox_path))
+                getattr(self.queuepool, outbox_path).put(message)
             start_response(self.default_status, message['header'][self.key]['http'])
             return response_queue
         except Exception as err:

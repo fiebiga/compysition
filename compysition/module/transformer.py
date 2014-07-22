@@ -52,7 +52,7 @@ class Transformer(Actor):
         self.caller = 'wsgi'
 
         self.template = self.load_template(xslt_path)
-        self.createQueue('errors')
+
 
     def consume(self, event, *args, **kwargs):
         f = open('logs/{0}_transform_inbox.txt'.format(self.key),'w')
