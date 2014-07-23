@@ -88,6 +88,7 @@ class WSGI(Actor):
         self.responders = {}
         self.default_status = "200 OK"
         self.run_server = run_server
+        self.base_path = base_path
 
     def preHook(self):
         if self.run_server:

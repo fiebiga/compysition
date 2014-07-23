@@ -63,9 +63,6 @@ class XMLMatcher(Actor):
             print("Inboxes: {0}".format(waiting_event.inboxes_reported))
             if waiting_event.all_inboxes_reported():
                 event['data'] = waiting_event.get_aggregate_xml()
-                f = open('logs/{0}_matcher_event.txt'.format(self.key),'w')
-                f.write(b"{0}".format(event['data'])) # python will convert \n to os.linesep
-                f.close() # you can omit in most cases as the destructor will call if
                 self.send_event(event)
                 del self.events[request_id]
         else:
