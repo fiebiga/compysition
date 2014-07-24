@@ -174,8 +174,9 @@ class Consumer():
                     fc(event, origin=q.name)
                     if self.enable_trace:
                         print "Module {0} received event on queue {1}".format(self.name, q.name)
-                except TypeError:
-                    self.logging.warn("You must define a consume function as consume(self, event, *args, **kwargs)")
+                except TypeError as err:
+                    self.logging.warn("You must define a consume function as consume(self, event, *args, **kwargs): {0}".format(err))
+                    traceback.print_exc()
                 except Exception as err:
                     self.logging.warn("Problem executing %s. Sleeping for a second. Reason: %s"%(str(fc),err))
                     traceback.print_exc()
