@@ -33,10 +33,11 @@ from copy import deepcopy
 
 class Consumer():
 
-    def __init__(self, name, setupbasic=False, enable_trace=False, *args, **kwargs):
+    def __init__(self, name, setupbasic=False, enable_trace=False, rescue=True, *args, **kwargs):
         self.__doConsumes = []
         self.__block = Event()
         self.__block.clear()
+        self.rescue = rescue
         self.name = name
 
         self.inbound_queues = {} # All queues that can submit events to this consumer
@@ -178,10 +179,13 @@ class Consumer():
                     self.logging.warn("You must define a consume function as consume(self, event, *args, **kwargs): {0}".format(err))
                     traceback.print_exc()
                 except Exception as err:
-                    self.logging.warn("Problem executing %s. Sleeping for a second. Reason: %s"%(str(fc),err))
-                    traceback.print_exc()
-                    q.rescue(event)
-                    sleep(1)
+                    if self.rescue:
+                        self.logging.warn("Problem executing %s. Sleeping for a second, then rescuing event. Reason: %s"%(str(fc),err))
+                        traceback.print_exc()
+                        q.rescue(event)
+                        sleep(1)
+                    else:
+                        self.logging.warn("Problem executing %s. Event rescue is disabled for module, event has been purged"%(str(fc),err))
 
         self.logging.info('Function %s has stopped consuming queue %s'%(str(fc),str(q)))
 
