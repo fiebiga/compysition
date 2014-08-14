@@ -54,3 +54,4 @@ from compysition.module.testevent import TestEvent
 from compysition.module.roundrobin import RoundRobin
 from compysition.module.slow import Slow
 from compysition.module.flowcontroller import FlowController
+from compysition.module.filelogger import FileLogger

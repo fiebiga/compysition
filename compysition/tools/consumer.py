@@ -113,7 +113,8 @@ class Consumer():
         for queue in queues.keys():
             if queues[queue] not in self.inbound_queues.values():
                 self.putEvent(deepcopy(event), queues[queue])
-                self.logging.debug("Module {0} putting event on queue {1}".format(self.name, queue))
+                if self.enable_trace:
+                    self.logging.debug("Module {0} putting event on queue {1}".format(self.name, queue))
 
 
     def putEvent(self, event, destination):
@@ -172,7 +173,8 @@ class Consumer():
             else:
                 try:
                     fc(event, origin=q.name)
-                    self.logging.debug("Module {0} received event on queue {1}".format(self.name, q.name))
+                    if self.enable_trace:
+                        self.logging.debug("Module {0} received event on queue {1}".format(self.name, q.name))
                 except TypeError as err:
                     self.logging.warn("You must define a consume function as consume(self, event, *args, **kwargs): {0}".format(err))
                     traceback.print_exc()
