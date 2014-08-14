@@ -53,7 +53,7 @@ class HumanLogFormatter(Actor):
     def __init__(self, name, colorize=True, *args, **kwargs):
         Actor.__init__(self, name, *args, **kwargs)
         self.name=name
-        self.levels={0:"emergency",1:"alert",2:"critical",3:"error",4:"warning",5:"notice",6:"informational",7:"debug"}
+        self.levels={0:"EMERGENCY",1:"ALERT",2:"CRITICAL",3:"ERROR",4:"WARN",5:"NOTICE",6:"INFO",7:"DEBUG"}
         self.colors={
             0:"\x1B[0;35m",
             1:"\x1B[1;35m",
@@ -70,9 +70,9 @@ class HumanLogFormatter(Actor):
             self.colorize = self.doNoColorize
 
     def consume(self, event, *args, **kwargs):
-        log = ("%s %s %s %s: %s"%(
+        log = ("{0} {1} {2} {3}: {4}".format(
                 strftime("%Y-%m-%dT%H:%M:%S", localtime(event["data"][1])),
-                "pid-%s"%(event["data"][2]),
+                "pid-{0}".format(event["data"][2]),
                 self.levels[event["data"][0]],
                 event["data"][3],
                 event["data"][4]))

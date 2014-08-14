@@ -130,8 +130,7 @@ class WSGI(Actor):
 
     def consume(self, event, *args, **kwargs):
         #pdb.set_trace()
-        print("Received Response from origin: {0}".format(kwargs.get('origin')))
-        self.logging.info("Consuming event: {}".format(event))
+        self.logging.debug("WSGI Received Response from origin: {0}".format(kwargs.get('origin')))
         header = event['header'][self.key]
         request_id = header['request_id']
         response_queue = ManagedQueue(request_id)

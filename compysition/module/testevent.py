@@ -75,7 +75,7 @@ class TestEvent(Actor):
         self.throttle.set()
 
     def consume(self, event, *args, **kwargs):
-        print("THIS SHOULDNT HAVE BEEN CALLED")
+        self.logging.error("THIS SHOULDNT HAVE BEEN CALLED")
 
     def preHook(self):
         spawn(self.go)

@@ -42,9 +42,9 @@ class Director(object):
 
     def find_actors(self, path=None):
         path = path or os.path.join(os.path.dirname(__file__), 'module')
-        print("Attempting to load templates from {0}".format(path))
+        self.logging.info("Attempting to load templates from {0}".format(path))
         for root, dirs, files in os.walk(path):
-            print("Walked {0} and got {1}, {2}, {3}".format(path, root, dirs, files))
+            self.logging.debug("Walked {0} and got {1}, {2}, {3}".format(path, root, dirs, files))
             for template in files:
                 file = "{0}/{1}".format(root, template)
                 name, ext = template.split(os.extsep)
@@ -52,8 +52,8 @@ class Director(object):
                     try:
                         module = imp.load_source(name, os.path.abspath(file))
                         self.load_actors(module)
-                    except:
-                        print("Error loading source")
+                    except Exception as error:
+                        self.logging.error("Error loading source: {0}".format(error))
 
     def load_actors(self, module):
         try:
@@ -63,7 +63,7 @@ class Director(object):
                         self.actors[name] = obj
         except Exception as exception:
             traceback.print_exc()
-            print("Error {0}".format(exception))
+            self.logging.error("Error loading actors {0}".format(exception))
                
         print("Loaded actors: {0}".format(self.actors))
 

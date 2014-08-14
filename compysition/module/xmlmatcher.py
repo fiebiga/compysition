@@ -59,8 +59,6 @@ class XMLMatcher(Actor):
         waiting_event = self.events.get(request_id, None)
         if waiting_event:
             waiting_event.report_inbox(inbox_origin, event['data'])
-            print("All Inboxes reported? {0}".format(waiting_event.all_inboxes_reported()))
-            print("Inboxes: {0}".format(waiting_event.inboxes_reported))
             if waiting_event.all_inboxes_reported():
                 event['data'] = waiting_event.get_aggregate_xml()
                 self.send_event(event)

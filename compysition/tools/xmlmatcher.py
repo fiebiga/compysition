@@ -8,12 +8,11 @@ class MatchedEvent(object):
     def __init__(self, root_node_name, inboxes):
         self.inboxes_reported = {}
         self.aggregate_xml = etree.Element(root_node_name)
-        print root_node_name
         if isinstance(inboxes, list):
             for inbox in inboxes:
                 self.inboxes_reported[inbox] = False
         else:
-            print("Must provide inboxes as a list")
+            self.logging.error("Must provide inboxes as a list")
 
     def report_inbox(self, inbox_name, xml_data):
         if not self.inboxes_reported[inbox_name]:
@@ -22,9 +21,9 @@ class MatchedEvent(object):
                 self.aggregate_xml.append(xml)
                 self.inboxes_reported[inbox_name] = True
             except:
-                print("Malformed data found while attempting to aggregate xml")
+                self.logging.error("Malformed data found while attempting to aggregate xml")
         else:
-            print("Inbox {0} already reported for event. Ignoring".format(inbox_name))    
+            self.logging.warn("Inbox {0} already reported for event. Ignoring".format(inbox_name))    
 
     def all_inboxes_reported(self):
         for key in self.inboxes_reported:

@@ -134,6 +134,12 @@ class Default():
 
         self.__exit.wait()
 
+    def connect_error(self, producer, consumer):
+        '''
+        Convenience function to connect an error queue, so that the router configuration need not pass type directly
+        '''
+        self.connect(producer, consumer, type="ERROR")
+
     def connect(self, producer, consumer, type="EVENT"):
         '''Connects a producing queue to a consuming queue.
 
