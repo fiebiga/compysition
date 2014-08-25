@@ -48,8 +48,7 @@ class BasicAuth(Actor):
         self.createQueue('errors')
 
     def consume(self, event, *args, **kwargs):
-        print event['header']['event_id']
-        self.logging.info("Got event with headers: {}".format(event['header']))
+        self.logging.info("[{0}] Got event with headers: {1}".format(event['header']['event_id'], event['header']))
         try:
             self.logging.info("Trying to extract authorization data")
             authorization = event['header'][self.caller]['environment']['HTTP_AUTHORIZATION']
@@ -60,7 +59,7 @@ class BasicAuth(Actor):
                 self.logging.info("Authorization successful")
                 self.send_event(event)
             else:
-                message = "Authorization Failed for user {}".format(user)
+                message = "[{0}] Authorization Failed for user {}".format(event['header']['event_id'], user)
                 self.logging.info(message)
                 raise Exception(message)
         except:

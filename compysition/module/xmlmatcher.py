@@ -57,13 +57,16 @@ class XMLMatcher(Actor):
         request_id = event['header']['event_id']
         inbox_origin = kwargs.get('origin', None)
         waiting_event = self.events.get(request_id, None)
-        if waiting_event:
-            waiting_event.report_inbox(inbox_origin, event['data'])
-            if waiting_event.all_inboxes_reported():
-                event['data'] = waiting_event.get_aggregate_xml()
-                self.send_event(event)
-                del self.events[request_id]
-        else:
-            self.events[request_id] = MatchedEvent(self.key, self.inbound_queues.keys())
-            self.events.get(request_id).report_inbox(inbox_origin, event['data'])
+        try:
+            if waiting_event:
+                waiting_event.report_inbox(inbox_origin, event['data'])
+                if waiting_event.all_inboxes_reported():
+                    event['data'] = waiting_event.get_aggregate_xml()
+                    self.send_event(event)
+                    del self.events[request_id]
+            else:
+                self.events[request_id] = MatchedEvent(self.key, self.inbound_queues.keys())
+                self.events.get(request_id).report_inbox(inbox_origin, event['data'])
+        except Exception as error:
+            self.logging.warn("[{0}] Could not process incoming event. Error Message: {1}".format(event['header']['event_id'], error))
 

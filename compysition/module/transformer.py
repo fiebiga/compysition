@@ -56,6 +56,7 @@ class Transformer(Actor):
 
 
     def consume(self, event, *args, **kwargs):
+        self.logging.info("[{0}] Transforming XML...".format(event['header']['event_id']))
         if self.print_input_output:
             f = open('logs/{0}_transform_inbox.txt'.format(self.key),'w')
             f.write(b"{0}".format(event['data'])) # python will convert \n to os.linesep

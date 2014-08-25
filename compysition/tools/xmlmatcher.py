@@ -12,7 +12,7 @@ class MatchedEvent(object):
             for inbox in inboxes:
                 self.inboxes_reported[inbox] = False
         else:
-            self.logging.error("Must provide inboxes as a list")
+            raise Exception("Must provide inboxes as a list")
 
     def report_inbox(self, inbox_name, xml_data):
         if not self.inboxes_reported[inbox_name]:
@@ -21,9 +21,9 @@ class MatchedEvent(object):
                 self.aggregate_xml.append(xml)
                 self.inboxes_reported[inbox_name] = True
             except:
-                self.logging.error("Malformed data found while attempting to aggregate xml")
+                raise Exception("Malformed data found while attempting to aggregate xml")
         else:
-            self.logging.warn("Inbox {0} already reported for event. Ignoring".format(inbox_name))    
+            raise Exception("Inbox {0} already reported for event. Ignoring".format(inbox_name))    
 
     def all_inboxes_reported(self):
         for key in self.inboxes_reported:

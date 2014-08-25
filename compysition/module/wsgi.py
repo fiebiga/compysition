@@ -116,11 +116,11 @@ class WSGI(Actor):
             message.update({"data":request.input})
             message['header']['event_id'] = message['header']['wsgi']['request_id'] # event_id is required for certain modules to track same event
             if env['PATH_INFO'] == self.base_path:
-                self.logging.info("Putting received message on outbox {0}".format(env['PATH_INFO']))
+                self.logging.info("[{0}] Putting received message on outbox {1}".format(message['header']['event_id'], env['PATH_INFO']))
                 self.queuepool.outbox.put(message)
             else:
                 outbox_path = env['PATH_INFO'].lstrip("{0}/".format(self.base_path)).split('/')[0]
-                self.logging.info("Putting received message on outbox {0}".format(outbox_path))
+                self.logging.info("[{0}] Putting received message on outbox {1}".format(message['header']['event_id'], outbox_path))
                 getattr(self.queuepool, outbox_path).put(message)
             start_response(self.default_status, message['header'][self.key]['http'])
             return response_queue
@@ -130,7 +130,7 @@ class WSGI(Actor):
 
     def consume(self, event, *args, **kwargs):
         #pdb.set_trace()
-        self.logging.debug("WSGI Received Response from origin: {0}".format(kwargs.get('origin')))
+        self.logging.debug("[{0}] WSGI Received Response from origin: {1}".format(event['header']['event_id'], kwargs.get('origin')))
         header = event['header'][self.key]
         request_id = header['request_id']
         response_queue = ManagedQueue(request_id)

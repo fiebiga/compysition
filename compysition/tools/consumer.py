@@ -159,6 +159,7 @@ class Consumer():
 
         while self.loop():
             self.__enable_consuming.wait()
+
             try:
                 event = q.get()
                 try:
@@ -185,7 +186,7 @@ class Consumer():
                         q.rescue(event)
                         sleep(1)
                     else:
-                        self.logging.warn("Problem executing %s. Event rescue is disabled for module, event has been purged"%(str(fc),err))
+                        self.logging.warn("Problem executing consume. Event rescue is disabled for module {0}, event has been purged".format(self.name))
 
         self.logging.info('Function %s has stopped consuming queue %s'%(str(fc),str(q)))
 
@@ -201,3 +202,11 @@ class Consumer():
         in 'router/default.py' to ensure that *args and **kwargs is defined"""
 
         raise SetupError("You must define a consume function as consume(self, event, *args, **kwargs)")
+
+    def is_blocked(self):
+        '''
+        Convenience function to check if the module has been blocked (shut down).
+        This allows for implementing consumers (Actors) to run block checks in continuous loops
+        and properly exit when the router invokes stop()
+        '''
+        return self.__block.isSet()

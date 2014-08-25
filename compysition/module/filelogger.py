@@ -95,9 +95,14 @@ class FileLogger(Actor):
             else:
                 gevent.sleep(1)
 
+
     def consume(self, event, *args, **kwargs):
 
-        entry = "pid-{0} {1} {2}".format(event["data"][2], event["data"][3], event["data"][4])
+        if event["header"].get("event_id"):
+            entry = "pid-{0}, module={1} id={2} {3}".format(event["data"][2], event["data"][3], event["header"].get("request_id"), event["data"][4])
+        else:
+            entry = "pid-{0} {1} {2}".format(event["data"][2], event["data"][3], event["data"][4])
+
         entry = self.colorize(entry, event["data"][0])
 
         self.logger_queue.put((self.levels[event["data"][0]], entry))
