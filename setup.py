@@ -27,7 +27,7 @@ from setuptools.command.test import test as TestCommand
 import sys
 
 PROJECT = 'compysition'
-VERSION = '0.0.6'
+VERSION = '0.0.7'
 install_requires=['gevent>=1.0dev','argparse','greenlet>=0.3.2','jsonschema','prettytable','python-daemon',"pyyaml","configobj"]
 
 try:
@@ -83,6 +83,10 @@ setup(
     install_requires=install_requires,
     namespace_packages=[],
     packages=find_packages(),
+     package_data = {
+        # If any package contains *.txt or *.rst files, include them:
+        '': ['*.txt', '*.rst', '*.xml', '*.xsl', '*.conf'],
+    },
     zip_safe=False,
     entry_points={
         'console_scripts': ['compysition = compysition.bootstrap:main'],
