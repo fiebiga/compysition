@@ -23,6 +23,7 @@
 #
 
 from compysition import Actor
+from compysition.tools import RotatingFileHandler, LoggingConfigLoader
 import gevent
 from os import getpid
 from time import strftime, localtime
@@ -31,64 +32,40 @@ import logging
 import logging.handlers
 import os
 
-class RotatingFileHandler(logging.handlers.RotatingFileHandler):
-
-	def __init__(self, file_path, *args, **kwargs):
-		self.make_file(file_path)
-		super(RotatingFileHandler, self).__init__(file_path, *args, **kwargs)
-
-	def make_file(self, file_path):
-		file_dir = os.path.dirname(file_path)
-		if not os.path.isfile(file_path):
-			if not os.path.exists(file_dir):
-				self.make_file_dir(file_dir)
-			open(file_path, 'w+')
-
-	def make_file_dir(self, file_path):
-		sub_path = os.path.dirname(file_path)
-		if not os.path.exists(sub_path):
-			self.make_file_dir(sub_path)
-		if not os.path.exists(file_path):
-			os.mkdir(file_path)
-
 class FileLogger(Actor):
     '''**Prints incoming events to a log file for debugging.**
     '''
 
-    def __init__(self, name, filepath, *args, **kwargs):
+    def __init__(self, name, filename, *args, **kwargs):
         Actor.__init__(self, name, *args, **kwargs)
-        self.filepath = filepath
-        self.levels={0:logging.CRITICAL,
-                     1:logging.CRITICAL,
-                     2:logging.CRITICAL,
-                     3:logging.ERROR,
-                     4:logging.WARNING,
-                     5:logging.INFO,
-                     6:logging.INFO,
-                     7:logging.DEBUG} # For legacy support. Ultimately, let's make the router use these numbers to begin with.
+        self.config = LoggingConfigLoader(**kwargs)
+        self.filepath = "{0}/{1}".format(self.config.config['directory'], filename)
+        
         self.colors={
-            0:"\x1B[0;35m",
-            1:"\x1B[1;35m",
-            2:"\x1B[0;31m",
-            3:"\x1B[1;31m",
-            4:"\x1B[1;33m",
-            5:"\x1B[1;30m",
-            6:"\x1B[1;37m",
-            7:"\x1B[1;37m"}
+            logging.CRITICAL:"\x1B[0;35m",  # Purple
+            logging.ERROR:"\x1B[1;31m",     # Red
+            logging.WARNING:"\x1B[1;33m",   # Orange
+            logging.INFO:None,              # No Coloring
+            logging.DEBUG:"\x1B[1;37m"}     # White
+
         self.logger_queue = gevent.queue.Queue()
 
         self.logger = logging.getLogger("filelogger")
-        logHandler = RotatingFileHandler(r'{0}'.format(self.filepath), maxBytes=209715200, backupCount=10)
+        logHandler = RotatingFileHandler(r'{0}'.format(self.filepath), maxBytes=self.config.config['maxBytes'], backupCount=self.config.config['backupCount'])
         logFormatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
         logHandler.setFormatter(logFormatter)
         self.logger.addHandler(logHandler)
-        self.logger.setLevel(logging.INFO)
+        self.logger.setLevel(self.config.config['level'])
 
     def preHook(self):
         gevent.spawn(self.go)
 
     def go(self):
-        while True:
+        """
+        Consumes a private queue, expects the event in the queue to be in a tuple,
+        in the format of (log_level (int), 
+        """
+        while not self.is_blocked():
             if self.logger_queue.qsize() > 0:
                 entry = self.logger_queue.get()
                 self.logger.log(entry[0], entry[1])
@@ -105,7 +82,10 @@ class FileLogger(Actor):
 
         entry = self.colorize(entry, event["data"][0])
 
-        self.logger_queue.put((self.levels[event["data"][0]], entry))
+        self.logger_queue.put((event["data"][0], entry))
 
     def colorize(self, message, level):
-        return self.colors[level]+message+"\x1B[0m"
+        color = self.colors[level]
+        if color is not None:
+            message = color + message + "\x1B[0m"
+        return message

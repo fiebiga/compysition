@@ -26,22 +26,36 @@
 from compysition import Actor
 from time import strftime, localtime
 from time import time
-
+from configobj import ConfigObj
+import logging
 
 class LogLevelFilter(Actor):
-    '''**Filters Compysition log events.**
+    '''**Filters Compysition log events for use by non-traditional logging modules (ones that don't implement a pythonic logger to
+    inherently filter, and ones that may initiate more complex logic chains after the logging module)**
 
         name(str)       :   The name of the module.
 
         max_level(bool) :   The maximum log level to show.
-                            Default: 6
+                            Default: logging.INFO
     '''
 
-    def __init__(self, name, max_level=6, *args, **kwargs):
+    def __init__(self, name, max_level=logging.INFO, config_file=None, *args, **kwargs):
         Actor.__init__(self, name, *args, **kwargs)
         self.name=name
-        self.max_level=max_level
+
+        if config_file is None:
+            self.max_level=max_level
+        else:
+            try:
+                config = ConfigObj(config_file)
+                logging_opts = config.get('logging')
+                self.max_level = getattr(logging, logging_opts['level'].upper(), None)
+            except Exception as error:
+                self.logging.error("Unable to load logging level from logging.conf. Using default values: Error is {0}".format(error))
+                self.max_level=max_level
 
     def consume(self, event, *args, **kwargs):
-        if event["data"][0] <= self.max_level:
-            self.queuepool.outbox.put(event)
+        if event["data"][0] >= self.max_level:
+            self.send_event(event)
+        else:
+            del event

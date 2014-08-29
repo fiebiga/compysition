@@ -42,3 +42,4 @@ from compysition.tools.consumer import Consumer
 from compysition.tools.qlogging import QLogging
 from compysition.tools.queuepool import QueuePool
 from compysition.tools.measure import Measure
+from compysition.tools.logmodule import *

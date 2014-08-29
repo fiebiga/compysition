@@ -27,16 +27,13 @@
 from compysition.tools import CompysitionQueue
 from time import time
 from os import getpid
+import logging
 
 class QLogging():
 
     '''
-    Generates Compysition formatted log messages following the Syslog priority
-    definition.
-
-    Generated logs are stored in a local queue <self.logs>.  It is up to an
-    external process the consume this queue.
-
+    Generates Compysition logging events, following the pythonic logging module priority levels
+    Generated logs are stored in a local queue <self.logs>.  It is up to an external process the consume this queue.
     '''
 
     def __init__(self, name):
@@ -47,47 +44,28 @@ class QLogging():
     def __log(self, level, message):
         self.logs.put({"header":{},"data":(level, time(), self.pid, self.name, message)})
 
-    def emergency(self, message):
-        """Generates a log message with priority emergency(0).
-        """
-        self.__log(0, message)
-    emerg=emergency
-
-    def alert(self, message):
-        """Generates a log message with priority alert(1).
-        """
-        self.__log(1, message)
-
     def critical(self, message):
-        """Generates a log message with priority critical(2).
+        """Generates a log message with priority logging.CRITICAL
         """
-        self.__log(2, message)
-    crit=critical
+        self.__log(logging.CRITICAL, message)
 
     def error(self, message):
         """Generates a log message with priority error(3).
         """
-        self.__log(3, message)
-    err=error
+        self.__log(logging.ERROR, message)
 
-    def warning(self, message):
-        """Generates a log message with priority warning(4).
+    def warn(self, message):
+        """Generates a log message with priority logging.WARN
         """
-        self.__log(4, message)
-    warn=warning
+        self.__log(logging.WARN, message)
+    warning=warn
 
-    def notice(self, message):
-        """Generates a log message with priority notice(5).
+    def info(self, message):
+        """Generates a log message with priority logging.INFO.
         """
-        self.__log(5, message)
-
-    def informational(self, message):
-        """Generates a log message with priority informational(6).
-        """
-        self.__log(6, message)
-    info=informational
+        self.__log(logging.INFO, message)
 
     def debug(self, message):
-        """Generates a log message with priority debug(7).
+        """Generates a log message with priority logging.DEBUG
         """
-        self.__log(7, message)
+        self.__log(logging.DEBUG, message)
