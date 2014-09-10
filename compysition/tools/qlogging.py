@@ -41,31 +41,35 @@ class QLogging():
         self.name=name
         self.pid=getpid()
 
-    def __log(self, level, message):
-        self.logs.put({"header":{},"data":(level, time(), self.pid, self.name, message)})
+    def __log(self, level, message, event_id=None):
+        self.logs.put({"header":{"event_id":event_id},"data":{"level":level,
+                                                             "time":time(),
+                                                             "pid":self.pid,
+                                                             "name":self.name,
+                                                             "message":message}})
 
-    def critical(self, message):
+    def critical(self, message, event_id=None):
         """Generates a log message with priority logging.CRITICAL
         """
         self.__log(logging.CRITICAL, message)
 
-    def error(self, message):
+    def error(self, message, event_id=None):
         """Generates a log message with priority error(3).
         """
         self.__log(logging.ERROR, message)
 
-    def warn(self, message):
+    def warn(self, message, event_id):
         """Generates a log message with priority logging.WARN
         """
         self.__log(logging.WARN, message)
     warning=warn
 
-    def info(self, message):
+    def info(self, message, event_id=None):
         """Generates a log message with priority logging.INFO.
         """
         self.__log(logging.INFO, message)
 
-    def debug(self, message):
+    def debug(self, message, event_id=None):
         """Generates a log message with priority logging.DEBUG
         """
         self.__log(logging.DEBUG, message)

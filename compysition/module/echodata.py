@@ -41,14 +41,13 @@ class EchoData(Actor):
     def __init__(self, name, capitalize=False, key=None, *args, **kwargs):
         Actor.__init__(self, name, *args, **kwargs)
         self.capitalize=capitalize
-        self.logging.info("Initialized")
         self.key = key or self.name
 
     def consume(self, event, *args, **kwargs):
-        self.logging.info("Got request with headers: {0}".format(event['header']))
-        self.logging.info("Got request with data: {0}".format(event['data']))
+        self.logging.info("Got request with headers: {0}".format(event['header']), event_id=event['header']['event_id'])
+        self.logging.info("Got request with data: {0}".format(event['data']), event_id=event['header']['event_id'])
         xml = event['data']['XML']
         xml += "** Touched by {} ***".format(self.name)
         event['data'] = xml
-        self.logging.info("Replying to request: {0}".format(event['data']))
-        self.queuepool.outbox.put(event)
+        self.logging.info("Replying to request: {0}".format(event['data']), event_id=event['header']['event_id'])
+        self.send_event(event)

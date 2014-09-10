@@ -28,5 +28,5 @@ class BlockingTest(Actor):
         print("Received an event: {0}".format(event))
         print("Module event consumption is not being blocked")
         if self.log_entry:
-            self.logging.info("Received an event: {0}".format(event))
-            self.logging.info("Module event consumption is not being blocked")
+            self.logging.info("Received an event: {0}".format(event), event_id=event['header']['event_id'])
+            self.logging.info("Module event consumption is not being blocked", event_id=event['header']['event_id'])

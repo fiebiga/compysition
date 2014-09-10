@@ -36,10 +36,11 @@ class FileLogger(Actor):
     '''**Prints incoming events to a log file for debugging.**
     '''
 
-    def __init__(self, name, filename, *args, **kwargs):
+    def __init__(self, name, filename, colorize=False, *args, **kwargs):
         Actor.__init__(self, name, *args, **kwargs)
         self.config = LoggingConfigLoader(**kwargs)
         self.filepath = "{0}/{1}".format(self.config.config['directory'], filename)
+        self.colorize = colorize
         
         self.colors={
             logging.CRITICAL:"\x1B[0;35m",  # Purple
@@ -63,7 +64,7 @@ class FileLogger(Actor):
     def go(self):
         """
         Consumes a private queue, expects the event in the queue to be in a tuple,
-        in the format of (log_level (int), 
+        in the format of (log_level (int), message)
         """
         while not self.is_blocked():
             if self.logger_queue.qsize() > 0:
@@ -74,17 +75,23 @@ class FileLogger(Actor):
 
 
     def consume(self, event, *args, **kwargs):
+        pid = event["data"].get("pid", None)
+        module_name = event["data"].get("name", None)
+        event_id = event["header"].get("event_id", None)
+        message = event["data"].get("message", None)
+        level = event["data"].get("level", None)
 
-        if event["header"].get("event_id"):
-            entry = "pid-{0}, module={1} id={2} {3}".format(event["data"][2], event["data"][3], event["header"].get("request_id"), event["data"][4])
+        if event_id:
+            entry = "pid={0}, module={1}, event_id={2}, Message: {3}".format(pid, module_name, event_id, message)
         else:
-            entry = "pid-{0} {1} {2}".format(event["data"][2], event["data"][3], event["data"][4])
+            entry = "pid={0}, module={1}, Message: {2}".format(pid, module_name, message)
 
-        entry = self.colorize(entry, event["data"][0])
+        if self.colorize:
+            entry = self.colorize_entry(entry, level)
 
-        self.logger_queue.put((event["data"][0], entry))
+        self.logger_queue.put((level, entry))
 
-    def colorize(self, message, level):
+    def colorize_entry(self, message, level):
         color = self.colors[level]
         if color is not None:
             message = color + message + "\x1B[0m"

@@ -41,28 +41,23 @@ class BasicAuth(Actor):
     def __init__(self, name, capitalize=False, key=None, *args, **kwargs):
         Actor.__init__(self, name, *args, **kwargs)
         self.capitalize=capitalize
-        self.logging.info("Initialized")
         self.key = key or self.name
         self.caller = 'wsgi'
 
         self.createQueue('errors')
 
     def consume(self, event, *args, **kwargs):
-        self.logging.info("[{0}] Got event with headers: {1}".format(event['header']['event_id'], event['header']))
         try:
-            self.logging.info("Trying to extract authorization data")
             authorization = event['header'][self.caller]['environment']['HTTP_AUTHORIZATION']
-            self.logging.info("Extracted authorization data: {}".format(authorization))
             user, password = base64.decodestring(authorization.split(' ')[1]).split(':')
-            self.logging.info("User: {}, Password: {}".format(user, password))
             if user == 'testuser' and password == 'testpassword':
-                self.logging.info("Authorization successful")
+                self.logging.info("Authorization successful", event_id=event['header']['event_id'])
                 self.send_event(event)
             else:
-                message = "[{0}] Authorization Failed for user {}".format(event['header']['event_id'], user)
-                self.logging.info(message)
+                message = "Authorization Failed for user {0}".format(user)
+                self.logging.info(message, event_id=event['header']['event_id'])
                 raise Exception(message)
         except:
             event['header'].get(self.caller, {}).update({'status': '401 Unauthorized'})
             event['header'].get(self.caller, {}).get('http', []).append(('WWW-Authenticate', 'Basic realm="CUA Integrations"'))
-            self.queuepool.errors.put(event)
+            self.send_error(event)

@@ -27,7 +27,7 @@ from setuptools.command.test import test as TestCommand
 import sys
 
 PROJECT = 'compysition'
-VERSION = '0.0.7'
+VERSION = '0.0.8'
 install_requires=['gevent>=1.0dev','argparse','greenlet>=0.3.2','jsonschema','prettytable','python-daemon',"pyyaml","configobj"]
 
 try:

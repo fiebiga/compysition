@@ -95,11 +95,10 @@ class WSGI(Actor):
             spawn(self.__serve)
 
     def application(self, env, start_response):
-        self.logging.info('UCI Received Message')
         response_queue = ManagedQueue()
         self.responders.update({response_queue.label: start_response})
         request = Request(env)
-        message = {
+        event = {
             "header": {
                 self.key: {
                     "request_id": response_queue.label,
@@ -113,24 +112,25 @@ class WSGI(Actor):
             "data": None
         }
         try:
-            message.update({"data":request.input})
-            message['header']['event_id'] = message['header']['wsgi']['request_id'] # event_id is required for certain modules to track same event
+            event.update({"data":request.input})
+            event['header']['event_id'] = event['header']['wsgi']['request_id'] # event_id is required for certain modules to track same event
+            self.logging.info('Received Message', event_id=event['header']['event_id'])
             if env['PATH_INFO'] == self.base_path:
-                self.logging.info("[{0}] Putting received message on outbox {1}".format(message['header']['event_id'], env['PATH_INFO']))
-                self.queuepool.outbox.put(message)
+                self.logging.info("Putting received message on outbox {0}".format(env['PATH_INFO']), event_id=event['header']['event_id'])
+                self.queuepool.outbox.put(event)
             else:
                 outbox_path = env['PATH_INFO'].lstrip("{0}/".format(self.base_path)).split('/')[0]
-                self.logging.info("[{0}] Putting received message on outbox {1}".format(message['header']['event_id'], outbox_path))
-                getattr(self.queuepool, outbox_path).put(message)
-            start_response(self.default_status, message['header'][self.key]['http'])
+                self.logging.info("Putting received message on outbox {0}".format(outbox_path), event_id=event['header']['event_id'])
+                getattr(self.queuepool, outbox_path).put(event)
+            start_response(self.default_status, event['header'][self.key]['http'])
             return response_queue
         except Exception as err:
-            start_response('404 Not Found', message['header'][self.key]['http'])
-            return "A problem occurred processing your request. Reason: %s"%(err)
+            start_response('404 Not Found', event['header'][self.key]['http'])
+            return "A problem occurred processing your request. Reason: {0}".format(err)
 
     def consume(self, event, *args, **kwargs):
         #pdb.set_trace()
-        self.logging.debug("[{0}] WSGI Received Response from origin: {1}".format(event['header']['event_id'], kwargs.get('origin')))
+        self.logging.debug("WSGI Received Response from origin: {0}".format(kwargs.get('origin')), event_id=event['header']['event_id'])
         header = event['header'][self.key]
         request_id = header['request_id']
         response_queue = ManagedQueue(request_id)

@@ -56,7 +56,6 @@ class Transformer(Actor):
 
 
     def consume(self, event, *args, **kwargs):
-        self.logging.info("[{0}] Transforming XML...".format(event['header']['event_id']))
         if self.print_input_output:
             f = open('logs/{0}_transform_inbox.txt'.format(self.key),'w')
             f.write(b"{0}".format(event['data'])) # python will convert \n to os.linesep
@@ -66,7 +65,7 @@ class Transformer(Actor):
             original_xml = etree.fromstring(event['data'])
             transformed_xml = self.transform(original_xml)
             event['data'] = etree.tostring(transformed_xml)
-
+            self.logging.info("Successfully transformed XML", event_id=event['header']['event_id'])
             self.send_event(event)
         except KeyError:
             event['header'].get(self.caller, {}).update({'status': '400 Bad Request'})
@@ -85,4 +84,4 @@ class Transformer(Actor):
         try:
             return etree.XSLT(etree.parse(path))
         except Exception as e:
-            self.logging.error("Unable to load XSLT at {}:{}".format(path, e))
+            self.logging.error("Unable to load XSLT at {0}:{1}".format(path, e))

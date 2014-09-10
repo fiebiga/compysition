@@ -69,7 +69,7 @@ class Header(Actor):
 
     def consume(self, event, *args, **kwargs):
         event=self.addHeader(event)
-        self.queuepool.outbox.put(event)
+        self.send_event(event)
 
     def __doHeader(self, event):
         event["header"][self.key]=self.header
@@ -79,5 +79,5 @@ class Header(Actor):
         try:
             return self.expr%event["data"]
         except Exception as err:
-            self.logging.error("String replace failed.  Reason: %s"%(err))
+            self.logging.error("String replace failed.  Reason: {0}".format(err))
             return event

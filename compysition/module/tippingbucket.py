@@ -89,7 +89,7 @@ class TippingBucket(Actor):
         self.buff_size+=len((event["data"]))
 
         if self.size > 0 and self.buff_size > self.size:
-            self.logging.debug("Size of buffer (%s) exceeded. Flushed."%(self.size))
+            self.logging.debug("Size of buffer ({0}) exceeded. Flushed.".format(self.size))
             self.flushBuffer()
 
         if self.events > 0 and self.buff_events > self.events:
