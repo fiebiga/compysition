@@ -159,7 +159,6 @@ class Default():
         self.setupDefaultConnections()
 
         for module in self.pool.list():
-            print("Started {0}".format(module.name))
             module.start()
 
         self.log_module.start()
