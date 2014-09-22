@@ -2,9 +2,10 @@
 #
 # -*- coding: utf-8 -*-
 #
-#  __init__.py
+#  error.py
 #
-#  Copyright 2013 Jelle Smet <development@smetj.net>
+#  Copyright 2014 Adam Fiebig <fiebig.adam@gmail.com>
+#  Originally based on 'wishbone' project by smetj
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -23,20 +24,51 @@
 #
 #
 
+
 class QueueLocked(Exception):
     pass
 
+
 class QueueEmpty(Exception):
-    pass
+    def __init__(self, message, waitUntilFull, waitUntilContent):
+        Exception.__init__(self, message)
+        self.waitUntilFull = waitUntilFull
+        self.waitUntilContent = waitUntilContent
+
 
 class QueueFull(Exception):
-    pass
+    def __init__(self, message, waitUntilEmpty, waitUntilFree):
+        Exception.__init__(self, message)
+        self.waitUntilEmpty = waitUntilEmpty
+        self.waitUntilFree = waitUntilFree
+
 
 class QueueMissing(Exception):
     pass
 
+
 class QueueOccupied(Exception):
     pass
 
+
+class QueueConnected(Exception):
+    pass
+
+
 class SetupError(Exception):
+    pass
+
+
+class ReservedName(Exception):
+    pass
+
+
+class ModuleInitFailure(Exception):
+    pass
+
+
+class NoSuchModule(Exception):
+    pass
+
+class NoConnectedQueues(Exception):
     pass

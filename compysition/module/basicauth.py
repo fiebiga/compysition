@@ -44,18 +44,16 @@ class BasicAuth(Actor):
         self.key = key or self.name
         self.caller = 'wsgi'
 
-        self.createQueue('errors')
-
     def consume(self, event, *args, **kwargs):
         try:
             authorization = event['header'][self.caller]['environment']['HTTP_AUTHORIZATION']
             user, password = base64.decodestring(authorization.split(' ')[1]).split(':')
             if user == 'testuser' and password == 'testpassword':
-                self.logging.info("Authorization successful", event_id=event['header']['event_id'])
+                self.logger.info("Authorization successful", event_id=event['header']['event_id'])
                 self.send_event(event)
             else:
                 message = "Authorization Failed for user {0}".format(user)
-                self.logging.info(message, event_id=event['header']['event_id'])
+                self.logger.info(message, event_id=event['header']['event_id'])
                 raise Exception(message)
         except:
             event['header'].get(self.caller, {}).update({'status': '401 Unauthorized'})

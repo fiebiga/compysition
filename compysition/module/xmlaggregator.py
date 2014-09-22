@@ -42,7 +42,7 @@ class XMLAggregator(Actor):
         Actor.__init__(self, name, *args, **kwargs)
         self.subjects = list(args)
         self.root = self.subjects.pop()
-        self.logging.info("Initialized with: {}".format(self.subjects))
+        self.logger.info("Initialized with: {}".format(self.subjects))
 
     def consume(self, event, *args, **kwargs):
         #pdb.set_trace()

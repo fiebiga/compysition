@@ -23,7 +23,7 @@
 #  MA 02110-1301, USA.
 
 from compysition import Actor
-from compysition.tools.xmlmatcher import MatchedEvent
+from util import MatchedEvent
 
 class XMLMatcher(Actor):
     '''**Holds event data until a matching request id, then appends the match to the specified xpath of the XML in the data.**
@@ -65,8 +65,12 @@ class XMLMatcher(Actor):
                     self.send_event(event)
                     del self.events[request_id]
             else:
-                self.events[request_id] = MatchedEvent(self.key, self.inbound_queues.keys())
+                inbound_queues = []
+                for queue in self.pool.listInboundQueues(names=True):
+                    inbound_queues.append(queue)
+
+                self.events[request_id] = MatchedEvent(self.key, inbound_queues)
                 self.events.get(request_id).report_inbox(inbox_origin, event['data'])
         except Exception as error:
-            self.logging.warn("Could not process incoming event. Error Message: {0}".format(error), event_id=event['header']['event_id'])
+            self.logger.warn("Could not process incoming event. Error Message: {0}".format(error), event_id=event['header']['event_id'])
 

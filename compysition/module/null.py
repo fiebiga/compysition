@@ -1,10 +1,9 @@
 #!/usr/bin/env python
-#
 # -*- coding: utf-8 -*-
 #
 #  null.py
 #
-#  Copyright 2013 Jelle Smet <development@smetj.net>
+#  Copyright 2014 Adam Fiebig <fiebig.adam@gmail.com>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -27,22 +26,34 @@ from compysition import Actor
 
 
 class Null(Actor):
-    '''**Purges incoming events..**
 
-    Useful to discard a stream of events.
+    '''**Purges incoming events.**
 
-    Parameters:
+    Purges incoming events.
 
-        - name(str):  The name of the module
+
+        Parameters:
+
+        - name(str)
+           |  The name of the module.
+
+        - size(int)
+           |  The default max length of each queue.
+
+        - frequency(int)
+           |  The frequency in seconds to generate metrics.
 
 
     Queues:
 
-        - inbox:    incoming events
+        - inbox
+           |  incoming events
     '''
 
-    def __init__(self, name, *args, **kwargs):
-        Actor.__init__(self, name, *args, **kwargs)
+    def __init__(self, name, size=100, frequency=1):
+
+        Actor.__init__(self, name, size, frequency)
+        self.name = name
 
     def consume(self, event, *args, **kwargs):
-        pass
+        del event

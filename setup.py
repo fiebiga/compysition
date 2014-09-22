@@ -3,8 +3,9 @@
 #
 #  setup.py
 #
-#  Copyright 2013 Jelle Smet <development@smetj.net>
-#
+#  Copyright 2014 Adam Fiebig <fiebig.adam@gmail.com>
+#  Originally based on "wishbone" project by smetj
+#  
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 3 of the License, or
@@ -27,30 +28,35 @@ from setuptools.command.test import test as TestCommand
 import sys
 
 PROJECT = 'compysition'
-VERSION = '0.0.8'
-install_requires=['gevent>=1.0dev','argparse','greenlet>=0.3.2','jsonschema','prettytable','python-daemon',"pyyaml","configobj"]
+VERSION = '1.0.0'
+
+install_requires = ['gevent>=1.1',
+                    'greenlet>=0.3.2',
+                    'argparse==1.2.1',
+                    'jsonschema==2.3.0',
+                    'prettytable==0.7.2',
+                    'python-daemon==1.6',
+                    'pyyaml==3.11',
+                    'msgpack-python==0.4.2',
+                    'pyzmq==14.3.1',
+                    'amqp==1.4.5',
+                    'grequests==0.2.0',
+                    'jinja2==2.7.3',
+                    'jsonschema==2.3.0',
+                    'gearman==2.0.2',
+                    'pycrypto==2.6.1',
+                    'flask==0.10.1']
 
 try:
     long_description = open('README.rst', 'rt').read()
 except IOError:
     long_description = ''
 
-class PyTest(TestCommand):
-    def finalize_options(self):
-        TestCommand.finalize_options(self)
-        self.test_args = []
-        self.test_suite = True
-
-    def run_tests(self):
-        import pytest
-        errcode = pytest.main(self.test_args)
-        sys.exit(errcode)
-
 setup(
     name=PROJECT,
     version=VERSION,
 
-    description='A Python application framework and CLI tool to build and manage async event pipeline servers with minimal effort, forked from the wishbone project',
+    description='Build event pipeline servers with minimal effort.',
     long_description=long_description,
 
     author='Adam Fiebig',
@@ -59,68 +65,22 @@ setup(
     url='https://github.com/fiebiga/compysition',
     download_url='https://github.com/fiebiga/compysition/tarball/master',
 
-    classifiers=['Development Status :: 4 - Beta',
+    classifiers=['Development Status :: 5 - Production/Stable',
                  'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
                  'Programming Language :: Python',
                  'Programming Language :: Python :: 2',
-                 'Programming Language :: Python :: 2.6',
                  'Programming Language :: Python :: 2.7',
                  'Programming Language :: Python :: 3.3',
                  'Programming Language :: Python :: Implementation :: PyPy',
                  'Intended Audience :: Developers',
                  'Intended Audience :: System Administrators',
                  ],
-    extras_require={
-        'testing': ['pytest'],
-    },
     platforms=['Linux'],
-    test_suite='compysition.test.test_compysition',
-    cmdclass={'test': PyTest},
     scripts=[],
-
     provides=[],
-    dependency_links=['https://github.com/surfly/gevent/tarball/master#egg=gevent-1.0dev'],
     install_requires=install_requires,
     namespace_packages=[],
     packages=find_packages(),
-     package_data = {
-        # If any package contains *.txt or *.rst files, include them:
-        '': ['*.txt', '*.rst', '*.xml', '*.xsl', '*.conf'],
-    },
     zip_safe=False,
-    entry_points={
-        'console_scripts': ['compysition = compysition.bootstrap:main'],
-        'compysition.builtin.flow': [
-            'fanout = compysition.module.fanout:Fanout',
-            'funnel = compysition.module.funnel:Funnel',
-            'lockbuffer = compysition.module.lockbuffer:LockBuffer',
-            'roundrobin = compysition.module.roundrobin:RoundRobin',
-            'tippingbucket = compysition.module.tippingbucket:TippingBucket'
-             ],
-        'compysition.builtin.logging': [
-            'humanlogformatter = compysition.module.humanlogformatter:HumanLogFormatter',
-            'loglevelfilter = compysition.module.loglevelfilter:LogLevelFilter'
-            ],
-        'compysition.builtin.metrics': [
-            'graphite = compysition.module.graphite:Graphite',
-            ],
-        'compysition.builtin.function': [
-            'header = compysition.module.header:Header',
-            ],
-        'compysition.builtin.input': [
-            'testevent = compysition.module.testevent:TestEvent'
-            ],
-        'compysition.builtin.output': [
-            'null = compysition.module.null:Null',
-            'stdout = compysition.module.stdout:STDOUT',
-            'syslog = compysition.module.wbsyslog:Syslog',
-            'slow = compysition.module.slow:Slow',
-            ],
-        'compysition.input': [
-            ],
-        'compysition.output': [
-            ],
-        'compysition.function': [
-            ]
-    }
+    dependency_links=['https://github.com/surfly/gevent/tarball/master#egg=gevent-1.1'],
 )

@@ -1,33 +1,31 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-#       testevent.py
+#  testevent.py
 #
-#       Copyright 2014 Adam Fiebig fiebig.adam@gmail.com
+#  Copyright 2014 Adam Fiebig <fiebig.adam@gmail.com>
+#  Originally based on 'wishbone' project by smetj
 #
-#       Original testevent.py created by Jelle Smet <development@smetj.net>
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 3 of the License, or
+#  (at your option) any later version.
 #
-#       This program is free software; you can redistribute it and/or modify
-#       it under the terms of the GNU General Public License as published by
-#       the Free Software Foundation; either version 3 of the License, or
-#       (at your option) any later version.
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
 #
-#       This program is distributed in the hope that it will be useful,
-#       but WITHOUT ANY WARRANTY; without even the implied warranty of
-#       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#       GNU General Public License for more details.
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+#  MA 02110-1301, USA.
 #
-#       You should have received a copy of the GNU General Public License
-#       along with this program; if not, write to the Free Software
-#       Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-#       MA 02110-1301, USA.
 #
 
 from compysition import Actor
-from uuid import uuid4 as uuid
-from compysition.errors import QueueLocked, QueueFull, SetupError
-from gevent import sleep, spawn
-from gevent.event import Event
+from gevent import sleep
+
 
 class TestEvent(Actor):
 
@@ -54,9 +52,6 @@ class TestEvent(Actor):
                                     to generate the first event. Should have a value of >= 0
                                     default: 0
 
-    Queues:
-
-        - outbox:    Contains the generated events.
     '''
 
     def __init__(self, name, data_value="test", header_value={}, interval=1, delay=0, *args, **kwargs):
@@ -71,39 +66,21 @@ class TestEvent(Actor):
         else:
             self.sleep = self.doSleep
 
-        self.throttle=Event()
-        self.throttle.set()
-
-    def consume(self, event, *args, **kwargs):
-        self.logging.error("THIS SHOULDNT HAVE BEEN CALLED")
-
     def preHook(self):
-        spawn(self.go)
+        self.threads.spawn(self.produce)
 
-    def go(self):
-        switcher = self.getContextSwitcher(100)
+    def produce(self):
 
-        if self.delay > 0:
-            self.doSleep(self.delay)
-
-        while switcher():
-            self.throttle.wait()
-            try:
-                event = {"header":self.header_value,"data":self.data_value}
-                event['header']['event_id'] = uuid()
-                self.send_event({"header":self.header_value,"data":self.data_value})
-            except (QueueFull, QueueLocked):
-                self.queuepool.outbox.waitUntilPutAllowed()
+        while self.loop():
+            event = {"header":self.header_value,"data":self.data_value}
+            event['header']['event_id'] = uuid()
+            self.send_event({"header":self.header_value,"data":self.data_value})
             self.sleep(self.interval)
 
-    def doSleep(self, interval):
-        sleep(interval)
+        self.logger.info("Stopped producing events.")
 
-    def doNoSleep(self, interval):
+    def __doSleep(self):
+        sleep(self.interval)
+
+    def __doNoSleep(self):
         pass
-
-    def enableThrottling(self):
-        self.throttle.clear()
-
-    def disableThrottling(self):
-        self.throttle.set()

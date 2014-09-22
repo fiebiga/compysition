@@ -46,7 +46,7 @@ class XMLFilter(Actor):
                                         - output: Outputs the event to 'error' queues connected to the module
                                         - log   : Output the text of an event to a log message, using the given log_level
                                         
-        - log_level (int):      (Default: 3) Only taken into account 
+        - log_level (int):      (Default: 3) Only taken into account when the filter_type is log
 
         - delete_event (bool):  (Default: True) If true, the module will delete a filtered event. If False, it will attempt to send the event on any connected
                                     error queues.
@@ -126,11 +126,11 @@ class XMLFilter(Actor):
 
                 
     def forward_event(self, event):
-        self.logging.info("XMLFilter {0} Forwarding event".format(self.name), event_id=event['header']['event_id'])
+        self.logger.info("XMLFilter {0} Forwarding event".format(self.name), event_id=event['header']['event_id'])
         self.send_event(event)
 
     def filter_event(self, event, message=None, *args, **kwargs):
-        self.logging.info("XMLFilter {0} Filtering event".format(self.name), event_id=event['header']['event_id'])
+        self.logger.info("XMLFilter {0} Filtering event".format(self.name), event_id=event['header']['event_id'])
 
         if self.filter_type == "delete":
             del event
@@ -138,15 +138,15 @@ class XMLFilter(Actor):
             self.send_error(event)
         elif self.filter_type == "log":
             if message is not None:
-                self.logging.error(message, event_id=event['header']['event_id'])
+                self.logger.error(message, event_id=event['header']['event_id'])
             else:
-                self.logging.error(event["data"], event_id=event['header']['event_id'])
+                self.logger.error(event["data"], event_id=event['header']['event_id'])
             del event
 
     def load_template(self, path):
         try:
             return etree.XSLT(etree.parse(path))
         except Exception as e:
-            self.logging.error("Unable to load XSLT at {0}:{1}".format(path, e))
+            self.logger.error("Unable to load XSLT at {0}:{1}".format(path, e))
             return None
 

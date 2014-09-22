@@ -23,21 +23,24 @@
 #
 
 from compysition import Actor
-from compysition.tools import RotatingFileHandler, LoggingConfigLoader
+from compysition.module.util import RotatingFileHandler, LoggingConfigLoader
 import gevent
+from gevent import queue
 from os import getpid
 from time import strftime, localtime
 from time import time
 import logging
 import logging.handlers
 import os
+import traceback
 
 class FileLogger(Actor):
     '''**Prints incoming events to a log file for debugging.**
     '''
 
     def __init__(self, name, filename, colorize=False, *args, **kwargs):
-        Actor.__init__(self, name, *args, **kwargs)
+        super(FileLogger, self).__init__(name, *args, **kwargs)
+
         self.config = LoggingConfigLoader(**kwargs)
         self.filepath = "{0}/{1}".format(self.config.config['directory'], filename)
         self.colorize = colorize
@@ -49,42 +52,58 @@ class FileLogger(Actor):
             logging.INFO:None,              # No Coloring
             logging.DEBUG:"\x1B[1;37m"}     # White
 
-        self.logger_queue = gevent.queue.Queue()
+        self.logger_queue = queue.Queue() 
 
-        self.logger = logging.getLogger("filelogger")
+        self.file_logger = logging.getLogger(self.name)
+
         logHandler = RotatingFileHandler(r'{0}'.format(self.filepath), maxBytes=self.config.config['maxBytes'], backupCount=self.config.config['backupCount'])
         logFormatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
         logHandler.setFormatter(logFormatter)
-        self.logger.addHandler(logHandler)
-        self.logger.setLevel(self.config.config['level'])
+        self.file_logger.addHandler(logHandler)
+        self.file_logger.setLevel(self.config.config['level'])
 
     def preHook(self):
-        gevent.spawn(self.go)
+        self.threads.spawn(self.__go)
 
-    def go(self):
+    def __go(self):
         """
         Consumes a private queue, expects the event in the queue to be in a tuple,
         in the format of (log_level (int), message)
         """
-        while not self.is_blocked():
+        while self.loop():
             if self.logger_queue.qsize() > 0:
                 entry = self.logger_queue.get()
-                self.logger.log(entry[0], entry[1])
+                try:
+                    self.file_logger.log(entry[0], entry[1])
+                except Exception as err:
+                    print traceback.format_exc()
             else:
                 gevent.sleep(1)
 
+        while True:
+            if self.logger_queue.qsize() > 0:
+                entry = self.logger_queue.get()
+                
+                try:
+                    self.file_logger.log(entry[0], entry[1])
+                except Exception as err:
+                    print traceback.format_exc()
+            else:
+                break
+
+
 
     def consume(self, event, *args, **kwargs):
-        pid = event["data"].get("pid", None)
         module_name = event["data"].get("name", None)
         event_id = event["header"].get("event_id", None)
         message = event["data"].get("message", None)
         level = event["data"].get("level", None)
 
+
         if event_id:
-            entry = "pid={0}, module={1}, event_id={2}, Message: {3}".format(pid, module_name, event_id, message)
+            entry = "module={0}, event_id={1}, Message: {2}".format(module_name, event_id, message)
         else:
-            entry = "pid={0}, module={1}, Message: {2}".format(pid, module_name, message)
+            entry = "module={0}, Message: {1}".format(module_name, message)
 
         if self.colorize:
             entry = self.colorize_entry(entry, level)

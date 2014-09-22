@@ -23,8 +23,8 @@
 
 from compysition import Actor
 from compysition.errors import QueueLocked
-from compysition.tools import ManagedQueue
-from compysition.tools.wsgi import Request
+from util.wsgi import Request
+from util.managedqueue import ManagedQueue
 from gevent import pywsgi, spawn, queue
 from uuid import uuid4 as uuid
 import pdb
@@ -114,14 +114,15 @@ class WSGI(Actor):
         try:
             event.update({"data":request.input})
             event['header']['event_id'] = event['header']['wsgi']['request_id'] # event_id is required for certain modules to track same event
-            self.logging.info('Received Message', event_id=event['header']['event_id'])
+            self.logger.info('Received Message', event_id=event['header']['event_id'])
             if env['PATH_INFO'] == self.base_path:
-                self.logging.info("Putting received message on outbox {0}".format(env['PATH_INFO']), event_id=event['header']['event_id'])
-                self.queuepool.outbox.put(event)
+                self.logger.info("Putting received message on outbox {0}".format(env['PATH_INFO']), event_id=event['header']['event_id'])
+                self.send_event(event, queue=self.pool.getQueue("outbox"))
             else:
                 outbox_path = env['PATH_INFO'].lstrip("{0}/".format(self.base_path)).split('/')[0]
-                self.logging.info("Putting received message on outbox {0}".format(outbox_path), event_id=event['header']['event_id'])
-                getattr(self.queuepool, outbox_path).put(event)
+                self.logger.info("Putting received message on outbox {0}".format(outbox_path), event_id=event['header']['event_id'])
+                self.send_event(event, queue=self.pool.getQueue(outbox_path))
+
             start_response(self.default_status, event['header'][self.key]['http'])
             return response_queue
         except Exception as err:
@@ -130,9 +131,10 @@ class WSGI(Actor):
 
     def consume(self, event, *args, **kwargs):
         #pdb.set_trace()
-        self.logging.debug("WSGI Received Response from origin: {0}".format(kwargs.get('origin')), event_id=event['header']['event_id'])
+        self.logger.debug("WSGI Received Response from origin: {0}".format(kwargs.get('origin')), event_id=event['header']['event_id'])
         header = event['header'][self.key]
         request_id = header['request_id']
+
         response_queue = ManagedQueue(request_id)
         start_response = self.responders.pop(request_id)  # Run this needed or not to be sure it's removed from memory with pop()
         start_response(header['status'], header['http'])  # Make sure we have all the headers so far
@@ -147,23 +149,14 @@ class WSGI(Actor):
                 result.update({key:value})
         return json.dumps(result)
 
-    def __setupQueues(self):
-        return
-        self.deleteQueue("inbox")
-        for resource in self.resources:
-            path=resource.keys()[0]
-            queue=resource[resource.keys()[0]]
-            self.createQueue(queue)
-            self.queue_mapping[path]=getattr(self.queuepool, queue)
-
     def __serve(self):
         if self.keyfile != None and self.certfile != None:
             self.__server = pywsgi.WSGIServer((self.address, self.port), self.application, keyfile=self.keyfile, certfile=self.certfile)
         else:
             self.__server = pywsgi.WSGIServer((self.address, self.port), self.application, log=None)
         self.__server.start()
-        self.logging.info("Serving on %s:%s"%(self.address, self.port))
+        self.logger.info("Serving on %s:%s"%(self.address, self.port))
         self.block()
-        self.logging.info("Stopped serving.")
         self.__server.stop()
-
+        self.logger.info("Stopped serving.")
+        self.__server.stop()

@@ -45,7 +45,7 @@ class Transformer(Actor):
 
     def __init__(self, name, xslt_path, add_to_header=False, print_input_output=False, *args, **kwargs):
         Actor.__init__(self, name, *args, **kwargs)
-        self.logging.info("Initialized")
+        self.logger.info("Initialized")
         self.subjects = args or None
         self.add_to_header = add_to_header or kwargs.get('add_to_header', False) or False
         self.key = kwargs.get('key', None) or self.name
@@ -65,7 +65,7 @@ class Transformer(Actor):
             original_xml = etree.fromstring(event['data'])
             transformed_xml = self.transform(original_xml)
             event['data'] = etree.tostring(transformed_xml)
-            self.logging.info("Successfully transformed XML", event_id=event['header']['event_id'])
+            self.logger.info("Successfully transformed XML", event_id=event['header']['event_id'])
             self.send_event(event)
         except KeyError:
             event['header'].get(self.caller, {}).update({'status': '400 Bad Request'})
@@ -84,4 +84,4 @@ class Transformer(Actor):
         try:
             return etree.XSLT(etree.parse(path))
         except Exception as e:
-            self.logging.error("Unable to load XSLT at {0}:{1}".format(path, e))
+            self.logger.error("Unable to load XSLT at {0}:{1}".format(path, e))
