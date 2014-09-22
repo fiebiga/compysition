@@ -81,6 +81,10 @@ setup(
     install_requires=install_requires,
     namespace_packages=[],
     packages=find_packages(),
+    package_data = {
+        # If any package contains *.txt or *.rst files, include them:
+        '': ['*.txt', '*.rst', '*.xml', '*.xsl', '*.conf'],
+    },
     zip_safe=False,
     dependency_links=['https://github.com/surfly/gevent/tarball/master#egg=gevent-1.1'],
 )
