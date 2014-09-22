@@ -1,2 +1,0 @@
-1) If a logging event is generated that cannot be consumed during a shutdown, the router will indefinitely hang on shutdown.
-	There should be some logic to flush unresolvable events from the system
