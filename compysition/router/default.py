@@ -54,17 +54,18 @@ class ModulePool():
 
 class Default():
 
-    def __init__(self, size=100, frequency=1):
+    def __init__(self, size=100, frequency=1, generate_metrics=False):
         signal(2, self.stop)
         signal(15, self.stop)
         self.pool = ModulePool()
         self.admin_pool = ModulePool()
         self.size = size
         self.frequency = frequency
+        self.generate_metrics=generate_metrics
 
-        self.metric_module = Null("null_metrics")
-        self.log_module = Null("null_logs")
-        self.failed_module = Null("null_faileds")
+        self.metric_module = self.__createModule(Null, "null_metrics")
+        self.log_module = self.__createModule(Null, "null_logs")
+        self.failed_module = self.__createModule(Null, "null_faileds")
 
         self.__running = False
         self.__block = event.Event()
@@ -116,39 +117,58 @@ class Default():
         arguments.'''
 
         try:
-            setattr(self.pool.module, name, module(name, size=self.size, frequency=self.frequency, *args, **kwargs))
+            setattr(self.pool.module, name, self.__createModule(module, name, *args, **kwargs))
         except Exception:
             raise ModuleInitFailure(traceback.format_exc())
 
     def registerLogModule(self, module, name, *args, **kwargs):
         """Initialize a log module for the router instance"""
-        self.log_module = module(name, size=self.size, frequency=self.frequency, *args, **kwargs)
+        self.log_module = self.__createModule(module, name, *args, **kwargs)
 
     def registerMetricModule(self, module, name, *args, **kwargs):
         """Initialize a metric module for the router instance"""
-        self.metric_module = module(name, size=self.size, frequency=self.frequency, *args, **kwargs)
+        self.metric_module = self.__createModule(module, name, *args, **kwargs)
 
     def registerFailedModule(self, module, name, *args, **kwargs):
         """Initialize a failed module for the router instance"""
-        self.failed_module = module(name, size=self.size, frequency=self.frequency, *args, **kwargs)
+        self.failed_module = self.__createModule(module, name, *args, **kwargs)
+
+    def __createModule(self, module, name, *args, **kwargs):
+        return module(name, size=self.size, frequency=self.frequency, generate_metrics=self.generate_metrics, *args, **kwargs)
 
     def setupDefaultConnections(self):
         '''Connect all log, metric, and failed queues to their respective modules
            If a log module has been registered but a failed module has not been, the failed module
            will default to also using the log module
         '''
+
+        if isinstance(self.failed_module, Null) and not isinstance(self.log_module, Null):
+            self.failed_module = self.log_module
+        else:
+            self.failed_module.connect("logs", self.log_module, "inbox", check_existing=False)
+
+        for module in self.pool.list():
+            module.connect("logs", self.log_module, "inbox", check_existing=False) 
+            module.connect("metrics", self.metric_module, "inbox", check_existing=False)
+            module.connect("failed", self.failed_module, "inbox", check_existing=False)
+
+        self.log_module.connect("logs", self.log_module, "inbox", check_existing=False)
+        self.metric_module.connect("logs", self.log_module, "inbox", check_existing=False)
+
+        """
         if isinstance(self.failed_module, Null) and not isinstance(self.log_module, Null):
             self.failed_module = self.log_module
         else:
             self.failed_module.connect("logs", self.log_module, "{0}_failed".format(self.failed_module.name))
 
         for module in self.pool.list():
-            module.connect("logs", self.log_module, "{0}_logs".format(module.name)) 
-            module.connect("metrics", self.metric_module, "{0}_metrics".format(module.name))
-            module.connect("failed", self.failed_module, "{0}_failed".format(module.name))
+            module.connect("logs", self.log_module, "{0}_logs".format(module.name), check_existing=False) 
+            module.connect("metrics", self.metric_module, "{0}_metrics".format(module.name), check_existing=False)
+            module.connect("failed", self.failed_module, "{0}_failed".format(module.name), check_existing=False)
 
         self.log_module.connect("logs", self.log_module, "{0}_logs".format(self.log_module.name))
         self.metric_module.connect("logs", self.log_module, "{0}_metrics".format(self.metric_module.name))
+        """
 
     def isRunning(self):
         return self.__running

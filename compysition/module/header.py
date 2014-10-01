@@ -63,8 +63,8 @@ class Header(Actor):
            |  Outgoing events.
     '''
 
-    def __init__(self, name, size=100, frequency=1, key=None, header={}, expr=None):
-        Actor.__init__(self, name, size, frequency)
+    def __init__(self, name, key=None, header={}, expr=None, *args, **kwargs):
+        Actor.__init__(self, name, *args, **kwargs)
         if key is None:
             self.key = name
         else:

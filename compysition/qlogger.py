@@ -28,25 +28,31 @@ from compysition.errors import QueueFull
 from time import time
 from os import getpid
 import logging
+from datetime import datetime
 
 class QLogger(object):
 
     '''
-    Generates Compysition formatted log messages following the Syslog priority
+    Generates Compysition formatted log messages following the python priority
     definition.
     '''
 
-    def __init__(self, name, queue):
+    def __init__(self, name, queue=None):
         self.name = name
         self.logs = queue
+        self.buffer = []
 
     def __log(self, level, message, event_id=None):
         while True:
             try:
-                self.logs.put({"header":{"event_id":event_id},"data":{"level":level,
-                                                        "time":time(),
+                event = {"header":{"event_id":event_id},"data":{"level":level,
+                                                        "time":datetime.now().strftime('%Y-%m-%d %H:%M:%S,%f')[:-3],
                                                         "name":self.name,
-                                                        "message":message}})
+                                                        "message":message}}
+                if self.logs is None:
+                    self.buffer.append(event)
+                else:
+                    self.logs.put(event)
                 break
             except QueueFull:
                 self.logs.waitUntilFree()
@@ -76,3 +82,16 @@ class QLogger(object):
         """Generates a log message with priority logging.DEBUG
         """
         self.__log(logging.DEBUG, message, event_id=event_id)
+
+    def connect_logs_queue(self, queue):
+        self.logs = queue
+        print "Log queue set to {0}".format(queue)
+        self.dump_buffer()
+
+    def dump_buffer(self):
+        while True:
+            try:
+                event = buffer.pop()
+                self.logs.put(event)
+            except Exception:
+                break

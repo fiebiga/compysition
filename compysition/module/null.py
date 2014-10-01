@@ -50,9 +50,9 @@ class Null(Actor):
            |  incoming events
     '''
 
-    def __init__(self, name, size=100, frequency=1):
+    def __init__(self, name, *args, **kwargs):
 
-        Actor.__init__(self, name, size, frequency)
+        Actor.__init__(self, name, *args, **kwargs)
         self.name = name
 
     def consume(self, event, *args, **kwargs):

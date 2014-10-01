@@ -27,6 +27,7 @@ from collections import deque
 from compysition.errors import QueueEmpty, QueueFull, ReservedName, QueueMissing
 from gevent import sleep
 from gevent.event import Event
+import gevent.queue as gqueue
 from time import time
 
 
@@ -39,9 +40,9 @@ class QueuePool(object):
     def __init__(self, size):
         self.__size = size
         self.queues = Container()
-        self.queues.metrics = Queue("metrics", max_size=size)
-        self.queues.logs = Queue("logs", max_size=size, fallthrough=False)
-        self.queues.failed = Queue("failed", max_size=size)
+        self.queues.metrics = Queue("metrics", maxsize=size)
+        self.queues.logs = Queue("logs", maxsize=size, fallthrough=False)
+        self.queues.failed = Queue("failed", maxsize=size)
         self.inbound_queues = Container()
         self.outbound_queues = Container()
         self.error_queues = Container()
@@ -99,7 +100,7 @@ class QueuePool(object):
         if name in ["metrics", "logs", "failed"]:
             raise ReservedName
 
-        queue = Queue(name, max_size=self.__size)
+        queue = Queue(name, maxsize=self.__size)
         setattr(self.queues, name, queue)
         setattr(self.error_queues, name, queue)
 
@@ -108,7 +109,7 @@ class QueuePool(object):
         if name in ["metrics", "logs", "failed"]:
             raise ReservedName
 
-        queue = Queue(name, max_size=self.__size)
+        queue = Queue(name, maxsize=self.__size)
         setattr(self.queues, name, queue)
         setattr(self.inbound_queues, name, queue)
 
@@ -122,10 +123,23 @@ class QueuePool(object):
         if queue.name in ["metrics", "logs", "failed"]:
             raise ReservedName
 
+        setattr(self.queues, name, queue)
+        setattr(self.outbound_queues, name, queue)
+
+    def addErrorQueue(self, queue, name=None):
+        '''Adds an existing outbound Queue.'''
+
+
+        if name is None:
+            name = queue.name
+
+        if queue.name in ["metrics", "logs", "failed"]:
+            raise ReservedName
+
 
 
         setattr(self.queues, name, queue)
-        setattr(self.outbound_queues, name, queue)
+        setattr(self.error_queues, name, queue)
 
     def addInboundQueue(self, queue, name=None):
         '''Adds an existing outbound Queue.'''
@@ -142,7 +156,7 @@ class QueuePool(object):
         if name in ["metrics", "logs", "failed"]:
             raise ReservedName
 
-        queue = Queue(name, max_size=self.__size)
+        queue = Queue(name, maxsize=self.__size)
         setattr(self.queues, queue.name, queue)
         setattr(self.outbound_queues, queue.name, queue)
 
@@ -155,6 +169,24 @@ class QueuePool(object):
         except:
             return False
 
+    def moveQueue(self, old_queue, new_queue):
+        try:
+            if old_queue.qsize() > 0:
+                while True:
+                    try:
+                        event = old_queue.next()
+                        new_queue.put(event)
+                    except StopIteration:
+                        break
+            setattr(self.queues, old_queue.name, new_queue)
+        except Exception as err:
+            raise Exception("Error moving queue {0} <{1}> to {2} <{3}>: {4}".format(old_queue.name, 
+                                                                          old_queue,
+                                                                          new_queue.name, 
+                                                                          new_queue,
+                                                                          err))
+
+
     def getQueue(self, name):
         '''Convenience funtion which returns the queue instance.'''
 
@@ -162,6 +194,12 @@ class QueuePool(object):
             return getattr(self.queues, name)
         except:
             raise QueueMissing
+
+    def createQueue(self, name):
+        '''Creates a non specific Queue for the pool. Usually these are queues used for administration of an actor.'''
+
+        queue = Queue(name, maxsize=self.__size)
+        setattr(self.queues, name, queue)
 
     def join(self):
         '''Blocks until all queues in the pool are empty.'''
@@ -174,13 +212,13 @@ class QueuePool(object):
             #         break
 
 
-class Queue(object):
-
+class Queue(gqueue.Queue):
+        
     '''A queue used to organize communication messaging between Compysition Actors.
 
     Parameters:
 
-        - max_size (int):   The max number of elements in the queue.
+        - maxsize (int):   The max number of elements in the queue.
                             Default: 1
 
     When a queue is created, it will drop all messages. This is by design.
@@ -194,144 +232,51 @@ class Queue(object):
 
     '''
 
-    def __init__(self, name, max_size=1, fallthrough=True, *args, **kwargs):
-        self.max_size = max_size
-        self.id = str(uuid4())
+    def __init__(self, name, fallthrough=True, *args, **kwargs):
+        super(Queue, self).__init__(*args, **kwargs)
+
         self.name = name
-        self.__q = deque()
+
         self.__in = 0
         self.__out = 0
-        self.__dropped = 0
         self.__cache = {}
-
-        self.__empty = Event()
-        self.__empty.set()
-
-        self.__free = Event()
-        self.__free.set()
-
-        self.__full = Event()
-        self.__full.clear()
-
         self.__content = Event()
-        self.__content.clear()
 
-        if fallthrough:
-            self.put = self.__fallThrough
-        else:
-            self.put = self.__put
-
-    def clean(self):
-        '''Deletes the content of the queue.
-        '''
-        self.__q = deque()
-
-    def disableFallThrough(self):
-        self.put = self.__put
-
-    def dump(self):
-        '''Dumps the queue as a generator and cleans it when done.
-        '''
-
-        while True:
-            try:
-                yield self.get()
-            except QueueEmpty:
-                break
-
-    def empty(self):
-        '''Returns True when queue and unacknowledged is empty otherwise False.'''
-
-        return self.__q.empty()
-
-    def enableFallthrough(self):
-        self.put = self.__fallThrough
-
-    def get(self):
+    def get(self, *args, **kwargs):
         '''Gets an element from the queue.'''
 
         try:
-            e = self.__q.pop()
-        except IndexError:
-            self.__empty.set()
-            self.__full.clear()
-            raise QueueEmpty("No more elements left to consume.", self.waitUntilFull, self.waitUntilContent)
+            element = super(Queue, self).get(block=False, *args, **kwargs)
+        except gqueue.Empty:
+            raise QueueEmpty("Queue {0} has no waiting events".format(self.name))
 
         self.__out += 1
-        self.__free.set()
         self.__content.clear()
-        return e
+        return element
 
     def rescue(self, element):
-
-        self.__q.append(element)
-
-    def size(self):
-        '''Returns the length of the queue.'''
-
-        return len(self.__q)
+        self.put(event)
 
     def stats(self):
         '''Returns statistics of the queue.'''
 
-        return {"size": len(self.__q),
+        return {"size": self.qsize(),
                 "in_total": self.__in,
                 "out_total": self.__out,
                 "in_rate": self.__rate("in_rate", self.__in),
-                "out_rate": self.__rate("out_rate", self.__out),
-                "dropped_total": self.__dropped,
-                "dropped_rate": self.__rate("dropped_rate", self.__dropped)
+                "out_rate": self.__rate("out_rate", self.__out)
                 }
 
-    def waitUntilEmpty(self):
-        '''Blocks until the queue is completely empty.'''
 
-        try:
-            self.__empty.wait(timeout=0.1)
-        except:
-            pass
-
-    def waitUntilFull(self):
-        '''Blocks until the queue is completely full.'''
-
-        try:
-            self.__full.wait(timeout=0.1)
-        except:
-            pass
-
-    def waitUntilFree(self):
-        '''Blocks until at least 1 slot it free.'''
-
-        try:
-            self.__free.wait(timeout=0.1)
-        except:
-            pass
-
-    def waitUntilContent(self):
-        '''Blocks until at least 1 slot is taken.'''
-
-        try:
-            self.__content.wait(timeout=0.1)
-        except:
-            pass
-
-    def __fallThrough(self, element):
-        '''Accepts an element but discards it'''
-
-        self.__dropped += 1
-
-    def __put(self, element):
+    def put(self, element, *args, **kwargs):
         '''Puts element in queue.'''
 
-        if len(self.__q) == self.max_size:
-            self.__empty.clear()
-            self.__full.set()
-            raise QueueFull("Queue has reached capacity of %s elements" % (self.max_size), self.waitUntilEmpty, self.waitUntilFree)
-
-        self.__q.append(element)
-        self.__in += 1
-        self.__free.clear()
+        try:
+            super(Queue, self).put(element, *args, **kwargs)
+        except gqueue.Full:
+            raise QueueFull("Queue {0} is full".format(self.name))
         self.__content.set()
+        self.__in += 1
 
     def __rate(self, name, value):
 
@@ -347,3 +292,15 @@ class Queue(object):
             self.__cache[name]["rate"] = (amount_now - amount_then) / (time_now - time_then)
 
         return self.__cache[name]["rate"]
+
+    
+    def waitUntilContent(self):
+        '''Blocks until at least 1 slot is taken.'''
+
+        try:
+            self.__content.wait(timeout=0.1)
+        except:
+            pass
+    
+    def disableFallThrough(self):
+        pass

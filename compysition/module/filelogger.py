@@ -25,7 +25,8 @@
 from compysition import Actor
 from compysition.module.util import RotatingFileHandler, LoggingConfigLoader
 import gevent
-from gevent import queue
+#from gevent import queue
+from compysition import Queue
 from os import getpid
 from time import strftime, localtime
 from time import time
@@ -52,12 +53,13 @@ class FileLogger(Actor):
             logging.INFO:None,              # No Coloring
             logging.DEBUG:"\x1B[1;37m"}     # White
 
-        self.logger_queue = queue.Queue() 
+        self.logger_queue = Queue("logger_queue") 
 
         self.file_logger = logging.getLogger(self.name)
 
         logHandler = RotatingFileHandler(r'{0}'.format(self.filepath), maxBytes=self.config.config['maxBytes'], backupCount=self.config.config['backupCount'])
-        logFormatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+        logFormatter = logging.Formatter('%(message)s') # We will do ALL formatting ourselves in qlogger, as we want to be extremely literal to make sure the timestamp
+                                                        # is generated at the time that logger.log was invoked, not the time it was written to file
         logHandler.setFormatter(logFormatter)
         self.file_logger.addHandler(logHandler)
         self.file_logger.setLevel(self.config.config['level'])
@@ -78,7 +80,7 @@ class FileLogger(Actor):
                 except Exception as err:
                     print traceback.format_exc()
             else:
-                gevent.sleep(1)
+                self.logger_queue.waitUntilContent()
 
         while True:
             if self.logger_queue.qsize() > 0:
@@ -98,7 +100,9 @@ class FileLogger(Actor):
         event_id = event["header"].get("event_id", None)
         message = event["data"].get("message", None)
         level = event["data"].get("level", None)
+        time = event["data"].get("time", None)
 
+        entry_prefix = "{0} {1} ".format(time, logging._levelNames.get(level)) # Use the time from the logging invocation as the timestamp
 
         if event_id:
             entry = "module={0}, event_id={1}, Message: {2}".format(module_name, event_id, message)
@@ -108,7 +112,7 @@ class FileLogger(Actor):
         if self.colorize:
             entry = self.colorize_entry(entry, level)
 
-        self.logger_queue.put((level, entry))
+        self.logger_queue.put((level, "{0}{1}".format(entry_prefix, entry)))
 
     def colorize_entry(self, message, level):
         color = self.colors[level]
