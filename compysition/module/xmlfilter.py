@@ -62,7 +62,7 @@ class XMLFilter(Actor):
     }
     '''
     
-    def __init__(self, name, xpath, xslt_filepath=None, value=None, whitelist=True, filter_type="delete", log_level=3, *args, **kwargs):
+    def __init__(self, name, xpath, xslt=None, xslt_filepath=None, value=None, whitelist=True, filter_type="delete", log_level=3, *args, **kwargs):
         Actor.__init__(self, name, *args, **kwargs)
         self.xpath = xpath
         self.value = value
@@ -73,10 +73,13 @@ class XMLFilter(Actor):
         if not isinstance(self.whitelist, bool):
             self.whitelist = True
 
-        if xslt_filepath is not None:
-            self.template = self.load_template(xslt_filepath)
+        if xslt is None:
+            if xslt_filepath is not None:
+                self.template = self.load_template(xslt_filepath)
+            else:
+                self.template = None
         else:
-            self.template = None
+            self.template = etree.XSLT(etree.XML(xslt))
 
     def consume(self, event, *args, **kwargs):
 

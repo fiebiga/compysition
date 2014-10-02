@@ -43,7 +43,7 @@ class Transformer(Actor):
         - outbox:   Outgoing events.
     '''
 
-    def __init__(self, name, xslt_path, add_to_header=False, print_input_output=False, *args, **kwargs):
+    def __init__(self, name, xslt=None, xslt_path=None, add_to_header=False, print_input_output=False, *args, **kwargs):
         Actor.__init__(self, name, *args, **kwargs)
         self.logger.info("Initialized")
         self.subjects = args or None
@@ -52,14 +52,20 @@ class Transformer(Actor):
         self.caller = 'wsgi'
         self.print_input_output = print_input_output
 
-        self.template = self.load_template(xslt_path)
+        if xslt is None:
+            if xslt_path is not None:
+                self.template = self.load_template(xslt_path)
+            else:
+                raise Exception("No xslt defined, you must define a transform using xslt or xslt_path")
+        else:
+            self.template = etree.XSLT(etree.XML(xslt))
 
 
     def consume(self, event, *args, **kwargs):
         if self.print_input_output:
             f = open('logs/{0}_transform_inbox.txt'.format(self.key),'w')
-            f.write(b"{0}".format(event['data'])) # python will convert \n to os.linesep
-            f.close() # you can omit in most cases as the destructor will call if
+            f.write(b"{0}".format(event['data']))
+            f.close() 
         try:
 
             original_xml = etree.fromstring(event['data'])
@@ -74,8 +80,8 @@ class Transformer(Actor):
 
         if self.print_input_output:
             f = open('logs/{0}_transform_outbox.txt'.format(self.key),'w')
-            f.write(b"{0}".format(event['data'])) # python will convert \n to os.linesep
-            f.close() # you can omit in most cases as the destructor will call if
+            f.write(b"{0}".format(event['data']))
+            f.close() 
 
     def transform(self, etree_element):
         return self.template(etree_element)
