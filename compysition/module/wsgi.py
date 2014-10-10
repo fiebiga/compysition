@@ -134,7 +134,6 @@ class WSGI(Actor):
         self.logger.debug("WSGI Received Response from origin: {0}".format(kwargs.get('origin')), event_id=event['header']['event_id'])
         header = event['header'][self.key]
         request_id = header['request_id']
-
         response_queue = ManagedQueue(request_id)
         start_response = self.responders.pop(request_id)  # Run this needed or not to be sure it's removed from memory with pop()
         start_response(header['status'], header['http'])  # Make sure we have all the headers so far

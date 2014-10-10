@@ -26,18 +26,19 @@
 from compysition.queue import QueuePool
 from compysition.qlogger import QLogger
 from compysition.errors import QueueEmpty, QueueFull, QueueConnected, SetupError, NoConnectedQueues
-from gevent.pool import Group
+from gevent.pool import Group, Pool
 from gevent import spawn, Greenlet
 from gevent import sleep, socket
 from gevent.event import Event
 from time import time
 from copy import copy, deepcopy
 import traceback
+import gevent.pool
 
 
 class Actor(object):
 
-    def __init__(self, name, size=100, frequency=1, generate_metrics=True, blocking_consume=False, *args, **kwargs):
+    def __init__(self, name, size=100, frequency=1, generate_metrics=True, blocking_consume=False, consumer_pool_size=200, *args, **kwargs):
 
         self.name = name
         self.size = size
@@ -48,7 +49,7 @@ class Actor(object):
         self.logger = QLogger(name)
 
         self.__loop = True
-        self.threads = Group()
+        self.threads = Pool(consumer_pool_size)
 
         if generate_metrics:
             spawn(self.__metricEmitter)

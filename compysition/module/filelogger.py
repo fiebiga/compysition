@@ -105,9 +105,9 @@ class FileLogger(Actor):
         entry_prefix = "{0} {1} ".format(time, logging._levelNames.get(level)) # Use the time from the logging invocation as the timestamp
 
         if event_id:
-            entry = "module={0}, event_id={1}, Message: {2}".format(module_name, event_id, message)
+            entry = "module={0}, event_id={1} :: {2}".format(module_name, event_id, message)
         else:
-            entry = "module={0}, Message: {1}".format(module_name, message)
+            entry = "module={0} :: {1}".format(module_name, message)
 
         if self.colorize:
             entry = self.colorize_entry(entry, level)
