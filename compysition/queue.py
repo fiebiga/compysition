@@ -193,7 +193,7 @@ class QueuePool(object):
         try:
             return getattr(self.queues, name)
         except:
-            raise QueueMissing
+            raise QueueMissing("Queue {0} does not exist".format(name))
 
     def createQueue(self, name):
         '''Creates a non specific Queue for the pool. Usually these are queues used for administration of an actor.'''

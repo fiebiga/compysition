@@ -50,6 +50,7 @@ class Actor(object):
 
         self.__loop = True
         self.threads = Pool(consumer_pool_size)
+        self.threads = Group()
 
         if generate_metrics:
             spawn(self.__metricEmitter)

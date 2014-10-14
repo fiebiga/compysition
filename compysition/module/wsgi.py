@@ -28,6 +28,7 @@ from util.managedqueue import ManagedQueue
 from gevent import pywsgi, spawn, queue
 from uuid import uuid4 as uuid
 import pdb
+import traceback
 
 class WSGI(Actor):
     '''**Receive events over HTTP.**
@@ -126,6 +127,7 @@ class WSGI(Actor):
             start_response(self.default_status, event['header'][self.key]['http'])
             return response_queue
         except Exception as err:
+            self.logger.warn("Exception on application processing: {0}".format(traceback.format_exc()), event_id=event['header']['event_id'])
             start_response('404 Not Found', event['header'][self.key]['http'])
             return "A problem occurred processing your request. Reason: {0}".format(err)
 
