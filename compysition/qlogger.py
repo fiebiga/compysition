@@ -85,13 +85,12 @@ class QLogger(object):
 
     def connect_logs_queue(self, queue):
         self.logs = queue
-        print "Log queue set to {0}".format(queue)
         self.dump_buffer()
 
     def dump_buffer(self):
         while True:
             try:
-                event = buffer.pop()
+                event = self.buffer.pop()
                 self.logs.put(event)
-            except Exception:
+            except Exception as err:
                 break

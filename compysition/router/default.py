@@ -54,7 +54,7 @@ class ModulePool():
 
 class Default():
 
-    def __init__(self, size=100, frequency=1, generate_metrics=False):
+    def __init__(self, size=500, frequency=1, generate_metrics=False):
         signal(2, self.stop)
         signal(15, self.stop)
         self.pool = ModulePool()
@@ -154,6 +154,7 @@ class Default():
 
         self.log_module.connect("logs", self.log_module, "inbox", check_existing=False)
         self.metric_module.connect("logs", self.log_module, "inbox", check_existing=False)
+
 
         """
         if isinstance(self.failed_module, Null) and not isinstance(self.log_module, Null):

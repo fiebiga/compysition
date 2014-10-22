@@ -184,7 +184,8 @@ class Actor(object):
         '''Starts the module.'''
 
         # self.readQueuesFromDisk()
-        self.logger.logs = self.pool.queues.logs
+        #self.logger.logs = self.pool.queues.logs
+        self.logger.connect_logs_queue(self.pool.queues.logs)
 
         if hasattr(self, "preHook"):
             self.logger.debug("preHook() found, executing")
@@ -192,9 +193,6 @@ class Actor(object):
 
         self.__run.set()
         self.logger.debug("Started with max queue size of %s events and metrics interval of %s seconds." % (self.size, self.frequency))
-
-    def stop_special(self):
-        pass
 
     def stop(self):
         '''Stops the loop lock and waits until all registered consumers have exit.'''
