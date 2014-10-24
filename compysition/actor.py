@@ -37,9 +37,29 @@ import gevent.pool
 
 
 class Actor(object):
+    """
+    The actor class is the abstract base class for all implementing compysition modules. 
+    In order to be a valid 'module' and connectable with the compysition event flow, a module must be an extension of this class.
 
-    def __init__(self, name, size=100, frequency=1, generate_metrics=True, blocking_consume=False, consumer_pool_size=200, *args, **kwargs):
+    The Actor is responsible for putting events on outbox queues, and consuming incoming events on inbound queues.
+    """
 
+    def __init__(self, name, size=100, frequency=1, generate_metrics=True, blocking_consume=False, *args, **kwargs):
+        """
+        **Base class for all compysition modules**
+
+        Parameters:
+
+        - name (str):               The instance name
+        - size (int):               The max amount of events any outbound queue connected to this actor may contain. A value of 0 represents an infinite qsize  (Default: 100)
+        - frequency (int):          The frequency that metrics are generated and broadcasted to the 'metrics' queue                                             (Default: 1)
+        - generate_metrics (bool):  Whether or not to generate and broadcast metrics for this actor                                                             (Default: True)
+        - blocking_consume (bool):  Define if this module should spawn a greenlet for every single 'consume' execution, or if
+                                        it should execute 'consume' and block until that 'consume' is complete. This is usually
+                                        only necessary if executing work on an event in the order that it was received is critical.                             (Default: False) 
+
+        """
+        
         self.name = name
         self.size = size
         self.frequency = frequency
@@ -49,7 +69,7 @@ class Actor(object):
         self.logger = QLogger(name)
 
         self.__loop = True
-        self.threads = Pool(consumer_pool_size)
+
         self.threads = Group()
 
         if generate_metrics:
