@@ -57,7 +57,7 @@ class FileLogger(Actor):
 
         self.file_logger = logging.getLogger(self.name)
 
-        logHandler = RotatingFileHandler(r'{0}'.format(self.filepath), maxBytes=self.config.config['maxBytes'], backupCount=self.config.config['backupCount'])
+        logHandler = RotatingFileHandler(r'{0}'.format(self.filepath), maxBytes=int(self.config.config['maxBytes']), backupCount=int(self.config.config['backupCount']))
         logFormatter = logging.Formatter('%(message)s') # We will do ALL formatting ourselves in qlogger, as we want to be extremely literal to make sure the timestamp
                                                         # is generated at the time that logger.log was invoked, not the time it was written to file
         logHandler.setFormatter(logFormatter)
