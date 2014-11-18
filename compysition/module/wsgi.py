@@ -103,6 +103,7 @@ class WSGI(Actor):
             "header": {
                 self.key: {
                     "request_id": response_queue.label,
+                    "service": "",
                     "environment": request.environment(),
                     "status": self.default_status,
                     "http": [
@@ -118,9 +119,11 @@ class WSGI(Actor):
             self.logger.info('Received Message', event_id=event['header']['event_id'])
             if env['PATH_INFO'] == self.base_path:
                 self.logger.info("Putting received message on outbox {0}".format(env['PATH_INFO']), event_id=event['header']['event_id'])
+                event['header']['service'] = "default"
                 self.send_event(event, queue=self.pool.getQueue("outbox"))
             else:
                 outbox_path = env['PATH_INFO'].lstrip("{0}/".format(self.base_path)).split('/')[0]
+                event['header']['service'] = outbox_path
                 self.logger.info("Putting received message on outbox {0}".format(outbox_path), event_id=event['header']['event_id'])
                 self.send_event(event, queue=self.pool.getQueue(outbox_path))
 

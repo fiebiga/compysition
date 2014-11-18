@@ -1,7 +1,17 @@
 Compysition changelog
 =====================
 
-Version 1.1.0
+Version 1.0.5
+~~~~~~~~~~~~~
+
+- Added MajorDomo implementation using ZeroMQ to public branch
+	- Documentation on the structure of this design pattern is available here: http://rfc.zeromq.org/spec:7
+	- Automatic registration of brokers and broadcasts of those brokers is accomplished dynamically with the RegistrationService
+		- The requirements for a fully dynamic and successful design is as follows:
+			- MDPClient, MDPBroker, MDPWorker, MDPRegistrationService
+
+
+Version 1.0.1
 ~~~~~~~~~~~~~
 
 - Completely refactored compysition to reflect rework done on wishbone

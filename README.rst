@@ -122,6 +122,11 @@ Or the latest development branch from Github:
 	$ cd compysition
 
 	$ sudo python setup.py install
+	
+ZeroMQ MajorDomo Implementation
+-------------------------------
+
+TBD
 
 
 Original Wishbone Project: Documentation
