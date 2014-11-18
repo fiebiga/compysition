@@ -31,6 +31,7 @@ class Request(object):
 
     def __init__(self, environ):
         self.__dict__.update({k.replace('.','_'):v for k,v in environ.items()})  # method syntax safe properties
+        self.__dict__.update({'FINAL_PATH_ENTRY': self.__dict__['PATH_INFO'].split('/').pop()})
 
         self._wsgi_input = self.__dict__.pop('wsgi_input', [])
         self._wsgi_error = self.__dict__.pop('wsgi_errors', [])

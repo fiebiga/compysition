@@ -132,7 +132,6 @@ class WSGI(Actor):
             return "A problem occurred processing your request. Reason: {0}".format(err)
 
     def consume(self, event, *args, **kwargs):
-        #pdb.set_trace()
         self.logger.debug("WSGI Received Response from origin: {0}".format(kwargs.get('origin')), event_id=event['header']['event_id'])
         header = event['header'][self.key]
         request_id = header['request_id']
