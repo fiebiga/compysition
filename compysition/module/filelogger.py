@@ -3,7 +3,7 @@
 #
 #       stdout.py
 #
-#       Copyright 2013 Jelle Smet development@smetj.net
+#       Copyright 2014 Adam Fiebig fiebig.adam@gmail.com
 #
 #       This program is free software; you can redistribute it and/or modify
 #       it under the terms of the GNU General Public License as published by
@@ -25,7 +25,6 @@
 from compysition import Actor
 from compysition.module.util import RotatingFileHandler, LoggingConfigLoader
 import gevent
-#from gevent import queue
 from compysition import Queue
 from os import getpid
 from time import strftime, localtime

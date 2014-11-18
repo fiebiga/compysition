@@ -2,7 +2,7 @@ import gevent
 import zmq.green as zmq
 import time
 from binascii import hexlify
-import util.MDPDefinition as MDPDefinition
+import mdpdefinition as MDPDefinition
 from compysition import Actor
 
 class RegistratorSocket(zmq.Socket):

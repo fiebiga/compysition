@@ -11,14 +11,10 @@ import gevent
 from random import randint
 import time
 from binascii import hexlify
-from util import BrokerRegistrator
+from util.mdpregistrar import BrokerRegistrator
 from compysition import Actor
-
 import zmq.green as zmq
-
-# local
 import util.mdpdefinition as MDPDefinition
-# DEL from zhelpers import dump
 
 class Service(object):
     """a single Service"""

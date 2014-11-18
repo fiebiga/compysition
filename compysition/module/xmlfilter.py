@@ -150,6 +150,6 @@ class XMLFilter(Actor):
         try:
             return etree.XSLT(etree.parse(path))
         except Exception as e:
-            self.logger.error("Unable to load XSLT at {0}:{1}".format(path, e))
+            self.logger.error("Unable to load XSLT at {0}: {1}".format(path, e))
             return None
 

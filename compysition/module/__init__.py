@@ -35,3 +35,7 @@ from xmlaggregator import XMLAggregator
 from xmlfilter import XMLFilter
 from xmlmatcher import XMLMatcher
 from flowcontroller import FlowController
+from mdpactors import MDPClient
+from mdpactors import MDPWorker
+from mdpbroker import MajorDomoBroker
+from mdpregistrar import BrokerRegistrationService
