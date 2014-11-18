@@ -21,6 +21,15 @@ fast, and fully concurrent manner
 
 **Compysition is currently new and in pre-Beta release. It will be undergoing many deep changes in the coming months**
 
+
+How?
+
+The **compysition* project uses a modified actor model combined with highly concurrent event-driven programming to achieve highly performant and scalable processes.
+
+How does it differ from the traditional Actor model?
+** Compysition modules (Actors) function as a N:M connector by default. Strict Actor model programming utilizes a 1:1 or N:1 or 1:N connection exclusively. This process makes sense academically, but from a development standpoint,
+each data processing branch adds needless complexity when dealing with such strict limitations.
+
 Full Circle WSGI Example
 -------
 
