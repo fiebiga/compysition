@@ -2,7 +2,7 @@ import gevent
 import zmq.green as zmq
 import time
 from binascii import hexlify
-import util.MDPDefinition as MDPDefinition
+import util.mdpdefinition as MDPDefinition
 from compysition import Actor
 from util.mdpregistrar import HeartbeatManager, RegistrationService, Broker
 
