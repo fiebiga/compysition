@@ -122,9 +122,8 @@ class UDPInterface(object):
     
     def start(self):
         self.__loop = True
-        self.pool.spawn(self.send_ping)
-        self.pool.spawn(self.reap_peers)
-        self.pool.spawn(self.receive_ping)
+        self.pool.spawn(self.run)
+        self.pool.spawn(self.send_pings)
         self.pool.spawn(self.__burn_in_timer)
 
     def __burn_in_timer(self):
@@ -145,18 +144,19 @@ class UDPInterface(object):
         '''Blocks until stop() is called.'''
         self.__master_block.wait()
     
-    def send_ping(self, *args, **kwargs):
+    def send_pings(self, *args, **kwargs):
         while self.__loop:
             try:
                 self.udp.send(self.service + self.uuid)
                 gevent.sleep(PING_INTERVAL)
             except Exception as e:
                 self.loop.stop()
-    
-    def receive_ping(self):
+
+    def run(self):
         while self.__loop:
             items = self.poller.poll(PING_INTERVAL)
             if items:
+                inc += 1
                 service, uuid = self.udp.recv(len(self.service), UUID_BYTES)
                 if uuid != self.uuid:
                     if service == self.service:
@@ -165,20 +165,18 @@ class UDPInterface(object):
                         else:
                             self.peers[uuid] = Peer(uuid)
                             self.log("New peer ({0}) discovered in '{1}' peer pool. (Total: {2})".format(uuid, self.service, len(self.peers) + 1))
-                            self.determine_master()
-           
-            
+            else:
+                gevent.sleep(1)
+
+            self.reap_peers()
+            self.determine_master()
     
     def reap_peers(self):
-        while self.__loop:
-            now = time.time()
-            for peer in list(self.peers.values()):
-                if peer.expires_at < now:
-                    self.peers.pop(peer.uuid)
-                    self.log("Reaping expired peer ({0}) from '{1}' peer pool. (Total remaining: {2})".format(peer.uuid, self.service, len(self.peers) + 1))
-
-            self.determine_master()
-            gevent.sleep(PING_INTERVAL)
+        now = time.time()
+        for peer in list(self.peers.values()):
+            if peer.expires_at < now:
+                self.peers.pop(peer.uuid)
+                self.log("Reaping expired peer ({0}) from '{1}' peer pool. (Total remaining: {2})".format(peer.uuid, self.service, len(self.peers) + 1))
 
     def determine_master(self):
         if self.__burned_in:

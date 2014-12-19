@@ -24,7 +24,9 @@
 #
 
 from compysition import Actor
-from gevent import sleep
+import gevent
+from uuid import uuid4 as uuid
+from gevent.pool import Pool
 
 
 class TestEvent(Actor):
@@ -54,33 +56,34 @@ class TestEvent(Actor):
 
     '''
 
-    def __init__(self, name, data_value="test", header_value={}, interval=1, delay=0, *args, **kwargs):
+    def __init__(self, name, data_value="test", header_value={}, producers=1, interval=1, delay=0, max_events=0, *args, **kwargs):
         Actor.__init__(self, name, *args, **kwargs)
         self.name = name
         self.interval = interval
         self.delay = delay
         self.data_value = data_value or "test"
         self.header_value = header_value or {}
-        if interval == 0:
-            self.sleep = self.doNoSleep
-        else:
-            self.sleep = self.doSleep
+        self.interval = interval
+        self.producers = producers
+        self.max_events = max_events
+        self.generated_events = 0
+        self.producer_pool = Pool(self.producers)
+
 
     def preHook(self):
-        self.threads.spawn(self.produce)
+        for i in xrange(self.producers):
+            self.producer_pool.spawn(self.produce)
 
     def produce(self):
-
         while self.loop():
+            if self.max_events > 0:
+                if self.generated_events == self.max_events:
+                    break
+
+            self.generated_events += 1
             event = {"header":self.header_value,"data":self.data_value}
             event['header']['event_id'] = uuid()
             self.send_event({"header":self.header_value,"data":self.data_value})
-            self.sleep(self.interval)
+            gevent.sleep(self.interval)
 
         self.logger.info("Stopped producing events.")
-
-    def __doSleep(self):
-        sleep(self.interval)
-
-    def __doNoSleep(self):
-        pass
