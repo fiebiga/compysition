@@ -2,12 +2,18 @@ import logging
 import logging.handlers
 import os
 from configobj import ConfigObj
+import gevent.coros
 
 class RotatingFileHandler(logging.handlers.RotatingFileHandler):
 
     def __init__(self, file_path, *args, **kwargs):
         self.make_file(file_path)
         super(RotatingFileHandler, self).__init__(file_path, *args, **kwargs)
+
+    def createLock(self):
+        """Set self.lock to a new gevent RLock.
+        """
+        self.lock = gevent.coros.RLock()
 
     def make_file(self, file_path):
         file_dir = os.path.dirname(file_path)
