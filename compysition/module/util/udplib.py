@@ -156,7 +156,6 @@ class UDPInterface(object):
         while self.__loop:
             items = self.poller.poll(PING_INTERVAL)
             if items:
-                inc += 1
                 service, uuid = self.udp.recv(len(self.service), UUID_BYTES)
                 if uuid != self.uuid:
                     if service == self.service:
