@@ -44,7 +44,7 @@ class Actor(object):
     The Actor is responsible for putting events on outbox queues, and consuming incoming events on inbound queues.
     """
 
-    def __init__(self, name, size=100, frequency=1, generate_metrics=True, blocking_consume=False, *args, **kwargs):
+    def __init__(self, name, size=0, frequency=1, generate_metrics=True, blocking_consume=False, *args, **kwargs):
         """
         **Base class for all compysition modules**
 
