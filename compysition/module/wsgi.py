@@ -76,7 +76,6 @@ class WSGI(Actor):
     The root resource "/" is mapped the <outbox> queue.
     '''
 
-
     def __init__(self, name, base_path='/', address="0.0.0.0", port=8080, keyfile=None, certfile=None, delimiter=None, key=None, run_server=False, *args, **kwargs):
         Actor.__init__(self, name, *args, **kwargs)
         self.name=name
@@ -93,14 +92,18 @@ class WSGI(Actor):
 
     def preHook(self):
         if self.run_server:
-            spawn(self.__serve)
+            self.__serve()
+
 
     def application(self, env, start_response):
+
         response_queue = ManagedQueue()
-        self.responders.update({response_queue.label: start_response})
         request = Request(env)
+        self.responders.update({response_queue.label: start_response})
+
         event = {
             "header": {
+                "event_id": response_queue.label, 
                 self.key: {
                     "request_id": response_queue.label,
                     "service": "",
@@ -111,11 +114,10 @@ class WSGI(Actor):
                     ]
                 }
             },
-            "data": None
+            "data": request.input
         }
+
         try:
-            event.update({"data":request.input})
-            event['header']['event_id'] = event['header']['wsgi']['request_id'] # event_id is required for certain modules to track same event
             self.logger.info('Received Message', event_id=event['header']['event_id'])
             if env['PATH_INFO'] == self.base_path:
                 self.logger.info("Putting received message on outbox {0}".format(env['PATH_INFO']), event_id=event['header']['event_id'])
@@ -133,6 +135,7 @@ class WSGI(Actor):
             self.logger.warn("Exception on application processing: {0}".format(traceback.format_exc()), event_id=event['header']['event_id'])
             start_response('404 Not Found', event['header'][self.key]['http'])
             return "A problem occurred processing your request. Reason: {0}".format(err)
+        
 
     def consume(self, event, *args, **kwargs):
         self.logger.debug("WSGI Received Response from origin: {0}".format(kwargs.get('origin')), event_id=event['header']['event_id'])
@@ -152,14 +155,14 @@ class WSGI(Actor):
                 result.update({key:value})
         return json.dumps(result)
 
+    def postHook(self):
+        self.__server.stop()
+        self.logger.info("Stopped serving.")
+
     def __serve(self):
         if self.keyfile != None and self.certfile != None:
             self.__server = pywsgi.WSGIServer((self.address, self.port), self.application, keyfile=self.keyfile, certfile=self.certfile)
         else:
             self.__server = pywsgi.WSGIServer((self.address, self.port), self.application, log=None)
-        self.__server.start()
         self.logger.info("Serving on %s:%s"%(self.address, self.port))
-        self.block()
-        self.__server.stop()
-        self.logger.info("Stopped serving.")
-        self.__server.stop()
+        self.__server.start()
