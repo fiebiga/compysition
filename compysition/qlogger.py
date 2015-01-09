@@ -42,7 +42,7 @@ class QLogger(object):
         self.logs = queue
         self.buffer = []
 
-    def __log(self, level, message, event_id=None):
+    def log(self, level, message, event_id=None):
         while True:
             try:
                 event = {"header":{"event_id":event_id},"data":{"level":level,
@@ -60,28 +60,28 @@ class QLogger(object):
     def critical(self, message, event_id=None):
         """Generates a log message with priority logging.CRITICAL
         """
-        self.__log(logging.CRITICAL, message, event_id=event_id)
+        self.log(logging.CRITICAL, message, event_id=event_id)
 
     def error(self, message, event_id=None):
         """Generates a log message with priority error(3).
         """
-        self.__log(logging.ERROR, message, event_id=event_id)
+        self.log(logging.ERROR, message, event_id=event_id)
 
     def warn(self, message, event_id=None):
         """Generates a log message with priority logging.WARN
         """
-        self.__log(logging.WARN, message, event_id=event_id)
+        self.log(logging.WARN, message, event_id=event_id)
     warning=warn
 
     def info(self, message, event_id=None):
         """Generates a log message with priority logging.INFO.
         """
-        self.__log(logging.INFO, message, event_id=event_id)
+        self.log(logging.INFO, message, event_id=event_id)
 
     def debug(self, message, event_id=None):
         """Generates a log message with priority logging.DEBUG
         """
-        self.__log(logging.DEBUG, message, event_id=event_id)
+        self.log(logging.DEBUG, message, event_id=event_id)
 
     def connect_logs_queue(self, queue):
         self.logs = queue

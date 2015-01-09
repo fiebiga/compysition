@@ -39,3 +39,4 @@ from mdpactors import MDPClient
 from mdpactors import MDPWorker
 from mdpbroker import MajorDomoBroker
 from mdpregistrar import BrokerRegistrationService
+from eventlogger import EventLogger
