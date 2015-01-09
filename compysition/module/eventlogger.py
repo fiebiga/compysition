@@ -33,18 +33,20 @@ class EventLogger(Actor):
 
     '''
 
-    def __init__(self, name, level=logging.INFO, header=True, data=True, prefix="", *args, **kwargs):
+    def __init__(self, name, level=logging.INFO, log_header=True, log_data=True, prefix="", *args, **kwargs):
         Actor.__init__(self, name, *args, **kwargs)
-        self.log_data = data
-        self.log_header = header
+        self.log_data = log_data
+        self.log_header = log_header
+        self.level = level
+        self.prefix = prefix
 
     def consume(self, event, *args, **kwargs):
-        message = prefix + ""
+        message = self.prefix + ""
         if self.log_header:
             message += "Event header: {header}\n".format(header=event['header'])
 
         if self.log_data:
-            message += "Event data: {data}".format(header=event['data'])
+            message += "Event data: {data}".format(data=event['data'])
 
-        self.logger.log(level, message, event_id=event['header']['event_id'])
+        self.logger.log(self.level, message, event_id=event['header']['event_id'])
         self.send_event(event)
