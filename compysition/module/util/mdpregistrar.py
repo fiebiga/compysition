@@ -90,7 +90,6 @@ class BrokerConnector(Broker):
         Broker.__init__(self, *args, **kwargs)
         self.context = context or kwargs.get('context', None) or RegistratorContext()
         self.socket_identity = socket_identity or kwargs.get('socket_identity', None)
-        print "Creating BrokerConnector with socket identity {0}".format(self.identity)
         self.verification_attempts = 0
         self.reconnect_attempts = 0
         self.reconnect()
@@ -196,7 +195,6 @@ class BrokerManager(RegistrationService):
             while (len(message) >= 2): # Iterate over the identities and addresses provided in the update
                 broker_identity = message.pop(0)
                 broker_address = message.pop(0)
-                print "Received heartbeat from broker {0}".format(broker_identity)
                 if self.verified_brokers.get(broker_identity) is None and self.unverified_brokers.get(broker_identity) is None:
                     self.connect_broker(BrokerConnector(identity=broker_identity, context=self.context, port=broker_address, socket_identity=self.controller_identity))
 
@@ -319,7 +317,6 @@ class BrokerManager(RegistrationService):
 
         if broker is not None:
             if self.logger is not None:
-                print "Disconnecting broker {0}".format(broker.identity)
                 self.logger.info("Disconnecting broker {0}".format(broker.identity))
 
             if (broker.inbound_socket, zmq.POLLIN) in self.inbound_poller.sockets:
@@ -363,7 +360,6 @@ class BrokerRegistrator(RegistrationService):
 
     def register(self):
         self.registration_manager.send_heartbeats(self.registrator, ['', b"{0}".format(self.broker_port)])
-        #self.registrator.send_multipart(['', b"{0}".format(self.broker_port)])
 
 class HeartbeatManager(object):
     """

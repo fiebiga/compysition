@@ -101,7 +101,6 @@ class MajorDomoBroker(Actor):
         self.port = port
         #self.broker_identity = hexlify(b"%04x-%04x-%04x" % (randint(0, 0x10000), randint(0, 0x10000), randint(0, 0x10000)))
         self.broker_identity = uuid().get_hex()
-        print "My identity: {0}".format(self.broker_identity)
         self.services = {}
         self.workers = {}
         self.context = zmq.Context()
@@ -140,8 +139,6 @@ class MajorDomoBroker(Actor):
             - command   :   The command from the peer. There are multiple commands definied for the MajorDomo Infrastructure. See 'MDPDefinition' module
             - ...       :   The rest of the message content to actually be used by the worker itself - all of these frame(s) are irrelevant to the broker
         """
-
-        print "Received the following message: {0}".format(message)
 
 
         if len(message) >= 4:
@@ -189,8 +186,6 @@ class MajorDomoBroker(Actor):
                 A) To respond and verify to the worker that the broker can be connected to, so to add it to potential brokers the worker may communicate with
                 B) To register that worker with a service with the MajorDomoBroker
             """
-
-            #print("Received Verification and Registration Request: {0}".format(msg))
             
             if len(msg) >= 1: # Message must contain the service name to properly register
                 service = msg.pop(0)
@@ -208,7 +203,6 @@ class MajorDomoBroker(Actor):
                     self.logger.info("Received verification and registration request from existing downstream worker {0} for service {1}".format(sender, service))
                 
                 self.send_to_worker(worker, MDPDefinition.B_VERIFICATION_RESPONSE, self.broker_identity)
-                #self.broker_socket.send_multipart([b"{0}_receiver".format(sender), '', MDPDefinition.W_WORKER, MDPDefinition.B_VERIFICATION_RESPONSE, self.broker_identity])
 
         elif (MDPDefinition.W_REPLY == command):
             client = b"{0}_receiver".format(msg.pop(0))
@@ -353,7 +347,6 @@ class MajorDomoBroker(Actor):
 
         message = [worker.inbound_address, '', MDPDefinition.W_WORKER, command] + message
 
-        print "Sending {0} to {1}".format(message, worker.identity)
         self.broker_socket.send_multipart(message)
 
     def preHook(self):

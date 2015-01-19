@@ -36,7 +36,6 @@ class MDPActor(Actor):
         self.context = zmq.Context()
         self.outbound_queue = Queue()
         self.broker_manager = BrokerManager(controller_identity=self.socket_identity, logging=self.logger)
-        print "My identity is {0}".format(self.socket_identity)
 
     def preHook(self):
         gevent.spawn(self.__listen)
@@ -203,9 +202,6 @@ class MDPWorker(MDPActor):
                 self.send_event(event)
 
             elif command == MDPDefinition.B_VERIFICATION_RESPONSE:
-                print "Origin Broker: {0}, {1}".format(origin_broker.socket_identity, message)
-                print self.broker_manager.unverified_brokers
-                #print hexlify(origin_broker.socket_identity)
                 self.logger.info("Received Verification Response from {0}".format(message))
                 self.broker_manager.verify_broker(message.pop(0))
             elif command == MDPDefinition.W_HEARTBEAT:
@@ -213,11 +209,7 @@ class MDPWorker(MDPActor):
                 pass
             elif command == MDPDefinition.W_DISCONNECT:
                 self.logger.info("Received disconnect command from {0}".format(message))
-                print "Received disconnect command, disconnecting broker {0}".format(origin_broker.identity)
-                print "Brokers before disconnect command: {0}".format(self.broker_manager.verified_brokers)
                 self.broker_manager.disconnect_broker(origin_broker.identity)
-                print "Brokers after disconnect command: {0}".format(self.broker_manager.verified_brokers)
-
             else:
                 pass
 
