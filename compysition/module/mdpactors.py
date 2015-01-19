@@ -95,8 +95,6 @@ class MDPActor(Actor):
     def send_heartbeats(self):
         raise NotImplementedError("Please Implement method 'send_heartbeats'")
 
-    def send_disconnect(self, 
-
 class MDPClient(MDPActor):
 
     client = None
