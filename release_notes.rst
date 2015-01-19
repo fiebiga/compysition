@@ -1,6 +1,11 @@
 Compysition changelog
 =====================
 
+Version 1.0.55
+~~~~~~~~~~~~~
+
+- Modified behavior of a MajorDomo Broker so that it issues a disconnect command to a worker that heartbeats after it has been deleted from the broker. This then triggers a re-registration between the worker and broker.
+
 Version 1.0.5
 ~~~~~~~~~~~~~
 
