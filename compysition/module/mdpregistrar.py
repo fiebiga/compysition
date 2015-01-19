@@ -40,7 +40,7 @@ class BrokerRegistrationService(Actor, RegistrationService):
 
         gevent.sleep(0.1) # Make sure publisher has time to fully connect. This is a zmq nuance
         
-        self.heartbeat_manager = HeartbeatManager(heartbeat_interval=self.timeout)
+        #self.heartbeat_manager = HeartbeatManager(heartbeat_interval=self.timeout)
         self.poller = zmq.Poller()
         self.poller.register(self.receiver_socket, zmq.POLLIN)
 
@@ -57,17 +57,21 @@ class BrokerRegistrationService(Actor, RegistrationService):
         message = [self.manager_subscriber_scope, '', command] + msg
         return message
 
-    def forward_broker_heartbeats(self):
+    def forward_broker_heartbeats(self, broker=None):
         """
-        Compile the message for the heartbeat manager to send to the clients, if it's time
+        Compile the message for the heartbeat manager to send to the clients, and send the broker heartbeat
         """
         
-        if(len(self.brokers) > 0):
-            message = []     
-            for broker_identity, broker in self.brokers.iteritems():
-                message.extend([broker_identity, broker.port])
+        if broker is None:
+            if(len(self.brokers) > 0):
+                message = []     
+                for broker_identity, broker in self.brokers.iteritems():
+                    message.extend([broker_identity, broker.port])
 
-            self.heartbeat_manager.send_heartbeats(self.client_publisher_socket, self.format_message(MDPDefinition.B_HEARTBEAT, message))
+                self.heartbeat_manager.send_heartbeats(self.client_publisher_socket, self.format_message(MDPDefinition.B_HEARTBEAT, message))
+        else:
+            self.send_to_clients(MDPDefinition.B_HEARTBEAT, [broker.identity, broker.port])
+
 
     def check_broker_liveness(self):
         """
@@ -106,18 +110,21 @@ class BrokerRegistrationService(Actor, RegistrationService):
                 empty = message.pop(0)
                 port = message.pop(0)
 
-                sender_identity = hexlify(sender)
+                sender_identity = sender
 
                 broker = self.brokers.get(sender_identity)
 
                 if broker is None:
-                    self.brokers[sender_identity] = Broker(sender_identity, port)
-                    self.logger.info("Registered new broker [{0}] on port {1}".format(hexlify(sender), port))
+                    broker = Broker(sender_identity, port)
+                    self.brokers[sender_identity] = broker
+                    self.logger.info("Registered new broker [{0}] on port {1}".format(sender, port))
                 else:
                     broker.refresh_expiration_time()
 
+                self.forward_broker_heartbeats(broker=broker)
+
             self.check_broker_liveness()
-            self.forward_broker_heartbeats()
+            #self.forward_broker_heartbeats()
 
     def preHook(self):
         gevent.spawn(self.start_service)

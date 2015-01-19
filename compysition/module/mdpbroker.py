@@ -15,12 +15,13 @@ from util.mdpregistrar import BrokerRegistrator
 from compysition import Actor
 import zmq.green as zmq
 import util.mdpdefinition as MDPDefinition
+from uuid import uuid4 as uuid
 
 class Service(object):
     """a single Service"""
-    name = None # Service name
-    requests = None # List of client requests
-    workers = None # List of waiting workers
+    name = None         # Service name
+    requests = None     # List of client requests
+    workers = None      # List of waiting workers
 
     def __init__(self, name):
         self.name = name
@@ -30,14 +31,14 @@ class Service(object):
 
 class Worker(object):
     """a Worker, idle or active"""
-    identity = None # hex Identity of worker
-    address = None # Address of outbound worker socket
-    inbound_address = None # Address of the socket used to process inbound requests for that worker factory. It is always '{address}-Inbound'
-    service = None # Owning service, if known
-    expiry = None # expires at this point, unless heartbeat
-    lifetime = None # How long this worker may go before it is considered expired
-    last_heartbeat = None # The last time that refresh_expiry was called
-    liveness = None # The number of times that a worker has missed it's heartbeat mark
+    identity = None         # Identity of worker
+    address = None          # Address of outbound worker socket
+    inbound_address = None  # Address of the socket used to process inbound requests for that worker factory. It is always '{address}-Inbound'
+    service = None          # Owning service, if known
+    expiry = None           # Worker expires at this point in time, unless heartbeat
+    lifetime = None         # How long this worker may go before it is considered expired
+    last_heartbeat = None   # The last time that refresh_expiry was called
+    liveness = None         # The number of times that a worker has missed it's heartbeat mark
 
     def __init__(self, identity, address, lifetime, max_liveness=3):
         self.identity = identity
@@ -61,6 +62,10 @@ class Worker(object):
             self.liveness += 1
         self.last_heartbeat = time.time()
         self.refresh_expiry()
+
+    @staticmethod
+    def generate_inbound_address(address):
+        return "{0}_receiver".format(address)
 
 
 class MajorDomoBroker(Actor):
@@ -94,7 +99,9 @@ class MajorDomoBroker(Actor):
         """Initialize broker state."""
         super(MajorDomoBroker, self).__init__(name, *args, **kwargs)
         self.port = port
-        self.broker_identity = b"%04x-%04x-%04x" % (randint(0, 0x10000), randint(0, 0x10000), randint(0, 0x10000))
+        #self.broker_identity = hexlify(b"%04x-%04x-%04x" % (randint(0, 0x10000), randint(0, 0x10000), randint(0, 0x10000)))
+        self.broker_identity = uuid().get_hex()
+        print "My identity: {0}".format(self.broker_identity)
         self.services = {}
         self.workers = {}
         self.context = zmq.Context()
@@ -104,7 +111,7 @@ class MajorDomoBroker(Actor):
         self.poller = zmq.Poller()
         self.poller.register(self.broker_socket, zmq.POLLIN)
 
-        self.logger.info("MajorDomoBroker {0} initialized. Client/Worker ID will be {1}".format(self.broker_identity, hexlify(self.broker_identity)))
+        self.logger.info("MajorDomoBroker {0} initialized. Client/Worker ID will be {1}".format(self.broker_identity, self.broker_identity))
 
     # ---------------------------------------------------------------------
 
@@ -133,6 +140,9 @@ class MajorDomoBroker(Actor):
             - command   :   The command from the peer. There are multiple commands definied for the MajorDomo Infrastructure. See 'MDPDefinition' module
             - ...       :   The rest of the message content to actually be used by the worker itself - all of these frame(s) are irrelevant to the broker
         """
+
+        print "Received the following message: {0}".format(message)
+
 
         if len(message) >= 4:
             sender = message.pop(0)
@@ -165,12 +175,13 @@ class MajorDomoBroker(Actor):
             self.dispatch(service, message=message, id=request_id)
         elif command == MDPDefinition.B_VERIFICATION_REQUEST:
             self.logger.info("Received verification request from upstream client {0}".format(sender))
-            self.broker_socket.send_multipart([b"{0}_receiver".format(sender), '', MDPDefinition.C_CLIENT, MDPDefinition.B_VERIFICATION_RESPONSE, hexlify(self.broker_identity)])
+            self.broker_socket.send_multipart([b"{0}_receiver".format(sender), '', MDPDefinition.C_CLIENT, MDPDefinition.B_VERIFICATION_RESPONSE, self.broker_identity])
 
     def process_worker_message(self, sender, command, msg):
         """Process message sent to us by a worker."""
 
-        worker_exists = self.workers.get(hexlify(sender)) is not None
+        worker_exists = self.workers.get(sender) is not None
+        
 
         if (command == MDPDefinition.B_VERIFICATION_REQUEST):
             """
@@ -185,6 +196,7 @@ class MajorDomoBroker(Actor):
                 service = msg.pop(0)
                 # Not first command in session or Reserved service name
                 if not worker_exists:
+                    
                     self.logger.info("Received verification and registration request from new downstream worker {0} for service {1}".format(sender, service))
                     worker = self.get_or_create_worker(sender)
                     worker.service = self.get_or_create_service(service)
@@ -195,7 +207,8 @@ class MajorDomoBroker(Actor):
                 else:
                     self.logger.info("Received verification and registration request from existing downstream worker {0} for service {1}".format(sender, service))
                 
-                self.broker_socket.send_multipart([b"{0}_receiver".format(sender), '', MDPDefinition.W_WORKER, MDPDefinition.B_VERIFICATION_RESPONSE, hexlify(self.broker_identity)])
+                self.send_to_worker(worker, MDPDefinition.B_VERIFICATION_RESPONSE, self.broker_identity)
+                #self.broker_socket.send_multipart([b"{0}_receiver".format(sender), '', MDPDefinition.W_WORKER, MDPDefinition.B_VERIFICATION_RESPONSE, self.broker_identity])
 
         elif (MDPDefinition.W_REPLY == command):
             client = b"{0}_receiver".format(msg.pop(0))
@@ -209,22 +222,27 @@ class MajorDomoBroker(Actor):
                 worker = self.get_or_create_worker(sender)
                 worker.register_heartbeat()
             else:
-                self.logger.warn("Received heartbeat for non-existant worker {0}".format(sender)); # TODO: Add a reconnect request to worker here
+                # INCOMPLETE
+                self.logger.warn("Received heartbeat for non-existant worker {0}. Ordering worker disconnect.".format(sender)); # TODO: Add a reconnect request to worker here
+                worker = self.get_or_create_worker(sender, include_in_worker_pool=False)
+                self.send_to_worker(worker, MDPDefinition.W_DISCONNECT, self.broker_identity)
 
         elif (MDPDefinition.W_DISCONNECT == command):
             pass # TODO: Initiate a worker disconnect, as requested (in the event of a clean or exceptional shutdown)
         else:
             self.logger.error("Invalid message received: {0} <sender, command, message>".format([sender, command, msg]))
 
-    def get_or_create_worker(self, address):
+    def get_or_create_worker(self, address, include_in_worker_pool=True):
         """Finds the worker (creates if necessary)."""
         assert (address is not None)
-        identity = hexlify(address)
+        
+        identity = address
         worker = self.workers.get(identity)
 
         if (worker is None):
             worker = Worker(identity, address, self.HEARTBEAT_EXPIRY)
-            self.workers[identity] = worker
+            if include_in_worker_pool:
+                self.workers[identity] = worker
 
         return worker
 
@@ -275,6 +293,9 @@ class MajorDomoBroker(Actor):
             service.workers.remove(worker)
             self.logger.info("Deleting worker {0} from service {1}. Service has {2} workers remaining".format(worker.identity, service.name, len(service.workers)))
 
+        # In the event that this worker is unhealthy and not completely shut down, send a disconnect command
+        self.send_to_worker(worker, MDPDefinition.W_DISCONNECT, message=self.broker_identity)
+
         del self.workers[worker.identity]
 
     def dispatch(self, service, message=None, id=None):
@@ -283,12 +304,12 @@ class MajorDomoBroker(Actor):
         new worker for that service is connected 
         """
         assert (service is not None)
-        if message is not None: # Queue message if any
+        if message is not None:                                                     # Queue message if any
             service.requests.append(message)
 
         self.purge_workers()
 
-        healthy_workers = [] # We only forward to workers that are fully alive
+        healthy_workers = []                                                        # We only forward to workers that are fully alive
 
         for worker in service.workers:
             if worker.liveness == worker.MAX_LIVENESS:
@@ -299,14 +320,14 @@ class MajorDomoBroker(Actor):
                 message = service.requests.pop(0)
                 worker = None
 
-                if len(service.workers) > 1: # Don't pop() and append() if only 1 worker exists for the service, as that is silly
-                    if len(healthy_workers) > 1: # Don't pop() and append() healthy workers if only 1 healthy worker exists, as that is also silly
+                if len(service.workers) > 1:                                        # Don't pop() and append() if only 1 worker exists for the service, as that is silly
+                    if len(healthy_workers) > 1:                                    # Don't pop() and append() healthy workers if only 1 healthy worker exists, as that is also silly
                         worker = service.workers.pop(service.workers.index(healthy_workers.pop(0)))
-                        healthy_workers.append(worker) # Place this worker at the end of the current healthy workers queue
-                        service.workers.append(worker) # Place this worker in the end of the service queue
+                        healthy_workers.append(worker)                              # Place this worker at the end of the current healthy workers queue
+                        service.workers.append(worker)                              # Place this worker in the end of the service queue
                     else:
                         worker = healthy_workers[0]
-                        if service.workers.index(worker) < len(service.workers): # Cycle the healthy worker to the end of the services total queue if it is not already
+                        if service.workers.index(worker) < len(service.workers):    # Cycle the healthy worker to the end of the services total queue if it is not already
                             service.workers.pop(service.workers.index(worker))
                             service.workers.append(worker) 
                             
@@ -315,11 +336,11 @@ class MajorDomoBroker(Actor):
                     worker = healthy_workers[0]
                     self.send_to_worker(worker, MDPDefinition.W_REQUEST, message=message)
         else:
-            if message is not None: # Only log once, when a new message is received
-                self.logger.warn("Request for service {0} has no waiting healthy workers, placing in holding queue. Queue size is {1}.".format(service.name, len(service.requests)), event_id=id)
+            if message is not None:                                                 # Only log once, when a new message is received
+                self.logger.error("Request for service {0} has no waiting healthy workers, placing in holding queue. Queue size is {1}.".format(service.name, len(service.requests)), event_id=id)
 
 
-    def send_to_worker(self, worker, command, message=None):
+    def send_to_worker(self, worker, command, message=None, worker_identity=None, *args, **kwargs):
         """
         Send message to worker.
         If message is provided, sends that message.
@@ -332,6 +353,7 @@ class MajorDomoBroker(Actor):
 
         message = [worker.inbound_address, '', MDPDefinition.W_WORKER, command] + message
 
+        print "Sending {0} to {1}".format(message, worker.identity)
         self.broker_socket.send_multipart(message)
 
     def preHook(self):

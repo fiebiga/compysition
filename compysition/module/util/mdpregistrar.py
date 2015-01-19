@@ -46,13 +46,13 @@ class Broker(object):
     A broker class used by the BrokerRegistrationService to keep track of relevant broker liveness, hexlified (unique) socket identity, and listening address
     """
 
-    identity = None # The identity of the Broker, taken as the hexlified address of the dealer socket that sends heartbeats to the BrokerRegistartionService
-    port = None # Port Address of outbound worker socket
-    expiration_time = None # expires at this point, unless heartbeat
-    lifetime = None # in millis, the amount of time allowed between heartbeats before a broker will be registered as invalid
-    liveness = None # The current liveness of the broker. See MAX_LIVENESS below for more. If this number reaches 0 the broker will be purged from the registration 
+    identity = None             # The identity of the Broker, taken as the hexlified address of the dealer socket that sends heartbeats to the BrokerRegistartionService
+    port = None                 # Port Address of outbound worker socket
+    expiration_time = None      # expires at this point, unless heartbeat
+    lifetime = None             # in millis, the amount of time allowed between heartbeats before a broker will be registered as invalid
+    liveness = None             # The current liveness of the broker. See MAX_LIVENESS below for more. If this number reaches 0 the broker will be purged from the registration 
 
-    MAX_LIVENESS = None # The number of times in a row a heartbeat can be missed before a broker will be purged
+    MAX_LIVENESS = None         # The number of times in a row a heartbeat can be missed before a broker will be purged
 
     def __init__(self, identity=None, port=None, lifetime=None, max_liveness=None, *args, **kwargs):
         self.port = port or kwargs.get('port', None)
@@ -78,8 +78,6 @@ class BrokerConnector(Broker):
     verification_attempts = None    # The number of times that the implementor has initiated a verification request for this broker
     reconnect_attempts = None       # The number of times that the implementor has initiated a reconnect for this broker
 
-    messages_received = None        # TEMPORARY - debugging dropped requests
-    messages_sent = None            # TEMPORARY - debugging dropped requests
     """
     socket_identity: The identity that will be used in conjunction with a naming convention to allow for non-blocking concurrent sending/receiving
     e.g.    socket_identity = b"foo"
@@ -92,10 +90,9 @@ class BrokerConnector(Broker):
         Broker.__init__(self, *args, **kwargs)
         self.context = context or kwargs.get('context', None) or RegistratorContext()
         self.socket_identity = socket_identity or kwargs.get('socket_identity', None)
+        print "Creating BrokerConnector with socket identity {0}".format(self.identity)
         self.verification_attempts = 0
         self.reconnect_attempts = 0
-        self.messages_received = 0
-        self.messages_sent = 0
         self.reconnect()
         
     def disconnect(self):
@@ -159,7 +156,7 @@ class BrokerManager(RegistrationService):
     def __init__(self, controller_identity=None, logging=None, *args, **kwargs):
         RegistrationService.__init__(self, *args, **kwargs)
 
-        self.controller_identity = controller_identity or kwargs.get('controller_id', None)
+        self.controller_identity = controller_identity or kwargs.get('controller_identity', None)
 
         self.subscriber_socket = self.context.socket(zmq.SUB)
         self.subscriber_socket.setsockopt(zmq.SUBSCRIBE, self.manager_subscriber_scope)
@@ -199,6 +196,7 @@ class BrokerManager(RegistrationService):
             while (len(message) >= 2): # Iterate over the identities and addresses provided in the update
                 broker_identity = message.pop(0)
                 broker_address = message.pop(0)
+                print "Received heartbeat from broker {0}".format(broker_identity)
                 if self.verified_brokers.get(broker_identity) is None and self.unverified_brokers.get(broker_identity) is None:
                     self.connect_broker(BrokerConnector(identity=broker_identity, context=self.context, port=broker_address, socket_identity=self.controller_identity))
 
@@ -321,6 +319,7 @@ class BrokerManager(RegistrationService):
 
         if broker is not None:
             if self.logger is not None:
+                print "Disconnecting broker {0}".format(broker.identity)
                 self.logger.info("Disconnecting broker {0}".format(broker.identity))
 
             if (broker.inbound_socket, zmq.POLLIN) in self.inbound_poller.sockets:
@@ -347,8 +346,8 @@ class BrokerRegistrator(RegistrationService):
     registrator = None
     registration_service_endpoint = None
     broker_port = None
-    broker_identity = None # The identity utilized by the broker - must match the identity of the broker main ROUTER socket, or client heartbeat requests will never track back to
-    registration_manager = None # Used to control frequency of registration
+    broker_identity = None          # The identity utilized by the broker - must match the identity of the broker main ROUTER socket, or client heartbeat requests will never track back to
+    registration_manager = None     # Used to control frequency of registration
 
     def __init__(self, broker_port=None, broker_identity=None, registration_service_endpoint=None, *args, **kwargs):
 

@@ -9,6 +9,7 @@ from ast import literal_eval
 import util.mdpdefinition as MDPDefinition
 import time
 from pprint import pprint
+from binascii import hexlify
 
 """
 The MDPWorker and MDPClient are implementations of the ZeroMQ MajorDomo configuration, which deals with dynamic process routing based on service configuration and registration.
@@ -35,6 +36,7 @@ class MDPActor(Actor):
         self.context = zmq.Context()
         self.outbound_queue = Queue()
         self.broker_manager = BrokerManager(controller_identity=self.socket_identity, logging=self.logger)
+        print "My identity is {0}".format(self.socket_identity)
 
     def preHook(self):
         gevent.spawn(self.__listen)
@@ -56,7 +58,7 @@ class MDPActor(Actor):
                 if broker is None:
                     self.outbound_queue.put(event)
                     self.logger.info("There are events waiting on the client queue, but no brokers are registered. Queue size is {0}".format(self.outbound_queue.qsize()))
-                    gevent.sleep(1) # Place back on queue and wait for a broker
+                    gevent.sleep(1)         # Place back on queue and wait for a broker
                 else:
                     self.send_outbound_message(broker.outbound_socket, event)
 
@@ -67,7 +69,7 @@ class MDPActor(Actor):
             try:
                 polled_sockets = dict(self.broker_manager.inbound_poller.poll())
             except KeyboardInterrupt:
-                break # Interrupted
+                break
 
             if polled_sockets:
                 message = None
@@ -92,6 +94,8 @@ class MDPActor(Actor):
 
     def send_heartbeats(self):
         raise NotImplementedError("Please Implement method 'send_heartbeats'")
+
+    def send_disconnect(self, 
 
 class MDPClient(MDPActor):
 
@@ -201,11 +205,21 @@ class MDPWorker(MDPActor):
                 self.send_event(event)
 
             elif command == MDPDefinition.B_VERIFICATION_RESPONSE:
+                print "Origin Broker: {0}, {1}".format(origin_broker.socket_identity, message)
+                print self.broker_manager.unverified_brokers
+                #print hexlify(origin_broker.socket_identity)
                 self.logger.info("Received Verification Response from {0}".format(message))
                 self.broker_manager.verify_broker(message.pop(0))
             elif command == MDPDefinition.W_HEARTBEAT:
                 # Do nothing for heartbeats
                 pass
+            elif command == MDPDefinition.W_DISCONNECT:
+                self.logger.info("Received disconnect command from {0}".format(message))
+                print "Received disconnect command, disconnecting broker {0}".format(origin_broker.identity)
+                print "Brokers before disconnect command: {0}".format(self.broker_manager.verified_brokers)
+                self.broker_manager.disconnect_broker(origin_broker.identity)
+                print "Brokers after disconnect command: {0}".format(self.broker_manager.verified_brokers)
+
             else:
                 pass
 
@@ -219,25 +233,25 @@ class MDPWorker(MDPActor):
 
             message = ['', MDPDefinition.W_WORKER, MDPDefinition.W_REPLY, return_address, '', event['header']['event_id'], b"{0}".format(event)]
 
-            if broker is not None: # Prioritize the originating broker first
+            if broker is not None:                  # Prioritize the originating broker first
                 try:
                     broker.outbound_socket.send_multipart(message)
                     self.logger.info("Sent reply through originating broker", event_id=event['header']['event_id'])
                 except zmq.ZMQError:
-                    socket.send_multipart(message) # Use the current broker in the round-robin rotation
+                    socket.send_multipart(message)  # Use the current broker in the round-robin rotation
                     self.logger.info("Sent reply through non-originating broker", event_id=event['header']['event_id'])
         else:
             self.logger.error("Received event response but was unable to find client return address: {0}".format(event), event_id=event['header']['event_id'])
 
 
     def send_heartbeats(self):
-        self.broker_manager.send_heartbeats(message=['', MDPDefinition.W_WORKER, MDPDefinition.W_HEARTBEAT])
+        self.broker_manager.send_heartbeats(message=['', MDPDefinition.W_WORKER, MDPDefinition.W_HEARTBEAT, self.socket_identity])
 
 
 class Request(object):
 
-    return_address = None # The socket id of the originating client
-    origin_broker = None # The original broker this message was received through
+    return_address = None       # The socket id of the originating client
+    origin_broker = None        # The original broker this message was received through
 
     def __init__(self, return_address, origin_broker):
         self.return_address = return_address
