@@ -28,7 +28,7 @@ from setuptools.command.test import test as TestCommand
 import sys
 
 PROJECT = 'compysition'
-VERSION = '1.0.55'
+VERSION = '1.0.56'
 
 install_requires = ['gevent>=1.1',
                     'greenlet>=0.3.2',

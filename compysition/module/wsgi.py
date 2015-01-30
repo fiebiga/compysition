@@ -87,6 +87,7 @@ class WSGI(Actor):
         self.key = key or self.name
         self.responders = {}
         self.default_status = "200 OK"
+        self.default_content_type = ("Content-Type", "text/html")
         self.run_server = run_server
         self.base_path = base_path
 
@@ -95,10 +96,15 @@ class WSGI(Actor):
             self.__serve()
 
 
-    def application(self, env, start_response):
+    def application(self, env, start_response):        
+        try:
+            request = Request(env)
+        except Exception as err:
+            start_response('400 Bad Request', [self.default_content_type])
+            return "Malformed or empty request"
 
         response_queue = ManagedQueue()
-        request = Request(env)
+
         self.responders.update({response_queue.label: start_response})
 
         event = {
@@ -107,7 +113,7 @@ class WSGI(Actor):
                 self.key: {
                     "request_id": response_queue.label,
                     "service": "",
-                    "environment": request.environment(),
+                    "environment": request.environment,
                     "status": self.default_status,
                     "http": [
                         ("Content-Type", "text/html")
@@ -133,7 +139,7 @@ class WSGI(Actor):
             return response_queue
         except Exception as err:
             self.logger.warn("Exception on application processing: {0}".format(traceback.format_exc()), event_id=event['header']['event_id'])
-            start_response('404 Not Found', event['header'][self.key]['http'])
+            start_response('404 Not Found', self.default_content_type)
             return "A problem occurred processing your request. Reason: {0}".format(err)
         
 
