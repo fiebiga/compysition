@@ -120,7 +120,7 @@ class MajorDomoBroker(Actor):
             try:
                 items = self.poller.poll(self.HEARTBEAT_INTERVAL)
             except KeyboardInterrupt:
-                break # Interrupted
+                break 
             if items:
                 msg = self.broker_socket.recv_multipart()
                 self.process_message(msg)

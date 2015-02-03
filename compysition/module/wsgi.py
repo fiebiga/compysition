@@ -130,7 +130,7 @@ class WSGI(Actor):
                 event['header']['service'] = "default"
                 self.send_event(event, queue=self.pool.getQueue("outbox"))
             else:
-                outbox_path = env['PATH_INFO'].lstrip("{0}/".format(self.base_path)).split('/')[0]
+                outbox_path = env['PATH_INFO'].replace("{0}/".format(self.base_path), "", 1).lstrip('/').split('/')[0]
                 event['header']['service'] = outbox_path
                 self.logger.info("Putting received message on outbox {0}".format(outbox_path), event_id=event['header']['event_id'])
                 self.send_event(event, queue=self.pool.getQueue(outbox_path))
@@ -139,7 +139,7 @@ class WSGI(Actor):
             return response_queue
         except Exception as err:
             self.logger.warn("Exception on application processing: {0}".format(traceback.format_exc()), event_id=event['header']['event_id'])
-            start_response('404 Not Found', self.default_content_type)
+            start_response('404 Not Found', [self.default_content_type])
             return "A problem occurred processing your request. Reason: {0}".format(err)
         
 
