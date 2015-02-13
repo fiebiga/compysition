@@ -28,10 +28,9 @@ from stdout import STDOUT
 from testevent import TestEvent
 from filelogger import FileLogger
 from wsgi import WSGI
-from tagaggregator import TagAggregator
 from basicauth import BasicAuth
 from transformer import Transformer
-from xmlaggregator import XMLAggregator
+from eventaggregator import EventDataXMLAggregator, EventDataAggregator
 from xmlfilter import XMLFilter
 from xmlmatcher import XMLMatcher
 from flowcontroller import FlowController
@@ -41,5 +40,5 @@ from mdpbroker import MajorDomoBroker
 from header import Header
 from mdpregistrar import BrokerRegistrationService
 from eventlogger import EventLogger
-from eventrouter import EventRouter
+from eventrouter import EventRouter, EventXMLFilter, EventFilter
 from data import Data
