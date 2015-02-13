@@ -49,10 +49,11 @@ class TestEvent(Actor):
         - data_value (str):         Allows specification of test event data content
                                     default: "test"
         - header_value (str):       Allows specification of test event header content
-                                    default: Empty Dict {}
+                                    default: {}
         - delay (float):            The interval in seconds to wait after preHook is called
                                     to generate the first event. Should have a value of >= 0
                                     default: 0
+        - max_events (int):         The max number of events to produce
 
     '''
 
@@ -82,7 +83,7 @@ class TestEvent(Actor):
 
             self.generated_events += 1
             event = {"header":self.header_value,"data":self.data_value}
-            event['header']['event_id'] = uuid()
+            event['header']['event_id'] = uuid().get_hex()
             self.send_event({"header":self.header_value,"data":self.data_value})
             gevent.sleep(self.interval)
 
