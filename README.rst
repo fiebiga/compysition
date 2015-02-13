@@ -108,7 +108,7 @@ Installing
 
 Through Pypi:
 
-	$ easy_install compysition
+	$ pip install compysition
 
 Or the latest development branch from Github:
 
