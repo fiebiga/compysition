@@ -67,22 +67,22 @@ One-way messaging example
 
 .. code-block:: python
 
-	from compysition.router import Default
-	from compysition.module import TestEvent
-	from compysition.module import STDOUT
+from compysition.router import Default
+from compysition.module import TestEvent
+from compysition.module import STDOUT
 
-	router = Default()
-	router.register(TestEvent, "event_generator", interval=1)
-	router.register(STDOUT, "output_one", prefix="I am number one: ", timestamp=True)
-	router.register(STDOUT, "output_two", prefix="I am number two: ", timestamp=True)
+router = Default()
+router.register(TestEvent, "event_generator", interval=1)
+router.register(STDOUT, "output_one", prefix="I am number one: ", timestamp=True)
+router.register(STDOUT, "output_two", prefix="I am number two: ", timestamp=True)
     
-    router.connect("event_generator.outbox_one_outbox", "output_one.inbox")
-	router.connect("event_generator.outbox_two_outbox", "output_two.inbox")
+router.connect("event_generator.outbox_one_outbox", "output_one.inbox")
+router.connect("event_generator.outbox_two_outbox", "output_two.inbox")
     
-    router.start()
-    router.block()
+router.start()
+router.block()
     	
-	Output: 
+Output: 
 	[2015-02-13 16:56:35.850659] I am number two: test
 	[2015-02-13 16:56:35.850913] I am number one: test
 	[2015-02-13 16:56:36.851588] I am number two: test
