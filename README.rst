@@ -19,6 +19,18 @@ fast, and fully concurrent manner, using gevent_ greenlets and concurrency patte
 **Compysition is currently new and in pre-Beta release. It will be undergoing many deep changes in the coming months**
 The **compysition** project is built upon the original work of the Wishbone_ project
 
+Variations from the traditional Actor Model
+-----
+
+The traditional and strict actor model requires that all actors have exactly one inbox and one outbox. I found that this was
+overly constraining for creating and crafting complex data flow models. So compysition inherently supports multiple inboxes
+and multiple outboxes on every single actor.
+
+To put it in actor model terms, every actor is also a "funnel" and a "fanout". 
+
+The default behavior, unless stated otherwise in the module documentation, is that all modules will send/copy an event to ALL
+connected outbox queues
+
 Full Circle WSGI Example
 -------
 
