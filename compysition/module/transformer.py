@@ -43,14 +43,13 @@ class Transformer(Actor):
         - outbox:   Outgoing events.
     '''
 
-    def __init__(self, name, xslt=None, xslt_path=None, add_to_header=False, print_input_output=False, *args, **kwargs):
+    def __init__(self, name, xslt=None, xslt_path=None, add_to_header=False, *args, **kwargs):
         Actor.__init__(self, name, *args, **kwargs)
         self.logger.info("Initialized")
         self.subjects = args or None
         self.add_to_header = add_to_header or kwargs.get('add_to_header', False) or False
         self.key = kwargs.get('key', None) or self.name
         self.caller = 'wsgi'
-        self.print_input_output = print_input_output
 
         if xslt is None:
             if xslt_path is not None:
@@ -62,12 +61,7 @@ class Transformer(Actor):
 
 
     def consume(self, event, *args, **kwargs):
-        if self.print_input_output:
-            f = open('logs/{0}_transform_inbox.txt'.format(self.key),'w')
-            f.write(b"{0}".format(event['data']))
-            f.close() 
         try:
-
             original_xml = etree.fromstring(event['data'])
             transformed_xml = self.transform(original_xml)
             event['data'] = etree.tostring(transformed_xml)
@@ -77,11 +71,6 @@ class Transformer(Actor):
             event['header'].get(self.caller, {}).update({'status': '400 Bad Request'})
             event['data'] = "Malformed Request"
             self.send_error(event)
-
-        if self.print_input_output:
-            f = open('logs/{0}_transform_outbox.txt'.format(self.key),'w')
-            f.write(b"{0}".format(event['data']))
-            f.close() 
 
     def transform(self, etree_element):
         return self.template(etree_element)
