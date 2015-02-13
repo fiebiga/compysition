@@ -3,23 +3,21 @@ Compysition
 
 What?
 -----
-
-The **compysition** project is built upon the original work of the Wishbone_ project, which is described as follows:
 ::
 
-	A Python application framework and CLI tool build and manage async event
-	pipeline servers with minimal effort.
+	A Python application framework to build and manage async and highly concurrent event-driven data flow
 
-
-We have created **compysition** to build off the simple way in which Wishbone_ managed message flow across multiple
-modules. Compysition also expands upon this module registration module to provide abstracted multi-process communication
+I have created **compysition** to build off the simple way in which Wishbone_ managed message flow across multiple
+modules. Compysition expands upon this module registration module to provide abstracted multi-process communication
 via 0mq_, as well as the ability for full cyclical communication for in-process request/response behavior in a lightweight,
-fast, and fully concurrent manner
+fast, and fully concurrent manner, using gevent_ greenlets and concurrency patterns to consume and output events
 
 .. _0mq: http://zeromq.org/
 .. _Wishbone: https://github.com/smetj/wishbone
+.. _gevent: http://www.gevent.org
 
 **Compysition is currently new and in pre-Beta release. It will be undergoing many deep changes in the coming months**
+The **compysition** project is built upon the original work of the Wishbone_ project
 
 Full Circle WSGI Example
 -------
@@ -67,40 +65,35 @@ adding it into the message execution flow
 One-way messaging example
 -------
 
-.. image:: docs/intro.png
-    :align: center
-
 .. code-block:: python
 
 	from compysition.router import Default
 	from compysition.module import TestEvent
-	from compysition.module import RoundRobin
 	from compysition.module import STDOUT
 
-	router=Default()
-	router.register(TestEvent, "input")
-	router.register(RoundRobin, "mixing")
-	router.register(STDOUT, "output1", prefix="I am number one: ")
-	router.register(STDOUT, "output2", prefix="I am number two: ")
+	router = Default()
+	router.register(TestEvent, "event_generator", interval=1)
+	router.register(STDOUT, "output_one", prefix="I am number one: ", timestamp=True)
+	router.register(STDOUT, "output_two", prefix="I am number two: ", timestamp=True)
     
-    	router.connect("input.outbox", "mixing.inbox")
-    	router.connect("mixing.one", "output1.inbox")
-    	router.connect("mixing.two", "output2.inbox")
+    router.connect("event_generator.outbox_one_outbox", "output_one.inbox")
+	router.connect("event_generator.outbox_two_outbox", "output_two.inbox")
     
-    	router.start()
-    	router.block()
+    router.start()
+    router.block()
     	
-    	Output: 
-    	I am number one: test
-    	I am number two: test
-    	I am number one: test
-    	I am number two: test
-    	I am number one: test
-    	I am number two: test
-    	I am number one: test
-    	I am number two: test
-    	I am number one: test
-	I am number two: test
+	Output: 
+	[2015-02-13 16:56:35.850659] I am number two: test
+	[2015-02-13 16:56:35.850913] I am number one: test
+	[2015-02-13 16:56:36.851588] I am number two: test
+	[2015-02-13 16:56:36.851856] I am number one: test
+	[2015-02-13 16:56:37.852456] I am number two: test
+	[2015-02-13 16:56:37.852737] I am number one: test
+	[2015-02-13 16:56:38.858107] I am number two: test
+	[2015-02-13 16:56:38.858400] I am number one: test
+	[2015-02-13 16:56:39.860292] I am number two: test
+	[2015-02-13 16:56:39.860570] I am number one: test
+
 
 
 Installing
@@ -118,17 +111,6 @@ Or the latest development branch from Github:
 
 	$ sudo python setup.py install
 
-
-Original Wishbone Project: Documentation
--------------
-
-https://wishbone.readthedocs.org/en/latest/index.html
-
-
-Other Available Modules <Original Wishbone Project>
--------
-
-https://github.com/smetj/wishboneModules
 
 Support
 -------
