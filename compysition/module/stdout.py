@@ -24,6 +24,7 @@
 
 from compysition import Actor
 from gevent import sleep
+import datetime
 
 class STDOUT(Actor):
 
@@ -39,7 +40,6 @@ class STDOUT(Actor):
         Actor.__init__(self, name, *args, **kwargs)
         self.complete = complete
         self.prefix = prefix
-        self.format = Format(complete, counter, pid)
         self.timestamp = timestamp
 
     def consume(self, event, *args, **kwargs):
