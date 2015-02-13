@@ -37,58 +37,27 @@ class Header(Actor):
         - name(str)
            |  The name of the module.
 
-        - size(int)
-           |  The default max length of each queue.
-
-        - frequency(int)
-           |  The frequency in seconds to generate metrics.
-
-        - key(str)(self.name)
+        - key(str) (Default: name)
            |  The header key to store the information.
 
         - header(dict)({})
            |  The data to store.
 
-        - expr(str)(None)
-           |  printf-style String Formatting.
-           |  Expects event["data"] to be a dictionary.
-
-
-    Queues:
-
-        - inbox
-           |  Incoming events.
-
-        - outbox
-           |  Outgoing events.
     '''
 
-    def __init__(self, name, key=None, header={}, expr=None, *args, **kwargs):
+    def __init__(self, name, key=None, header={}, *args, **kwargs):
         Actor.__init__(self, name, *args, **kwargs)
+        self.header = header
+
         if key is None:
             self.key = name
         else:
             self.key = key
 
-        self.header = header
-        self.expr = expr
-
-        if expr is None:
-            self.addHeader = self.__doHeader
-        else:
-            self.addHeader = self.__doPrintf
-
-    def consume(self, event):
-        event = self.addHeader(event)
+    def consume(self, event, *args, **kwargs):
+        event = self.update_header_dict(event)
         self.send_event(event)
 
-    def __doHeader(self, event):
+    def update_header_dict(self, event):
         event["header"][self.key] = self.header
         return event
-
-    def __doPrintf(self, event, *args, **kwargs):
-        try:
-            return self.expr % event["data"]
-        except Exception as err:
-            self.logger.error("String replace failed.  Reason: %s" % (err))
-            return event
