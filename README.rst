@@ -31,10 +31,9 @@ and concurrent way. All steps and executions are spun up as spawned greenlet on 
 	from compysition.module import WSGI
 	from compysition.module import BasicAuth
 	from compysition.module import Transformer
-	from compysition.module import Funnel
 	
 	from mymodules.module import SomeRequestExecutor
-	from myprojectpackage import my_xsl_files as xsls
+	from myprojectresources import my_xsl_files as xsls
 	
 	router = Default()
 	router.registerModule(WSGIServer, "wsgi")
