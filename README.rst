@@ -5,7 +5,7 @@ What?
 -----
 ::
 
-	A Python application framework to build and manage async and highly concurrent event-driven data flow
+	A Python application framework to build and manage asynchronous and highly concurrent event-driven data flow
 
 I have created **compysition** to build off the simple way in which Wishbone_ managed message flow across multiple
 modules. Compysition expands upon this module registration module to provide abstracted multi-process communication
