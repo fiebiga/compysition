@@ -25,10 +25,9 @@ from compysition import Actor
 from pprint import pformat
 from lxml import etree
 import os
-import pdb
 
 class Transformer(Actor):
-    '''**Sample module which reverses incoming events.**
+    '''**A sample module which applies a provided XSLT to an incoming event XML data**
 
     Parameters:
 
