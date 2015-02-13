@@ -26,7 +26,8 @@ from lxml import etree
 
 class XMLFilter(Actor):
     '''**A module that forwards or discards an event based on the presence/absence of or value of 
-    a given xml path (or xslt transform) for the event XML data**
+    a given xml path (or xslt transform) for the event XML data
+    WARNING: Deprecated. Use EventRouter Instead**
 
     Parameters:
 
@@ -60,6 +61,7 @@ class XMLFilter(Actor):
             }
         }
     }
+
     '''
     
     def __init__(self, name, xpath, xslt=None, xslt_filepath=None, value=None, whitelist=True, filter_type="delete", log_level=3, *args, **kwargs):
