@@ -26,7 +26,6 @@
 
 from compysition import Actor
 
-
 class Data(Actor):
 
     '''**Adds information to event data.**'''

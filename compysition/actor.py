@@ -63,13 +63,9 @@ class Actor(object):
         self.name = name
         self.size = size
         self.frequency = frequency
-
         self.pool = QueuePool(size)
-        
         self.logger = QLogger(name)
-
         self.__loop = True
-
         self.threads = Group()
 
         if generate_metrics:
@@ -77,17 +73,12 @@ class Actor(object):
 
         self.__run = Event()
         self.__run.clear()
-
         self.__connections = {}
-
         self.__children = {}
         self.__parents = {}
-
         self.__block = Event()
         self.__block.clear()
-
         self.__blocking_consume = blocking_consume
-
         self.__consumers = []
 
     def block(self):
@@ -143,21 +134,6 @@ class Actor(object):
                                                                       destination_queue,
                                                                       destination.pool.getQueue(destination_queue)))
 
-        """
-        if not destination.pool.hasQueue(destination_queue):
-            #destination.pool.createQueue(destination_queue)
-            destination.registerConsumer(destination.consume, destination_queue)
-
-        if not self.pool.hasQueue(source_queue):
-            if not error_queue:
-                self.pool.createOutboundQueue(source_queue)
-            else:
-                self.pool.createErrorQueue(source_queue)
-
-        destination.pool.addInboundQueue(self.pool.getQueue(source_queue), name=destination_queue)
-        #setattr(destination.pool.queues, destination_queue, self.pool.getQueue(source_queue))
-        self.pool.getQueue(source_queue).disableFallThrough()
-        """
 
     def flushQueuesToDisk(self):
         '''Writes whatever event in the queue to disk for later retrieval.'''
