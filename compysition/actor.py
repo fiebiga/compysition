@@ -34,7 +34,7 @@ from time import time
 from copy import copy, deepcopy
 import traceback
 import gevent.pool
-
+from uuid import uuid4 as uuid
 
 class Actor(object):
     """
@@ -43,6 +43,8 @@ class Actor(object):
 
     The Actor is responsible for putting events on outbox queues, and consuming incoming events on inbound queues.
     """
+
+    DEFAULT_EVENT_SERVICE = "default"
 
     def __init__(self, name, size=0, frequency=1, generate_metrics=True, blocking_consume=False, *args, **kwargs):
         """
@@ -315,6 +317,31 @@ class Actor(object):
                         except QueueFull:
                             self.pool.queues.metrics.waitUntilEmpty()
             sleep(self.frequency)
+
+    def create_event(self, meta_id=None, service=DEFAULT_EVENT_SERVICE, data=""):
+        """
+        Anatomy of an event:
+            - header:
+                - event_id: The unique and functionally immutable ID for this new event
+                - meta_id:  The ID associated with other unique event data flows. This ID is used in logging
+                - service:  (default: default) Used for compatability with the ZeroMQ MajorDomo configuration. Scope this to specific types of interproces routing
+            - data:
+                <The data passed and worked on from event to event. Mutable and variable>
+        """
+
+        # TODO: Create and test an easily serialized Event() object. 
+        # For the moment, a standard create_event dictionary structure will suffice
+        event_id = uuid().get_hex()
+
+        event = {
+            "header": {
+                "event_id": event_id,
+                "meta_id": meta_id,
+                "service": service
+                },
+            "data": data
+        }
+        return event
 
     def consume(self, event, *args, **kwargs):
         """Raises error when user didn't define this function in his module.

@@ -131,11 +131,11 @@ class XMLFilter(Actor):
 
                 
     def forward_event(self, event):
-        self.logger.info("XMLFilter {0} Forwarding event".format(self.name), event_id=event['header']['event_id'])
+        self.logger.info("XMLFilter {0} Forwarding event".format(self.name), event=event)
         self.send_event(event)
 
     def filter_event(self, event, message=None, *args, **kwargs):
-        self.logger.info("XMLFilter {0} Filtering event".format(self.name), event_id=event['header']['event_id'])
+        self.logger.info("XMLFilter {0} Filtering event".format(self.name), event=event)
 
         if self.filter_type == "delete":
             del event
@@ -143,9 +143,9 @@ class XMLFilter(Actor):
             self.send_error(event)
         elif self.filter_type == "log":
             if message is not None:
-                self.logger.error(message, event_id=event['header']['event_id'])
+                self.logger.error(message, event=event)
             else:
-                self.logger.error(event["data"], event_id=event['header']['event_id'])
+                self.logger.error(event["data"], event=event)
             del event
 
     def load_template(self, path):

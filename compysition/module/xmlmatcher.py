@@ -72,5 +72,5 @@ class XMLMatcher(Actor):
                 self.events[request_id] = MatchedEvent(self.key, inbound_queues)
                 self.events.get(request_id).report_inbox(inbox_origin, event['data'])
         except Exception as error:
-            self.logger.warn("Could not process incoming event: {0}".format(error), event_id=event['header']['event_id'])
+            self.logger.warn("Could not process incoming event: {0}".format(error), event=event)
 

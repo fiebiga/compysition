@@ -87,10 +87,10 @@ class EventRouter(Actor):
                         filter_queue = self.pool.getQueue(outbox)
                         self.send_event(event, queue=filter_queue)
                         self.logger.debug("EventFilter matched for outbound queue '{queue_name}'. Event successfully forwarded".format(queue_name=outbox), 
-                                          event_id=event['header']['event_id'])
+                                          event=event)
                     except QueueMissing as err:
                         self.logger.error("EventFilter to outbound queue '{queue_name}' was matched, but no queue by that name was connected. Event will be discarded".format(queue_name=outbox), 
-                                          event_id=event['header']['event_id'])
+                                          event=event)
 
         if not matched:
             if not self.whitelist:
@@ -98,11 +98,11 @@ class EventRouter(Actor):
                     for default_outbox in self.default_outboxes:
                             self.send_event(event, queue=default_outbox)
                             self.logger.debug("No EventFilters matched for event. Event forwarded on default outbox '{queue_name}'".format(queue_name=default_outbox), 
-                                              event_id=event['header']['event_id'])
+                                              event=event)
                 else:
-                    self.logger.error("No EventFilters matched for event and no default queues are connected. Event has been discarded", event_id=event['header']['event_id'])
+                    self.logger.error("No EventFilters matched for event and no default queues are connected. Event has been discarded", event=event)
             else:
-                self.logger.debug("No EventFilters matched for event. Event has been discarded", event_id=event['header']['event_id'])
+                self.logger.debug("No EventFilters matched for event. Event has been discarded", event=event)
 
     def set_filter(self, filter):
         if isinstance(filter, EventFilter):
@@ -169,7 +169,7 @@ class EventFilter(object):
                         else:
                             return True
         except Exception as err:
-            self.logger.error("Error in attempting to apply regex patterns {0} to {1}: {2}".format(self.value_regexes, value, err), event_id=event['header']['event_id'])
+            self.logger.error("Error in attempting to apply regex patterns {0} to {1}: {2}".format(self.value_regexes, value, err), event=event)
 
         return False
 

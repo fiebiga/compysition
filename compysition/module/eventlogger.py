@@ -3,7 +3,7 @@
 #
 #  stdout.py
 #
-#  Copyright 2013 Jelle Smet <smetj@gmail.com>
+#  Copyright 2015 Adam Fiebig <fiebig.adam@gmail.com>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ import logging
 
 class EventLogger(Actor):
 
-    '''**Prints incoming events to logger.**
+    '''**Sends incoming events to logger.**
 
     Simple module that logs the current event contents
 
@@ -48,5 +48,5 @@ class EventLogger(Actor):
         if self.log_data:
             message += "Event data: {data}".format(data=event['data'])
 
-        self.logger.log(self.level, message, event_id=event['header']['event_id'])
+        self.logger.log(self.level, message, event=event)
         self.send_event(event)

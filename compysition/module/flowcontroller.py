@@ -26,7 +26,7 @@ from compysition import Actor
 class FlowController(Actor):
     '''
     Simple module that is designed to accept any input and replicate it to any outbox(s)
-    For example, if one were to want to abstract multiple potential data flows to a single aggregator (XMLMatcher) inbox, the outbox behind
+    For example, if one were to want to abstract multiple potential data flows to a single aggregator (EventMatcher) inbox, the outbox behind
     this FlowController module would serve as a mask so that the data aggregator isn't waiting for data flow channels that will never arrive
 
     In the future this could be designed to handle multiple functions, such as controlling rate of event flow through it

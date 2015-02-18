@@ -155,22 +155,6 @@ class Default():
         self.log_module.connect("logs", self.log_module, "inbox", check_existing=False)
         self.metric_module.connect("logs", self.log_module, "inbox", check_existing=False)
 
-
-        """
-        if isinstance(self.failed_module, Null) and not isinstance(self.log_module, Null):
-            self.failed_module = self.log_module
-        else:
-            self.failed_module.connect("logs", self.log_module, "{0}_failed".format(self.failed_module.name))
-
-        for module in self.pool.list():
-            module.connect("logs", self.log_module, "{0}_logs".format(module.name), check_existing=False) 
-            module.connect("metrics", self.metric_module, "{0}_metrics".format(module.name), check_existing=False)
-            module.connect("failed", self.failed_module, "{0}_failed".format(module.name), check_existing=False)
-
-        self.log_module.connect("logs", self.log_module, "{0}_logs".format(self.log_module.name))
-        self.metric_module.connect("logs", self.log_module, "{0}_metrics".format(self.metric_module.name))
-        """
-
     def isRunning(self):
         return self.__running
 

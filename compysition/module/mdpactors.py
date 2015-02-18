@@ -103,9 +103,9 @@ class MDPClient(MDPActor):
 
     def send_outbound_message(self, socket, event):
         try:
-            request_id = event['header']['event_id'] # Set for broker logging so we can trace the path of an event easily
+            request_id = event['header'].get("meta_id", None) or event['header']['event_id'] # Set for broker logging so we can trace the path of an event easily
             service = event['header']['service']
-            self.logger.info("Sending event to service '{0}'".format(service), event_id=event['header']['event_id'])
+            self.logger.info("Sending event to service '{0}'".format(service), event=event)
             message = [request_id, b"{0}".format(event)]
             self.send(service, message, broker_socket=socket)
         except Exception as err:
@@ -136,7 +136,7 @@ class MDPClient(MDPActor):
                 request_identity = message.pop(0)
 
                 event = literal_eval(message[0])
-                self.logger.info("Received reply from broker", event_id=event['header']['event_id'])
+                self.logger.info("Received reply from broker", event=event)
                 self.send_event(event)
 
     def set_broker(self, broker_socket=None):
@@ -194,9 +194,10 @@ class MDPWorker(MDPActor):
             if command == MDPDefinition.W_REQUEST:
                 return_address = message.pop(0)
                 empty = message.pop(0)
-                request_id = message.pop(0)
+                broker_event_logging_id = message.pop(0)
                 event = literal_eval(message.pop(0))
 
+                request_id = event['header']['event_id']
                 self.requests[request_id] = Request(return_address, origin_broker)
 
                 self.send_event(event)
@@ -214,24 +215,24 @@ class MDPWorker(MDPActor):
                 pass
 
     def send_outbound_message(self, socket, event):
-        request_id = event['header']['wsgi']['request_id']
+        request_id = event['header']['event_id']
         request = self.requests.get(request_id)
 
         if request is not None:
             broker = request.origin_broker
             return_address = request.return_address
-
-            message = ['', MDPDefinition.W_WORKER, MDPDefinition.W_REPLY, return_address, '', event['header']['event_id'], b"{0}".format(event)]
+            broker_event_logging_id = event['header'].get("meta_id", None) or event['header']['event_id']
+            message = ['', MDPDefinition.W_WORKER, MDPDefinition.W_REPLY, return_address, '', broker_event_logging_id, b"{0}".format(event)]
 
             if broker is not None:                  # Prioritize the originating broker first
                 try:
                     broker.outbound_socket.send_multipart(message)
-                    self.logger.info("Sent reply through originating broker", event_id=event['header']['event_id'])
+                    self.logger.info("Sent reply through originating broker", event=event)
                 except zmq.ZMQError:
                     socket.send_multipart(message)  # Use the current broker in the round-robin rotation
-                    self.logger.info("Sent reply through non-originating broker", event_id=event['header']['event_id'])
+                    self.logger.info("Sent reply through non-originating broker", event=event)
         else:
-            self.logger.error("Received event response but was unable to find client return address: {0}".format(event), event_id=event['header']['event_id'])
+            self.logger.error("Received event response but was unable to find client return address: {0}".format(event), event=event)
 
 
     def send_heartbeats(self):

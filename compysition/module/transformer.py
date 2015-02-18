@@ -64,7 +64,7 @@ class Transformer(Actor):
             original_xml = etree.fromstring(event['data'])
             transformed_xml = self.transform(original_xml)
             event['data'] = etree.tostring(transformed_xml)
-            self.logger.info("Successfully transformed XML", event_id=event['header']['event_id'])
+            self.logger.info("Successfully transformed XML", event=event)
             self.send_event(event)
         except KeyError:
             event['header'].get(self.caller, {}).update({'status': '400 Bad Request'})

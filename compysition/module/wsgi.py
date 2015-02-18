@@ -103,48 +103,36 @@ class WSGI(Actor):
             start_response('400 Bad Request', [self.default_content_type])
             return "Malformed or empty request"
 
-        response_queue = ManagedQueue()
-
-        self.responders.update({response_queue.label: start_response})
-
-        event = {
-            "header": {
-                "event_id": response_queue.label, 
-                self.key: {
-                    "request_id": response_queue.label,
-                    "service": "",
-                    "environment": request.environment,
-                    "status": self.default_status,
-                    "http": [
-                        ("Content-Type", "text/html")
-                    ]
-                }
-            },
-            "data": request.input
-        }
-
         try:
-            self.logger.info('Received Message', event_id=event['header']['event_id'])
             if env['PATH_INFO'] == self.base_path:
-                self.logger.info("Putting received message on outbox {0}".format(env['PATH_INFO']), event_id=event['header']['event_id'])
-                event['header']['service'] = "default"
-                self.send_event(event, queue=self.pool.getQueue("outbox"))
+                service = self.DEFAULT_EVENT_SERVICE
+                outbox = "outbox"
             else:
-                outbox_path = env['PATH_INFO'].replace("{0}/".format(self.base_path), "", 1).lstrip('/').split('/')[0]
-                event['header']['service'] = outbox_path
-                self.logger.info("Putting received message on outbox {0}".format(outbox_path), event_id=event['header']['event_id'])
-                self.send_event(event, queue=self.pool.getQueue(outbox_path))
+                outbox = env['PATH_INFO'].replace("{0}/".format(self.base_path), "", 1).lstrip('/').split('/')[0]
+                service = outbox
 
-            start_response(self.default_status, event['header'][self.key]['http'])
+            response_queue = ManagedQueue()
+            self.responders.update({response_queue.label: start_response})
+            environment_header = {"request_id": response_queue.label,
+                                    "service": "",
+                                    "environment": request.environment,
+                                    "status": self.default_status,
+                                    "http": [self.default_content_type]}
+            event = self.create_event(data=request.input, service=service)
+            event['header'][self.key] = environment_header
+
+            self.logger.info("Putting received message on outbox {0}".format(outbox), event=event)
+            self.send_event(event, queue=self.pool.getQueue(outbox))
+            start_response(self.default_status, [self.default_content_type])
             return response_queue
         except Exception as err:
-            self.logger.warn("Exception on application processing: {0}".format(traceback.format_exc()), event_id=event['header']['event_id'])
+            self.logger.warn("Exception on application processing: {0}".format(traceback.format_exc()), event=event)
             start_response('404 Not Found', [self.default_content_type])
             return "A problem occurred processing your request. Reason: {0}".format(err)
         
 
     def consume(self, event, *args, **kwargs):
-        self.logger.debug("WSGI Received Response from origin: {0}".format(kwargs.get('origin')), event_id=event['header']['event_id'])
+        self.logger.debug("WSGI Received Response from origin: {0}".format(kwargs.get('origin')), event=event)
         header = event['header'][self.key]
         request_id = header['request_id']
         response_queue = ManagedQueue(request_id)

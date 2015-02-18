@@ -24,36 +24,13 @@
 
 from compysition import Actor
 
-
 class Null(Actor):
 
-    '''**Purges incoming events.**
+    '''**Purges incoming events.** '''
 
-    Purges incoming events.
-
-
-        Parameters:
-
-        - name(str)
-           |  The name of the module.
-
-        - size(int)
-           |  The default max length of each queue.
-
-        - frequency(int)
-           |  The frequency in seconds to generate metrics.
-
-
-    Queues:
-
-        - inbox
-           |  incoming events
-    '''
 
     def __init__(self, name, *args, **kwargs):
-
         Actor.__init__(self, name, *args, **kwargs)
-        self.name = name
 
     def consume(self, event, *args, **kwargs):
         del event

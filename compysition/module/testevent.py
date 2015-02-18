@@ -84,7 +84,9 @@ class TestEvent(Actor):
             self.generated_events += 1
             event = {"header":self.header_value,"data":self.data_value}
             event['header']['event_id'] = uuid().get_hex()
-            self.send_event({"header":self.header_value,"data":self.data_value})
+            event['header']['meta_id'] = event['header']['event_id']
+            event['data'] = self.data_value
+            self.send_event(event)
             gevent.sleep(self.interval)
 
         self.logger.info("Stopped producing events.")

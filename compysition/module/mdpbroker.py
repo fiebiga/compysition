@@ -166,10 +166,10 @@ class MajorDomoBroker(Actor):
             service = message.pop(0)
             service = self.get_or_create_service(service)
             request_id = message[0]
-            self.logger.info("Received client request for service {0} ({1} waiting workers)".format(service.name, len(service.workers)), event_id=request_id)
+            self.logger.info("Received client request for service {0} ({1} waiting workers)".format(service.name, len(service.workers)), log_entry_id=request_id)
             # Set reply return address to client sender
             message = [sender,''] + message
-            self.dispatch(service, message=message, id=request_id)
+            self.dispatch(service, message=message, log_entry_id=request_id)
         elif command == MDPDefinition.B_VERIFICATION_REQUEST:
             self.logger.info("Received verification request from upstream client {0}".format(sender))
             self.broker_socket.send_multipart([b"{0}_receiver".format(sender), '', MDPDefinition.C_CLIENT, MDPDefinition.B_VERIFICATION_RESPONSE, self.broker_identity])
@@ -208,7 +208,7 @@ class MajorDomoBroker(Actor):
             client = b"{0}_receiver".format(msg.pop(0))
             request_id = msg[1]
             msg = [client, '', MDPDefinition.C_CLIENT, MDPDefinition.W_REPLY] + msg
-            self.logger.info("Received worker response, routing to waiting client...", event_id=request_id)
+            self.logger.info("Received worker response, routing to waiting client...", log_entry_id=request_id)
             self.broker_socket.send_multipart(msg)
 
         elif (MDPDefinition.W_HEARTBEAT == command):
@@ -292,7 +292,7 @@ class MajorDomoBroker(Actor):
 
         del self.workers[worker.identity]
 
-    def dispatch(self, service, message=None, id=None):
+    def dispatch(self, service, message=None, log_entry_id=None):
         """
         Dispatch requests to waiting workers as possible. This will flush an entire service queue if backed up requests exist for a previously workerless service if a
         new worker for that service is connected 
@@ -331,7 +331,7 @@ class MajorDomoBroker(Actor):
                     self.send_to_worker(worker, MDPDefinition.W_REQUEST, message=message)
         else:
             if message is not None:                                                 # Only log once, when a new message is received
-                self.logger.error("Request for service {0} has no waiting healthy workers, placing in holding queue. Queue size is {1}.".format(service.name, len(service.requests)), event_id=id)
+                self.logger.error("Request for service {0} has no waiting healthy workers, placing in holding queue. Queue size is {1}.".format(service.name, len(service.requests)), log_entry_id=log_entry_id)
 
 
     def send_to_worker(self, worker, command, message=None, worker_identity=None, *args, **kwargs):
