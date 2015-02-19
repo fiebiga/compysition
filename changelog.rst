@@ -4,18 +4,11 @@ Compysition changelog
 Version 1.0.62
 ~~~~~~~~~~~~~
 
-- Added the concept of the 'meta_id' to an event. This is designed to allow a newly generated event to be associated to the data flow of an event that was previously persisted outside
-	of the immediate event data-flow. To summarize the proper uses of 'event_id' vs 'meta_id':
-		- event_id:		Used for internal compysition operations. Should be unique and immutable for every event generated in compysition. 
-							Changing this value breaks certain control modules - it should not be altered once generated for a new event.
-		- meta_id:		This is an ID that associates it with an overall meta work, such as a series of generated events that all pertain to the same 'theme' of work.
-							For example, a form of some sort waiting for human approval in a database won't be a part of the active compysition dataflow, but for logging purposes we would want
-							the new series of compysition events that follow that approval to log with an ID that allows us to easily associate the 'form creation' and the 'post approval' steps.
-							For this, we have the meta_id. Logging invocations that pass the 'event' variable to the qlogger will always use meta_id over the event_id. 
-							**Changing this value has no effect on the internal workings of compysition modules. It is purely for logging associations**
+- Added the concept of the 'meta_id' to an event. This is designed to allow a newly generated event to be associated to the data flow of an event that was previously persisted outside of the immediate event data-flow. To summarize the proper uses of 'event_id' vs 'meta_id':
+		- event_id:		Used for internal compysition operations. Should be unique and immutable for every event generated in compysition. Changing this value breaks certain control modules - it should not be altered once generated for a new event.
+		- meta_id:		This is an ID that associates it with an overall meta work, such as a series of generated events that all pertain to the same 'theme' of work. For example, a form of some sort waiting for human approval in a database won't be a part of the active compysition dataflow, but for logging purposes we would want the new series of compysition events that follow that approval to log with an ID that allows us to easily associate the 'form creation' and the 'post approval' steps. For this, we have the meta_id. Logging invocations that pass the 'event' variable to the qlogger will always use meta_id over the event_id. **Changing this value has no effect on the internal workings of compysition modules. It is purely for logging associations**
 
-- Added "create_event" method on the Actor class. This allows a uniform and standardized event creation syntax, rather than re-creating events and event dict syntaxes in multiple locations.
-	This will be a precursor to implementing an Event() object - the reason it was not done at this time is because testing is required to ensure that serialization works flawlessly across ZeroMQ sockets
+- Added "create_event" method on the Actor class. This allows a uniform and standardized event creation syntax, rather than re-creating events and event dict syntaxes in multiple locations. This will be a precursor to implementing an Event() object - The reason it was not done at this time is because testing is required to ensure that serialization works flawlessly across ZeroMQ sockets
 
 Version 1.0.55
 ~~~~~~~~~~~~~
