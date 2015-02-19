@@ -8,7 +8,7 @@ What?
 	A Python application framework to build and manage asynchronous and highly concurrent event-driven data flow
 
 I have created **compysition** to build off the simple way in which Wishbone_ managed message flow across multiple
-modules. Compysition expands upon this module registration module to provide abstracted multi-process communication
+modules. Compysition expands upon this module registration method to provide abstracted multi-process communication
 via 0mq_, as well as the ability for full cyclical communication for in-process request/response behavior in a lightweight,
 fast, and fully concurrent manner, using gevent_ greenlets and concurrency patterns to consume and output events
 
