@@ -92,6 +92,7 @@ class Actor(object):
     def connect(self, source_queue, destination, destination_queue, error_queue=False, check_existing=True):
         '''Connects the <source> queue to the <destination> queue.
         In fact, the source queue overwrites the destination queue.'''
+        """TODO: Refactor and simplify this"""
 
         if check_existing:
             if source_queue in self.__children:
@@ -336,12 +337,34 @@ class Actor(object):
         event = {
             "header": {
                 "event_id": event_id,
-                "meta_id": meta_id,
-                "service": service
+                "meta_id":  meta_id,
+                "service":  service
                 },
             "data": data
         }
         return event
+
+    def spawn_greenlet(self, function, *args, **kwargs):
+        gs = self.threads.spawn(function, *args, **kwargs)
+        gs.link_exception(self._greenlet_monitor)
+
+    def _greenlet_monitor(self, exceptional_greenlet):
+        function_name = exceptional_greenlet.run_target.__name__
+        error_message = exceptional_greenlet.exception.message
+
+        self.logger.error("Greenlet '{function_name}' has encountered an uncaught error: {err}".format(function_name=function_name,
+                                                                                                     err=error_message))
+        if exceptional_greenlet.restart_desired:
+            sleep(1)     # This is to guard against exceptional exit spam bringing the framework to its knees
+            self.logger.info("Restarting greenlet '{function_name}'...".format(function_name=function_name))
+            new_greenlet = self.threads.spawn(exceptional_greenlet.run_target,
+                            *exceptional_greenlet.run_target_args,
+                            **exceptional_greenlet.run_target_kwargs)
+            new_greenlet.link_exception(_greenlet_monitor)
+        else:
+            self.logger.info("Greenlet '{function_name}' does not desire a restart.".format(function_name=function_name))
+
+        print dir(exceptional_greenlet)
 
     def consume(self, event, *args, **kwargs):
         """Raises error when user didn't define this function in his module.
