@@ -1,4 +1,5 @@
 from lxml import etree
+from time import time
 
 class MatchedEvent(object):
     
@@ -8,6 +9,7 @@ class MatchedEvent(object):
     def __init__(self, root_node_name, inboxes):
         self.inboxes_reported = {}
         self.aggregate_xml = etree.Element(root_node_name)
+        self.created = time()
         if isinstance(inboxes, list):
             for inbox in inboxes:
                 self.inboxes_reported[inbox] = False

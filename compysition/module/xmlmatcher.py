@@ -24,6 +24,8 @@
 
 from compysition import Actor
 from util import MatchedEvent
+from time import time
+import gevent
 
 class XMLMatcher(Actor):
     '''**Holds event data until a matching request id, then appends the match to the specified xpath of the XML in the data.**
@@ -48,10 +50,26 @@ class XMLMatcher(Actor):
     }
     '''
     
-    def __init__(self, name, *args, **kwargs):
+    def __init__(self, name, purge_interval=None, *args, **kwargs):
         Actor.__init__(self, name, *args, **kwargs)
         self.events = {}
         self.key = kwargs.get('key', self.name)
+        self.purge_interval = purge_interval
+
+    def preHook(self):
+        if self.purge_interval:
+            self.threads.spawn(self.event_purger)
+
+    def event_purger(self):
+        while True:
+            keys = self.events.keys()
+            for key in keys:
+                event = event.get(key, None)
+                if event:
+                    purge_time = event.created + self.purge_interval
+                    if purge_time < time():
+                        del self.events[key]
+
 
     def consume(self, event, *args, **kwargs):
         request_id = event['header']['event_id']

@@ -218,7 +218,7 @@ class Actor(object):
                 self.__loopSubmit(event, queues)
             except NoConnectedQueues:
                 event_id = event["header"].get("event_id", None)
-                self.logger.warn("Attempted to send event to outbox queues, but no outbox queues were connected", event_id=event_id)
+                self.logger.warn("Attempted to send event to outbox queues, but no outbox queues were connected", event=event)
 
     def send_error(self, event, queue=None):
         """
@@ -233,7 +233,7 @@ class Actor(object):
                 self.__loopSubmit(event, queues)
             except NoConnectedQueues:
                 event_id = event["header"].get("event_id", None)
-                self.logger.warn("Attempted to send event on error queue, but no error queues were connected", event_id=event_id)
+                self.logger.warn("Attempted to send event on error queue, but no error queues were connected", event=event)
 
     def __loopSubmit(self, event, queues):
         try:
@@ -333,6 +333,7 @@ class Actor(object):
         # TODO: Create and test an easily serialized Event() object. 
         # For the moment, a standard create_event dictionary structure will suffice
         event_id = uuid().get_hex()
+        meta_id = meta_id or event_id
 
         event = {
             "header": {

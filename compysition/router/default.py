@@ -26,6 +26,7 @@ from compysition.module import Null
 from compysition.errors import ModuleInitFailure, NoSuchModule
 from gevent import signal, event, sleep
 import traceback
+from compysition.actor import Actor
 
 class Container():
     pass
@@ -79,27 +80,71 @@ class Default():
         self.connect(source, destination, error_queue=True, *args, **kwargs)
 
 
-    def connect(self, source, destination, error_queue=False, *args, **kwargs):
-        '''Connects one queue to the other.
+    def connect(self, source, destinations, error_queue=False, *args, **kwargs):
+        '''**Connects one queue to the other.**
 
-        For convenience, the syntax of the queues is <modulename>.<queuename>
-        For example:
+        There are 4 accepted syntaxes. Consider the following scenario:
+            router = Default()
+            test_event = router.registerModule(TestEvent, "test_event")
+            std_out = router.registerModule(STDOUT, "std_out")
 
-            stdout.inbox
+        First accepted syntax
+            router.connect("test_event.outbox", "std_out.inbox")
+
+        Second accepted syntax
+            router.connect(("test_event", "outbox"), ("std_out", "inbox"))
+
+        Third accepted syntax
+        Using this condition, the queue names will default to the name of the source for the destination module,
+        and to the name of the destination for the source module
+            router.connect(test_event, std_out)
+
+        Fourth accepted syntax
+            router.connect((test_event, "custom_outbox_name"), (stdout, "custom_inbox_name"))
+
+        All four syntaxes may be used interchangeably, such as in:
+            router.connect(test_event, "std_out.inbox")
         '''
 
-        (source_module, source_queue) = source.split('.')
-        (destination_module, destination_queue) = destination.split('.')
+        if not isinstance(destinations, list):
+            destinations = [destinations]
 
-        source = self.pool.getModule(source_module)
-        destination = self.pool.getModule(destination_module)
+        (source_name, source_queue_name) = self._parse_connect_arg(source)
+        source = self.pool.getModule(source_name)
 
-        if not error_queue:
-            source.connect(source_queue, destination, destination_queue)
-        else:
-            source.connect_error(source_queue, destination, destination_queue)
+        for destination in destinations:
+            (destination_name, destination_queue_name) = self._parse_connect_arg(destination)
+            destination = self.pool.getModule(destination_name)
+            if destination_queue_name is None:
+                destination_queue_name = source.name
 
-    def getChildren(self, module):
+            if source_queue_name is None:
+                destination_source_queue_name = destination.name
+            else:
+                destination_source_queue_name = source_queue_name
+
+            if not error_queue:
+                source.connect(destination_source_queue_name, destination, destination_queue_name)
+            else:
+                source.connect_error(destination_source_queue_name, destination, destination_queue_name)
+
+    def _parse_connect_arg(self, input):
+        if isinstance(input, tuple):
+            (module_name, queue_name) = input
+            if isinstance(module_name, Actor):
+                module_name = module_name.name
+        elif isinstance(input, Actor):
+            module_name = input.name
+            queue_name = None                # Will have to be generated deterministically
+        elif isinstance(input, str):
+            (module_name, queue_name) = input.split(".")
+
+        return (module_name, queue_name)
+
+    def _getChildren(self, module):
+        """
+        UNUSABLE - Code kept in place until complete usefulness analysis is complete
+        """
         children = []
 
         def lookupChildren(module, children):
@@ -118,20 +163,24 @@ class Default():
 
         try:
             setattr(self.pool.module, name, self.__createModule(module, name, *args, **kwargs))
+            return getattr(self.pool.module, name)
         except Exception:
             raise ModuleInitFailure(traceback.format_exc())
 
     def registerLogModule(self, module, name, *args, **kwargs):
         """Initialize a log module for the router instance"""
         self.log_module = self.__createModule(module, name, *args, **kwargs)
+        return self.log_module
 
     def registerMetricModule(self, module, name, *args, **kwargs):
         """Initialize a metric module for the router instance"""
         self.metric_module = self.__createModule(module, name, *args, **kwargs)
+        return self.metric_module
 
     def registerFailedModule(self, module, name, *args, **kwargs):
         """Initialize a failed module for the router instance"""
         self.failed_module = self.__createModule(module, name, *args, **kwargs)
+        return self.failed_module
 
     def __createModule(self, module, name, *args, **kwargs):
         return module(name, size=self.size, frequency=self.frequency, generate_metrics=self.generate_metrics, *args, **kwargs)

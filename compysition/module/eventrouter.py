@@ -97,7 +97,7 @@ class EventRouter(Actor):
                 if len(self.default_outboxes) > 0:
                     for default_outbox in self.default_outboxes:
                             self.send_event(event, queue=default_outbox)
-                            self.logger.debug("No EventFilters matched for event. Event forwarded on default outbox '{queue_name}'".format(queue_name=default_outbox), 
+                            self.logger.debug("No EventFilters matched for event. Event forwarded on default outbox '{queue_name}'".format(queue_name=default_outbox.name), 
                                               event=event)
                 else:
                     self.logger.error("No EventFilters matched for event and no default queues are connected. Event has been discarded", event=event)
@@ -128,7 +128,6 @@ class EventFilter(object):
     '''
 
     def __init__(self, value_regexes, outboxes, event_scope=("data",), next_filter=None, *args, **kwargs):
-        super(EventFilter, self).__init__(*args, **kwargs)
         self._validate_scope_definition(event_scope)
         if not isinstance(value_regexes, list):
             value_regexes = [value_regexes]
