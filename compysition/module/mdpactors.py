@@ -199,7 +199,6 @@ class MDPWorker(MDPActor):
 
                 request_id = event['header']['event_id']
                 self.requests[request_id] = Request(return_address, origin_broker)
-
                 self.send_event(event)
 
             elif command == MDPDefinition.B_VERIFICATION_RESPONSE:

@@ -28,7 +28,7 @@ from setuptools.command.test import test as TestCommand
 import sys
 
 PROJECT = 'compysition'
-VERSION = '1.0.63'
+VERSION = '1.0.64'
 
 install_requires = ['gevent>=1.0',
                     'greenlet>=0.3.2',
@@ -45,7 +45,7 @@ install_requires = ['gevent>=1.0',
                     'jsonschema==2.3.0',
                     'gearman==2.0.2',
                     'pycrypto==2.6.1',
-                    'flask==0.10.1']
+                    'configobj']
 
 try:
     long_description = open('README.rst', 'rt').read()
