@@ -1,9 +1,31 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+#  mdpregistrar.py
+#
+#  Copyright 2014 Adam Fiebig <fiebig.adam@gmail.com>
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+#  MA 02110-1301, USA.
+#
+
 import gevent
 import zmq.green as zmq
 import time
 from binascii import hexlify
 import mdpdefinition as MDPDefinition
-from compysition import Actor
 
 class RegistratorSocket(zmq.Socket):
     """
@@ -152,7 +174,7 @@ class BrokerManager(RegistrationService):
     verification_manager = None
     
 
-    def __init__(self, controller_identity=None, logging=None, *args, **kwargs):
+    def __init__(self, controller_identity=None, logger=None, *args, **kwargs):
         RegistrationService.__init__(self, *args, **kwargs)
 
         self.controller_identity = controller_identity or kwargs.get('controller_identity', None)
@@ -165,7 +187,7 @@ class BrokerManager(RegistrationService):
         self.unverified_brokers = {}
         self.inbound_sockets = []
 
-        self.logger = logging
+        self.logger = logger
 
         self.inbound_poller = zmq.Poller()
 

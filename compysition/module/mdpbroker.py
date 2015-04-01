@@ -1,16 +1,28 @@
-"""
-Majordomo Protocol broker
-A minimal implementation of http:#rfc.zeromq.org/spec:7 and spec:8
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+#  mdpbroker.py
+#
+#  Copyright 2014 Adam Fiebig <fiebig.adam@gmail.com>
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+#  MA 02110-1301, USA.
+#
 
-Author: Min RK <benjaminrk@gmail.com>
-Based on Java example by Arkadiusz Orzechowski
-"""
-
-import sys
 import gevent
-from random import randint
 import time
-from binascii import hexlify
 from util.mdpregistrar import BrokerRegistrator
 from compysition import Actor
 import zmq.green as zmq
@@ -99,7 +111,6 @@ class MajorDomoBroker(Actor):
         """Initialize broker state."""
         super(MajorDomoBroker, self).__init__(name, *args, **kwargs)
         self.port = port
-        #self.broker_identity = hexlify(b"%04x-%04x-%04x" % (randint(0, 0x10000), randint(0, 0x10000), randint(0, 0x10000)))
         self.broker_identity = uuid().get_hex()
         self.services = {}
         self.workers = {}

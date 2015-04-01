@@ -1,15 +1,34 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+#  mdpactors.py
+#
+#  Copyright 2014 Adam Fiebig <fiebig.adam@gmail.com>
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+#  MA 02110-1301, USA.
+#
+
 import zmq.green as zmq
 from util.mdpregistrar import BrokerManager
 import gevent
 from gevent.queue import Queue
 from compysition import Actor
-from random import randint
 from uuid import uuid4 as uuid
 from ast import literal_eval
 import util.mdpdefinition as MDPDefinition
-import time
-from pprint import pprint
-from binascii import hexlify
 
 """
 The MDPWorker and MDPClient are implementations of the ZeroMQ MajorDomo configuration, which deals with dynamic process routing based on service configuration and registration.
@@ -35,7 +54,7 @@ class MDPActor(Actor):
         self.socket_identity = uuid().get_hex()
         self.context = zmq.Context()
         self.outbound_queue = Queue()
-        self.broker_manager = BrokerManager(controller_identity=self.socket_identity, logging=self.logger)
+        self.broker_manager = BrokerManager(controller_identity=self.socket_identity, logger=self.logger)
 
     def preHook(self):
         gevent.spawn(self.__listen)
