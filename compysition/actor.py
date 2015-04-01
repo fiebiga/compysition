@@ -21,19 +21,16 @@
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #  MA 02110-1301, USA.
 #
-#
 
-from compysition.queue import QueuePool
+from compysition.queue import QueuePool, Queue
 from compysition.qlogger import QLogger
 from compysition.errors import QueueEmpty, QueueFull, QueueConnected, SetupError, NoConnectedQueues
-from gevent.pool import Group, Pool
-from gevent import spawn, Greenlet
+from restartlet import RestartPool
 from gevent import sleep, socket
 from gevent.event import Event
 from time import time
-from copy import copy, deepcopy
+from copy import deepcopy
 import traceback
-import gevent.pool
 from uuid import uuid4 as uuid
 
 class Actor(object):
@@ -68,10 +65,10 @@ class Actor(object):
         self.pool = QueuePool(size)
         self.logger = QLogger(name)
         self.__loop = True
-        self.threads = Group()
+        self.threads = RestartPool(logger=self.logger, sleep_interval=1)
 
         if generate_metrics:
-            spawn(self.__metricEmitter)
+            self.threads.spawn(self.__metricEmitter)
 
         self.__run = Event()
         self.__run.clear()
@@ -139,13 +136,9 @@ class Actor(object):
 
 
     def flushQueuesToDisk(self):
-        '''Writes whatever event in the queue to disk for later retrieval.'''
+        '''Writes whatever event in the queue to disk for later retrieval. This has not yet been implemented'''
 
-        # for queue in self.pool.listQueues(names=True):
-        #     size = self.pool.getQueue(queue).size()
-        #     print "%s %s %s" % (self.name, queue, size)
-
-        self.logger.debug("Writing queues to disk.")
+        self.logger.debug("Writing queues to disk. Theoretically.")
 
     def getChildren(self, queue=None):
         '''Returns the queue name <queue> is connected to.'''
@@ -173,8 +166,6 @@ class Actor(object):
         success queue.'''
         self.__consumers.append(queue)
         consumer = self.threads.spawn(self.__consumer, function, queue)
-        #consumer.function = function.__name__
-        #consumer.queue = queue
 
     def is_consuming(self, queue_name):
         return queue_name in self.__consumers
@@ -182,8 +173,6 @@ class Actor(object):
     def start(self):
         '''Starts the module.'''
 
-        # self.readQueuesFromDisk()
-        #self.logger.logs = self.pool.queues.logs
         self.logger.connect_logs_queue(self.pool.queues.logs)
 
         if hasattr(self, "preHook"):
@@ -205,44 +194,39 @@ class Actor(object):
             self.logger.debug("postHook() found, executing")
             self.postHook()
 
-    def send_event(self, event, queue=None):
+    def send_event(self, event, queues=None, queue=None):
         """
         Sends event to all registered outbox queues. If multiple queues are consuming the event,
-        a deepcopy of the event is sent instead of raw event
+        a deepcopy of the event is sent instead of raw event.
+
+        If 'queue' is provided, it supercedes all others and submits ONLY to that queue
         """
         if queue is not None: 
             self.__submit(event, queue)
         else:
-            try:
-                queues = self.pool.listOutboundQueues(default=False)
-                self.__loopSubmit(event, queues)
-            except NoConnectedQueues:
-                event_id = event["header"].get("event_id", None)
-                self.logger.warn("Attempted to send event to outbox queues, but no outbox queues were connected", event=event)
+            if queues:
+                send_queues = iter(queues)
+            else:
+                send_queues = self.pool.listOutboundQueues(default=False)
+            self.__loop_submit(event, send_queues)
 
-    def send_error(self, event, queue=None):
+    def send_error(self, event, queue=None, queues=None):
         """
-        Sends event to all registered error queues. If multiple queues are consuming the event,
-        a deepcopy of the event is sent instead of raw event
+        Calls 'send_event' with all error queues as the 'queues' parameter
         """
-        if queue is not None: 
-            self.__submit(event, queue)
-        else:
-            try:
-                queues = self.pool.listErrorQueues()
-                self.__loopSubmit(event, queues)
-            except NoConnectedQueues:
-                event_id = event["header"].get("event_id", None)
-                self.logger.warn("Attempted to send event on error queue, but no error queues were connected", event=event)
+        if not queues:
+            queues = self.pool.listErrorQueues()
+        self.send_event(event, queue=queue, queues=queues)
 
-    def __loopSubmit(self, event, queues):
+    def __loop_submit(self, event, queues):
         try:
             queue = queues.next()
             self.__submit(event, queue)
-            for queue in queues:
+            while True:
+                queue = queues.next()
                 self.__submit(deepcopy(event), queue)
         except StopIteration:
-            raise NoConnectedQueues("No outgoing queues connected to send to")
+            pass
 
     def __submit(self, event, queue):
         '''A convenience function which submits <event> to <queue>
@@ -271,7 +255,7 @@ class Actor(object):
                     if self.__blocking_consume:
                         self.__doConsume(function, event, queue, original_data)
                     else:
-                        self.threads.spawn(self.__doConsume, function, event, queue, original_data)
+                        self.threads.spawn(self.__doConsume, function, event, queue, original_data, restart=False)
             else:
                 queue_object.waitUntilContent()
 
@@ -283,7 +267,7 @@ class Actor(object):
                 except QueueEmpty as err:
                     break
                 else:
-                    self.threads.spawn(self.__doConsume, function, event, queue, original_data)
+                    self.threads.spawn(self.__doConsume, function, event, queue, original_data, restart=False)
             else:
                 break
 
@@ -344,28 +328,6 @@ class Actor(object):
             "data": data
         }
         return event
-
-    def spawn_greenlet(self, function, *args, **kwargs):
-        gs = self.threads.spawn(function, *args, **kwargs)
-        gs.link_exception(self._greenlet_monitor)
-
-    def _greenlet_monitor(self, exceptional_greenlet):
-        function_name = exceptional_greenlet.run_target.__name__
-        error_message = exceptional_greenlet.exception.message
-
-        self.logger.error("Greenlet '{function_name}' has encountered an uncaught error: {err}".format(function_name=function_name,
-                                                                                                     err=error_message))
-        if exceptional_greenlet.restart_desired:
-            sleep(1)     # This is to guard against exceptional exit spam bringing the framework to its knees
-            self.logger.info("Restarting greenlet '{function_name}'...".format(function_name=function_name))
-            new_greenlet = self.threads.spawn(exceptional_greenlet.run_target,
-                            *exceptional_greenlet.run_target_args,
-                            **exceptional_greenlet.run_target_kwargs)
-            new_greenlet.link_exception(_greenlet_monitor)
-        else:
-            self.logger.info("Greenlet '{function_name}' does not desire a restart.".format(function_name=function_name))
-
-        print dir(exceptional_greenlet)
 
     def consume(self, event, *args, **kwargs):
         """Raises error when user didn't define this function in his module.

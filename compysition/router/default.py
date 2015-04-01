@@ -83,27 +83,21 @@ class Default():
     def connect(self, source, destinations, error_queue=False, *args, **kwargs):
         '''**Connects one queue to the other.**
 
-        There are 4 accepted syntaxes. Consider the following scenario:
+        There are 2 accepted syntaxes. Consider the following scenario:
             router = Default()
-            test_event = router.registerModule(TestEvent, "test_event")
-            std_out = router.registerModule(STDOUT, "std_out")
+            test_event  = router.registerModule(TestEvent,  "test_event")
+            std_out     = router.registerModule(STDOUT,     "std_out")
 
         First accepted syntax
-            router.connect("test_event.outbox", "std_out.inbox")
-
-        Second accepted syntax
-            router.connect(("test_event", "outbox"), ("std_out", "inbox"))
-
-        Third accepted syntax
-        Using this condition, the queue names will default to the name of the source for the destination module,
-        and to the name of the destination for the source module
+            Queue names will default to the name of the source for the destination module,
+                and to the name of the destination for the source module
             router.connect(test_event, std_out)
 
-        Fourth accepted syntax
+        Second accepted syntax
             router.connect((test_event, "custom_outbox_name"), (stdout, "custom_inbox_name"))
 
-        All four syntaxes may be used interchangeably, such as in:
-            router.connect(test_event, "std_out.inbox")
+        Both syntaxes may be used interchangeably, such as in:
+            router.connect(test_event, (stdout, "custom_inbox_name"))
         '''
 
         if not isinstance(destinations, list):
@@ -130,32 +124,14 @@ class Default():
 
     def _parse_connect_arg(self, input):
         if isinstance(input, tuple):
-            (module_name, queue_name) = input
-            if isinstance(module_name, Actor):
-                module_name = module_name.name
+            (module, queue_name) = input
+            if isinstance(module, Actor):
+                module_name = module.name
         elif isinstance(input, Actor):
             module_name = input.name
             queue_name = None                # Will have to be generated deterministically
-        elif isinstance(input, str):
-            (module_name, queue_name) = input.split(".")
 
         return (module_name, queue_name)
-
-    def _getChildren(self, module):
-        """
-        UNUSABLE - Code kept in place until complete usefulness analysis is complete
-        """
-        children = []
-
-        def lookupChildren(module, children):
-            for module in self.pool.getModule(module).getChildren():
-                name = module.split(".")[0]
-                if name not in children:
-                    children.append(name)
-                    lookupChildren(name, children)
-
-        lookupChildren(module, children)
-        return children
 
     def registerModule(self, module, name, *args, **kwargs):
         '''Initializes the mdoule using the provided <args> and <kwargs>

@@ -1,6 +1,13 @@
 Compysition changelog
 =====================
 
+Version 1.0.65
+~~~~~~~~~~~~~
+
+- Changed EventRouter to use the newly created 'queues' functionality of Actor.send_event. This fixed a bug where event references were passed uncopied to multiple queues, causing collision on event editing by multiple modules.
+- Started using 'restartlet' for Actor.threads pool. All long-running greenlets spawned on actors from self.threads will auto restart on an exceptional exit.
+- Removed legacy support for router.connect() - strings in the format "modulename.outboxname" or "modulename.inboxname" will no longer be accepted
+
 Version 1.0.62
 ~~~~~~~~~~~~~
 

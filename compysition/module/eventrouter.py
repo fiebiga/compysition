@@ -48,7 +48,10 @@ class EventRouter(Actor):
         Actor.__init__(self, name, *args, **kwargs)
         self.filters = []
         self.default_outbox_regexes = default_outbox_regexes
-        self.default_outboxes = []          
+        self.default_outboxes = []
+        if not isinstance(routing_filters, list):
+            routing_filters = [routing_filters]
+
         for filter in routing_filters:
             self.set_filter(filter)
 
@@ -58,7 +61,10 @@ class EventRouter(Actor):
             self.whitelist = False
 
     def preHook(self):
-        # We only need to initialized default outboxes if this is a 'blacklist' router
+        self._initialize_outboxes()
+
+    def _initialize_outboxes(self):
+        self._initialize_filter_outboxes()
         if not self.whitelist:
             self._initialize_default_outboxes()
 
@@ -66,7 +72,7 @@ class EventRouter(Actor):
         # Check to see which outboxes are 'filtered' outboxes, as we do not want to include these in a "default" outbox list
         filtered_outboxes = set()
         for filter in self.filters:
-            for outbox in filter.outboxes:
+            for outbox in filter.outbox_names:
                 filtered_outboxes.add(outbox)
 
         # Determine default outboxes for a 'blacklist' routing scenario
@@ -77,30 +83,34 @@ class EventRouter(Actor):
                     if outbox_regex.search(outbox.name):
                         self.default_outboxes.append(outbox)
 
+    def _initialize_filter_outboxes(self):
+        """
+        This method is called in preHook and converts the 'outboxes' on the provided filters from a string to the actual queue object
+        """
+        for filter in self.filters:
+            outboxes = []
+            for outbox_name in filter.outbox_names:
+                try:
+                    filter.outboxes.append(self.pool.getQueue(outbox_name))
+                except:
+                    raise Exception("Queue {outbox_name} was referenced in a filter, but is not connected as a valid outbox for {name}".format(outbox_name=outbox_name, name=self.name))
+
     def consume(self, event, *args, **kwargs):
         matched = False
         for filter in self.filters:
             if filter.matches(event):
                 matched = True
-                for outbox in filter.outboxes:
-                    try:
-                        filter_queue = self.pool.getQueue(outbox)
-                        self.send_event(event, queue=filter_queue)
-                        self.logger.debug("EventFilter matched for outbound queue '{queue_name}'. Event successfully forwarded".format(queue_name=outbox), 
-                                          event=event)
-                    except QueueMissing as err:
-                        self.logger.error("EventFilter to outbound queue '{queue_name}' was matched, but no queue by that name was connected. Event will be discarded".format(queue_name=outbox), 
-                                          event=event)
+                self.send_event(event, filter.outboxes)
+                self.logger.debug("EventFilter matched for outbound queues ({outbox_names}). Event successfully forwarded".format(outbox_names=filter.outbox_names), 
+                                    event=event)
 
         if not matched:
             if not self.whitelist:
                 if len(self.default_outboxes) > 0:
-                    for default_outbox in self.default_outboxes:
-                            self.send_event(event, queue=default_outbox)
-                            self.logger.debug("No EventFilters matched for event. Event forwarded on default outbox '{queue_name}'".format(queue_name=default_outbox.name), 
-                                              event=event)
+                    self.send_event(event, self.default_outboxes)
+                    self.logger.debug("No EventFilters matched for event. Event forwarded to default outbox(s)", event=event)
                 else:
-                    self.logger.error("No EventFilters matched for event and no default queues are connected. Event has been discarded", event=event)
+                    self.logger.info("No EventFilters matched for event and no default queues are connected. Event has been discarded", event=event)
             else:
                 self.logger.debug("No EventFilters matched for event. Event has been discarded", event=event)
 
@@ -117,7 +127,7 @@ class EventFilter(object):
     
     Paramters:
         - value_regexes ([str] or str):         The value(s) that will cause this filter to match. This is evaluated as a regex
-        - outboxes ([str] or str):              The desired outbox that a positive filter match should place the event on
+        - outbox_names ([str] or str):          The desired outbox that a positive filter match should place the event on
         - event_scope (tuple(str)):             The string address of the location of the string value to check against this filter in an event, provided as a tuple chain
                                                     e.g. 'event["header"]["service"] == ("header", "service")'
                                                     e.g. 'event["data"] == ("data")'
@@ -127,16 +137,17 @@ class EventFilter(object):
 
     '''
 
-    def __init__(self, value_regexes, outboxes, event_scope=("data",), next_filter=None, *args, **kwargs):
+    def __init__(self, value_regexes, outbox_names, event_scope=("data",), next_filter=None, *args, **kwargs):
         self._validate_scope_definition(event_scope)
         if not isinstance(value_regexes, list):
             value_regexes = [value_regexes]
 
-        if not isinstance(outboxes, list):
-            outboxes = [outboxes]
+        if not isinstance(outbox_names, list):
+            outbox_names = [outbox_names]
 
         self.value_regexes = [re.compile(value_regex) for value_regex in value_regexes]
-        self.outboxes = outboxes
+        self.outbox_names = outbox_names
+        self.outboxes = []                                          # To be filled and defined later when the EventRouter initializes outboxes
         self.next_filter = self.set_next_filter(next_filter)
         
 
@@ -191,8 +202,8 @@ class EventXMLFilter(EventFilter):
     **A filter class for the EventRouter module that will additionally use xpath lookup values to apply a regex comparison**
     '''
     
-    def __init__(self, xpath, value_regexes, outboxes, xslt=None, *args, **kwargs):
-        super(EventXMLFilter, self).__init__(value_regexes, outboxes, *args, **kwargs)
+    def __init__(self, xpath, value_regexes, outbox_names, xslt=None, *args, **kwargs):
+        super(EventXMLFilter, self).__init__(value_regexes, outbox_names, *args, **kwargs)
         self.xpath = xpath
 
         if xslt:
