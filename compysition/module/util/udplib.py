@@ -10,7 +10,7 @@ from gevent.pool import Pool
 
 PING_PORT_NUMBER    = 6999  # The UDP port to ping over
 PING_INTERVAL       = 1.0   # The time between sending each ping (seconds)
-PEER_EXPIRY         = 5.0   # How many pings a peer can miss before they are reaped
+PEER_EXPIRY         = 10   # How many pings a peer can miss before they are reaped
 UUID_BYTES          = 32    # The number of bytes in the UUID
 BURN_IN_PINGS       = 5     # The number of pings to wait before a master is determined from peers that report in that time
 
@@ -71,16 +71,18 @@ class Peer(object):
     uuid = None         # The uuid the peer broadcasted
     expires_at = None   # The time the peer will expire
     
-    def __init__(self, uuid):
+    def __init__(self, uuid, expiry=None, interval=None):
         self.uuid = uuid
         self.is_alive()
+        self.expiry = expiry or PEER_EXPIRY
+        self.interval = interval or PING_INTERVAL
     
     def is_alive(self):
         """Reset the peers expiry time
         
         Call this method whenever we get any activity from a peer.
         """
-        self.expires_at = time.time() + (PEER_EXPIRY * PING_INTERVAL)
+        self.expires_at = time.time() + (self.expiry * self.interval)
 
 class UDPInterface(object):
     """
@@ -94,7 +96,7 @@ class UDPInterface(object):
     uuid = None                # Our UUID as binary blob
     peers = None               # Hash of known peers, fast lookup
 
-    def __init__(self, service, logger=None):
+    def __init__(self, service, logger=None, interval=None, expiry=None, burn_in_pings=None):
         self.pool = Pool()
         self.udp = UDP(PING_PORT_NUMBER)
         self.uuid = uuid.uuid4().hex.encode('utf8')
@@ -102,6 +104,10 @@ class UDPInterface(object):
         self.poller.register(self.udp.handle, zmq.POLLIN)
         self.service = service
         self.logger = logger
+
+        self.expiry = expiry or PEER_EXPIRY
+        self.interval = interval or PING_INTERVAL
+        self.burn_in_pings = burn_in_pings or BURN_IN_PINGS;
 
         self.__master_block = event.Event()
         self.__master_block.clear()
@@ -133,7 +139,7 @@ class UDPInterface(object):
         recognizing as master and doing work as such
         """
 
-        gevent.sleep(BURN_IN_PINGS * PING_INTERVAL)
+        gevent.sleep(self.burn_in_pings * self.interval)
         self.__burned_in = True
 
 
@@ -148,13 +154,13 @@ class UDPInterface(object):
         while self.__loop:
             try:
                 self.udp.send(self.service + self.uuid)
-                gevent.sleep(PING_INTERVAL)
+                gevent.sleep(self.interval)
             except Exception as e:
                 self.loop.stop()
 
     def run(self):
         while self.__loop:
-            items = self.poller.poll(PING_INTERVAL)
+            items = self.poller.poll(self.interval)
             if items:
                 service, uuid = self.udp.recv(len(self.service), UUID_BYTES)
                 if uuid != self.uuid:
@@ -162,7 +168,7 @@ class UDPInterface(object):
                         if uuid in self.peers:
                             self.peers[uuid].is_alive()
                         else:
-                            self.peers[uuid] = Peer(uuid)
+                            self.peers[uuid] = Peer(uuid, interval=self.interval, expiry=self.expiry)
                             self.log("New peer ({0}) discovered in '{1}' peer pool. (Total: {2})".format(uuid, self.service, len(self.peers) + 1))
             else:
                 gevent.sleep(1)
