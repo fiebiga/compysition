@@ -70,13 +70,13 @@ class Peer(object):
     
     uuid = None         # The uuid the peer broadcasted
     expires_at = None   # The time the peer will expire
-    
+
     def __init__(self, uuid, expiry=None, interval=None):
         self.uuid = uuid
-        self.is_alive()
         self.expiry = expiry or PEER_EXPIRY
         self.interval = interval or PING_INTERVAL
-    
+        self.is_alive()
+
     def is_alive(self):
         """Reset the peers expiry time
         
