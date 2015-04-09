@@ -48,19 +48,19 @@ and concurrent way. All steps and executions are spun up as spawned greenlet on 
 	from myprojectresources import my_xsl_files as xsls
 	
 	router = Default()
-	router.registerModule(WSGIServer, "wsgi")
-	router.registerModule(BasicAuth, "auth")
-	router.registerModule(Transformer, "submit_transform", xsls['submit'])
-	router.registerModule(Transformer, "acknowledge_transform", my_xsl_files['acknowledge.xsl'])
-	router.registerModule(SomeRequestExecutor, "request_executor")
+	wsgi 			= router.registerModule(WSGIServer, "wsgi")
+	auth 			= router.registerModule(BasicAuth, "auth")
+	submit_transform 	= router.registerModule(Transformer, "submit_transform", xsls['submit'])
+	acknowledge_transform 	= router.registerModule(Transformer, "acknowledge_transform", my_xsl_files['acknowledge.xsl'])
+	request_executor 	= router.registerModule(SomeRequestExecutor, "request_executor")
 	
-	router.connect('wsgi.outbox', 'auth.inbox')
-	router.connect('auth.outbox', 'submit_transform.inbox')
-	router.connect_error('auth.wsgi_error_outbox', 'wsgi.auth_errors') 			# Redirect auth errors to the wsgi server as a 401 Unaothorized Error
-	router.connect('submit_transform.outbox', 'request_executor.inbox')
-	router.connect_error('submit_transform.errors', 'wsgi.transformation_errors')
-	router.connect('request_executor.outbox', 'acknowledge_transform.inbox')
-	router.connect('acknowledge_transform.outbox', 'wsgi.acknowledge_inbox')
+	router.connect(wsgi, 			auth)
+	router.connect(auth, 			submit_transform)
+	router.connect_error(auth, 		wsgi) 			# Redirect auth errors to the wsgi server as a 401 Unaothorized Error
+	router.connect(submit_transform, 	request_executor)
+	router.connect_error(submit_transform, 	wsgi)
+	router.connect(request_executor, 	acknowledge_transform)
+	router.connect(acknowledge_transform, 	wsgi)
 	
 	router.start()
 	router.block()
@@ -79,12 +79,12 @@ One-way messaging example
 	from compysition.module import STDOUT
 
 	router = Default()
-	router.register(TestEvent, "event_generator", interval=1)
-	router.register(STDOUT, "output_one", prefix="I am number one: ", timestamp=True)
-	router.register(STDOUT, "output_two", prefix="I am number two: ", timestamp=True)
+	event_generator = router.register(TestEvent, "event_generator", interval=1)
+	output_one 	= router.register(STDOUT, "output_one", prefix="I am number one: ", timestamp=True)
+	output_two 	= router.register(STDOUT, "output_two", prefix="I am number two: ", timestamp=True)
     
-	router.connect("event_generator.outbox_one_outbox", "output_one.inbox")
-	router.connect("event_generator.outbox_two_outbox", "output_two.inbox")
+	router.connect(event_generator, output_one)
+	router.connect(event_generator, output_two)
     
 	router.start()
 	router.block()
