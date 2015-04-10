@@ -101,9 +101,10 @@ One-way messaging example
 		[2015-02-13 16:56:39.860292] I am number two: test
 		[2015-02-13 16:56:39.860570] I am number one: test
 
-ZeroMQ MajorDomo Implmentation example
+ZeroMQ MajorDomo Implementation example
 -------
-
+The following example is a single-process example of the multi-process MajorDomo Protocal from ZMQ. The pieces noted 
+could all be run outside this process in their own compysitionscript, scalable across multiple hosts and cores
 .. code-block:: python
 
     from compysition.module import MDPClient, MDPWorker, MDPBroker, WSGI, MDPBrokerRegistrationService, STDOUT, Data
