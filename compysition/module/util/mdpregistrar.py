@@ -418,7 +418,7 @@ class HeartbeatManager(object):
             self.refresh_heartbeat_timer()
 
 def main():
-    service = BrokerRegistrationService()
+    service = MDPBrokerRegistrationService()
     service.start()
 
 if __name__ == '__main__':

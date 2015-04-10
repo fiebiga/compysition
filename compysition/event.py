@@ -30,39 +30,43 @@ DEFAULT_EVENT_SERVICE="default"
 
 class CompysitionEvent(object):
 
-	"""
-	Anatomy of an event:
-	    - header:
-	        - event_id: The unique and functionally immutable ID for this new event
-	        - meta_id:  The ID associated with other unique event data flows. This ID is used in logging
-	        - service:  (default: default) Used for compatability with the ZeroMQ MajorDomo configuration. Scope this to specific types of interproces routing
-	    - data:
-	        <The data passed and worked on from event to event. Mutable and variable>
-	"""
+    """
+    Anatomy of an event:
+        - header:
+            - event_id: The unique and functionally immutable ID for this new event
+            - meta_id:  The ID associated with other unique event data flows. This ID is used in logging
+            - service:  (default: default) Used for compatability with the ZeroMQ MajorDomo configuration. Scope this to specific types of interproces routing
+        - data:
+            <The data passed and worked on from event to event. Mutable and variable>
+    """
 
-	def __init__(self, meta_id=None, service=None, data=None, header=None):
-		self.event_id = uuid().get_hex()
-		self.meta_id = meta_id or self.event_id
-		self.service = service or DEFAULT_EVENT_SERVICE
-		self.header = header
-		self.data = data
+    def __init__(self, meta_id=None, service=None, data=None, header=None):
+        self.event_id = uuid().get_hex()
+        self.meta_id = meta_id or self.event_id
+        self.service = service or DEFAULT_EVENT_SERVICE
+        self.header = header
+        self.data = data
 
-	def to_string(self):
-		return_dict = {}
-		keys = self.__dict__.keys()
-		for key in keys:
-			return_dict[key] = b"{0}".format(self.__dict__[key])
+    def to_string(self):
+        return_dict = {}
+        keys = self.__dict__.keys()
+        for key in keys:
+            return_dict[key] = b"{0}".format(self.__dict__[key])
 
-		return return_dict
+        return return_dict
 
-	def from_string(self, string_value):
-		value_dict = literal_eval(string_value)
-		keys = value_dict.keys()
-		for key in keys:
-			setattr(self, key, value_dict[key])
+    def from_string(self, string_value):
+        value_dict = literal_eval(string_value)
+        keys = value_dict.keys()
+        for key in keys:
+            setattr(self, key, value_dict[key])
 
-test = CompysitionEvent()
-str_value = test.to_string()
-print str_value
-test_two = CompysitionEvent()
-print test_two.from_string(str_value)
+if __name__ == "__main__":
+    """
+    Event Test execution. Will be removed or migrated to a test suite
+    """
+    test = CompysitionEvent()
+    str_value = test.to_string()
+    print str_value
+    test_two = CompysitionEvent()
+    print test_two.from_string(str_value)

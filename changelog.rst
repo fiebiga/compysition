@@ -10,6 +10,8 @@ Version
 - Immense refactoring, multiple instances of using reference rather than calling getters
 - Removed a lot of unused and overly complicated code
 - Added prototype for standardized CompysitonEvent, as mentioned previously in my TODO in Actor.create_event, this is overdue and just makes sense. The best practice for ZeroMQ and interprocess serialization is still TBD
+- Changed naming of Major Domo pieces to be more consistent
+- Added MDP Example in README.rst
 
 Version 1.0.65
 ~~~~~~~~~~~~~

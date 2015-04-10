@@ -91,7 +91,7 @@ class EventRouter(Actor):
             outboxes = []
             for outbox_name in filter.outbox_names:
                 try:
-                    filter.outboxes.append(self.pool.getQueue(outbox_name))
+                    filter.outboxes.append(self.pool.get_queue(outbox_name))
                 except:
                     raise Exception("Queue {outbox_name} was referenced in a filter, but is not connected as a valid outbox for {name}".format(outbox_name=outbox_name, name=self.name))
 

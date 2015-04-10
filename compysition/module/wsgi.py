@@ -122,7 +122,7 @@ class WSGI(Actor):
             event['header'][self.key] = environment_header
 
             self.logger.info("Putting received message on outbox {0}".format(outbox), event=event)
-            self.send_event(event, queue=self.pool.getQueue(outbox))
+            self.send_event(event, queue=self.pool.outbound_queues.get(outbox, None))
             start_response(self.default_status, [self.default_content_type])
             return response_queue
         except Exception as err:

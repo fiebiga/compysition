@@ -80,7 +80,7 @@ class Worker(object):
         return "{0}_receiver".format(address)
 
 
-class MajorDomoBroker(Actor):
+class MDPBroker(Actor):
     """
     Majordomo Protocol broker
     A minimal implementation of http:#rfc.zeromq.org/spec:7 and spec:8
@@ -109,7 +109,7 @@ class MajorDomoBroker(Actor):
 
     def __init__(self, name, port=5555, *args, **kwargs):
         """Initialize broker state."""
-        super(MajorDomoBroker, self).__init__(name, *args, **kwargs)
+        super(MDPBroker, self).__init__(name, *args, **kwargs)
         self.port = port
         self.broker_identity = uuid().get_hex()
         self.services = {}
@@ -121,7 +121,7 @@ class MajorDomoBroker(Actor):
         self.poller = zmq.Poller()
         self.poller.register(self.broker_socket, zmq.POLLIN)
 
-        self.logger.info("MajorDomoBroker {0} initialized. Client/Worker ID will be {1}".format(self.broker_identity, self.broker_identity))
+        self.logger.info("MDPBroker {0} initialized. Client/Worker ID will be {1}".format(self.broker_identity, self.broker_identity))
 
     # ---------------------------------------------------------------------
 
@@ -195,7 +195,7 @@ class MajorDomoBroker(Actor):
             """
             This verification request serves two purposes from a worker. 
                 A) To respond and verify to the worker that the broker can be connected to, so to add it to potential brokers the worker may communicate with
-                B) To register that worker with a service with the MajorDomoBroker
+                B) To register that worker with a service with the MDPBroker
             """
             
             if len(msg) >= 1: # Message must contain the service name to properly register
@@ -270,7 +270,7 @@ class MajorDomoBroker(Actor):
         endpoint = "tcp://*:{0}".format(port)
         self.broker_socket.bind(endpoint)
         self.registrator = BrokerRegistrator(broker_port=port, broker_identity=self.broker_identity)
-        self.logger.info("MajorDomoBroker {0} is bound and listening at {1}".format(self.broker_identity, endpoint))
+        self.logger.info("MDPBroker {0} is bound and listening at {1}".format(self.broker_identity, endpoint))
 
     def purge_workers(self):
         """Look for & kill expired workers"""

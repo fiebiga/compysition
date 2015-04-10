@@ -36,9 +36,9 @@ from xmlmatcher import XMLMatcher
 from flowcontroller import FlowController
 from mdpactors import MDPClient
 from mdpactors import MDPWorker
-from mdpbroker import MajorDomoBroker
+from mdpbroker import MDPBroker
 from header import Header
-from mdpregistrar import BrokerRegistrationService
+from mdpregistrar import MDPBrokerRegistrationService
 from eventlogger import EventLogger
 from eventrouter import EventRouter, EventXMLFilter, EventFilter
 from data import Data

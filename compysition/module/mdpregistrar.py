@@ -29,7 +29,7 @@ import util.mdpdefinition as MDPDefinition
 from compysition import Actor
 from util.mdpregistrar import HeartbeatManager, RegistrationService, Broker
 
-class BrokerRegistrationService(Actor, RegistrationService):
+class MDPBrokerRegistrationService(Actor, RegistrationService):
     """
     This service is the standalone service the brokers configuration notification between active brokers and clients, so that the clients can round-robin between brokers to evenly
     distribute load. Implementors of this service should use the 'BrokerRegistrator' class on the broker end, and the 'RegistrationServiceListener' class on the client end to register or listen for 
