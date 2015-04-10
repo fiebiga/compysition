@@ -101,7 +101,7 @@ One-way messaging example
 		[2015-02-13 16:56:39.860292] I am number two: test
 		[2015-02-13 16:56:39.860570] I am number one: test
 
-ZeroMQ MajorDomo Implementation example
+ZeroMQ MajorDomo Implementation Example
 -------
 The following example is a single-process example of the multi-process MajorDomo Protocal from ZMQ. The pieces noted 
 could all be run outside this process in their own compysitionscript, scalable across multiple hosts and cores
@@ -131,6 +131,7 @@ could all be run outside this process in their own compysitionscript, scalable a
     director.start()
     director.block()
 
+After running this process, initiating a http request to http://127.0.0.1:7000/test_service would show the dataflow across MDP components
 
 Installing
 ----------
