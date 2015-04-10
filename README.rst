@@ -39,7 +39,7 @@ and concurrent way. All steps and executions are spun up as spawned greenlet on 
     
 .. code-block:: python
 
-	from compysition.router import Default
+	from compysition import Director
 	from compysition.module import WSGI
 	from compysition.module import BasicAuth
 	from compysition.module import Transformer
@@ -47,12 +47,12 @@ and concurrent way. All steps and executions are spun up as spawned greenlet on 
 	from mymodules.module import SomeRequestExecutor
 	from myprojectresources import my_xsl_files as xsls
 	
-	router = Default()
-	wsgi 			= router.registerModule(WSGIServer, "wsgi")
-	auth 			= router.registerModule(BasicAuth, "auth")
-	submit_transform 	= router.registerModule(Transformer, "submit_transform", xsls['submit'])
-	acknowledge_transform 	= router.registerModule(Transformer, "acknowledge_transform", my_xsl_files['acknowledge.xsl'])
-	request_executor 	= router.registerModule(SomeRequestExecutor, "request_executor")
+	director = Director()
+	wsgi 			= director.register_module(WSGIServer, "wsgi")
+	auth 			= director.register_module(BasicAuth, "auth")
+	submit_transform 	= director.register_module(Transformer, "submit_transform", xsls['submit'])
+	acknowledge_transform 	= director.register_module(Transformer, "acknowledge_transform", my_xsl_files['acknowledge.xsl'])
+	request_executor 	= director.register_module(SomeRequestExecutor, "request_executor")
 	
 	router.connect(wsgi, 			auth)
 	router.connect(auth, 			submit_transform)
@@ -74,20 +74,20 @@ One-way messaging example
 
 .. code-block:: python
 
-	from compysition.router import Default
+	from compysition import Director
 	from compysition.module import TestEvent
 	from compysition.module import STDOUT
 
-	router = Default()
-	event_generator = router.register(TestEvent, "event_generator", interval=1)
-	output_one 	= router.register(STDOUT, "output_one", prefix="I am number one: ", timestamp=True)
-	output_two 	= router.register(STDOUT, "output_two", prefix="I am number two: ", timestamp=True)
+	director = Director()
+	event_generator = director.register_module(TestEvent, "event_generator", interval=1)
+	output_one 	= director.register_module(STDOUT, "output_one", prefix="I am number one: ", timestamp=True)
+	output_two 	= director.register_module(STDOUT, "output_two", prefix="I am number two: ", timestamp=True)
     
-	router.connect(event_generator, output_one)
-	router.connect(event_generator, output_two)
+	director.connect(event_generator, output_one)
+	director.connect(event_generator, output_two)
     
-	router.start()
-	router.block()
+	director.start()
+	director.block()
     	
 	Output: 
 		[2015-02-13 16:56:35.850659] I am number two: test
