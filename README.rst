@@ -105,6 +105,7 @@ ZeroMQ MajorDomo Implementation example
 -------
 The following example is a single-process example of the multi-process MajorDomo Protocal from ZMQ. The pieces noted 
 could all be run outside this process in their own compysitionscript, scalable across multiple hosts and cores
+
 .. code-block:: python
 
     from compysition.module import MDPClient, MDPWorker, MDPBroker, WSGI, MDPBrokerRegistrationService, STDOUT, Data
