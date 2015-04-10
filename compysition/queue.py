@@ -30,146 +30,54 @@ from gevent.event import Event
 import gevent.queue as gqueue
 from time import time
 
-
-class Container():
-    pass
-
-
 class QueuePool(object):
 
     def __init__(self, size):
         self.__size = size
-        self.queues = Container()
-        self.queues.metrics = Queue("metrics", maxsize=size)
-        self.queues.logs = Queue("logs", maxsize=size, fallthrough=False)
-        self.queues.failed = Queue("failed", maxsize=size)
-        self.inbound_queues = Container()
-        self.outbound_queues = Container()
-        self.error_queues = Container()
+        self.default_outbound_queues = {}
+        self.default_outbound_queues['metrics'] = Queue("metrics", maxsize=size)
+        self.default_outbound_queues['logs'] = Queue("logs", maxsize=size)
+        self.default_outbound_queues['failed'] = Queue("failed", maxsize=size)
+        self.inbound_queues = {}
+        self.outbound_queues = {}
+        self.error_queues = {}
 
-    def listOutboundQueues(self, names=False, default=True):
-        '''returns the list of queue names from the queuepool.
-        '''
+    def _add_queue(self, name, queue_scope, queue=None):
+        if not queue:
+            queue = Queue(name, maxsize=self.__size)
 
-        if default:
-            blacklist = []
-        else:
-            blacklist = ['failed', 'logs', 'metrics']
+        queue_scope[name] = queue
+        return queue
 
-        for m in self.outbound_queues.__dict__.keys():
-            if m not in blacklist:
-                if not names:
-                    yield getattr(self.outbound_queues, m)
-                else:
-                    yield m
+    def list_all_queues(self, default_queues=True):
+        """
+        Returns an aggregate list of all Queue objects in this pool
+        """
+        queue_list = self.inbound_queues.values() + self.outbound_queues.values() + self.error_queues.values()
+        if default_queues:
+            queue_list += self.default_queues
 
-    def listQueues(self, names=False, default=True):
-        '''returns the list of queue names from the queuepool.
-        '''
+        return queue_list
 
-        if default:
-            blacklist = []
-        else:
-            blacklist = ['failed', 'logs', 'metrics']
+    def add_outbound_queue(self, name, queue=None):
+        '''Creates an outbound queue or adds the queue reference specified'''
+        return self._add_queue(name, self.outbound_queues, queue=queue)
 
-        for m in self.queues.__dict__.keys():
-            if m not in blacklist:
-                if not names:
-                    yield getattr(self.queues, m)
-                else:
-                    yield m
+    def add_error_queue(self, name, queue=None):
+        '''Creates an error queue or adds the queue reference specified'''
+        return self._add_queue(name, self.error_queues, queue=queue)
 
-    def listInboundQueues(self, names=False):
-        '''returns the list of queue names from the queuepool.
-        '''
-        for m in self.inbound_queues.__dict__.keys():
-            if not names:
-                yield getattr(self.inbound_queues, m)
-            else:
-                yield m
+    def add_inbound_queue(self, name, queue=None):
+        '''Creates an inbound queue or adds the queue reference specified'''
+        return self._add_queue(name, self.inbound_queues, queue=queue)
 
-    def listErrorQueues(self, names=False):
-        for m in self.error_queues.__dict__.keys():
-            if not names:
-                yield getattr(self.error_queues, m)
-            else:
-                yield m
-
-    def createErrorQueue(self, name):
-        '''Creates an error Queue.'''
-        if name in ["metrics", "logs", "failed"]:
-            raise ReservedName
-
-        queue = Queue(name, maxsize=self.__size)
-        setattr(self.queues, name, queue)
-        setattr(self.error_queues, name, queue)
-
-    def createInboundQueue(self, name):
-        '''Creates an inbound Queue.'''
-        if name in ["metrics", "logs", "failed"]:
-            raise ReservedName
-
-        queue = Queue(name, maxsize=self.__size)
-        setattr(self.queues, name, queue)
-        setattr(self.inbound_queues, name, queue)
-
-    def addOutboundQueue(self, queue, name=None):
-        '''Adds an existing outbound Queue.'''
-
-
-        if name is None:
-            name = queue.name
-
-        if queue.name in ["metrics", "logs", "failed"]:
-            raise ReservedName
-
-        setattr(self.queues, name, queue)
-        setattr(self.outbound_queues, name, queue)
-
-    def addErrorQueue(self, queue, name=None):
-        '''Adds an existing outbound Queue.'''
-
-
-        if name is None:
-            name = queue.name
-
-        if queue.name in ["metrics", "logs", "failed"]:
-            raise ReservedName
-
-
-
-        setattr(self.queues, name, queue)
-        setattr(self.error_queues, name, queue)
-
-    def addInboundQueue(self, queue, name=None):
-        '''Adds an existing outbound Queue.'''
-        #if queue.name in ["metrics", "logs", "failed"]:
-        #    raise ReservedName
-        if name is None:
-            name = queue.name
-
-        setattr(self.queues, name, queue)
-        setattr(self.inbound_queues, name, queue)
-
-    def createOutboundQueue(self, name):
-        '''Creates an outbound Queue.'''
-        if name in ["metrics", "logs", "failed"]:
-            raise ReservedName
-
-        queue = Queue(name, maxsize=self.__size)
-        setattr(self.queues, queue.name, queue)
-        setattr(self.outbound_queues, queue.name, queue)
-
-    def hasQueue(self, name):
-        '''Returns true when queue with <name> exists.'''
-
-        try:
-            getattr(self.queues, name)
-            return True
-        except:
-            return False
-
-    def moveQueue(self, old_queue, new_queue):
+    def move_queue(self, old_queue, new_queue, queue_scope=None):
+        """
+        Move the contents from one queue object to another, then replace that queue reference
+        with the new queue. 
+        Kwarg 'queue_scope' is which type of queue the new queue will be on this pool. Defaults to outbound_queue
+        """
+        queue_scope = queue_scope or self.outbound_queues
         try:
             if old_queue.qsize() > 0:
                 while True:
@@ -178,7 +86,7 @@ class QueuePool(object):
                         new_queue.put(event)
                     except StopIteration:
                         break
-            setattr(self.queues, old_queue.name, new_queue)
+            return self._add_queue(new_queue.name, queue_scope, queue=new_queue)
         except Exception as err:
             raise Exception("Error moving queue {0} <{1}> to {2} <{3}>: {4}".format(old_queue.name, 
                                                                           old_queue,
@@ -186,30 +94,10 @@ class QueuePool(object):
                                                                           new_queue,
                                                                           err))
 
-
-    def getQueue(self, name):
-        '''Convenience funtion which returns the queue instance.'''
-
-        try:
-            return getattr(self.queues, name)
-        except:
-            raise QueueMissing("Queue {0} does not exist".format(name))
-
-    def createQueue(self, name):
-        '''Creates a non specific Queue for the pool. Usually these are queues used for administration of an actor.'''
-
-        queue = Queue(name, maxsize=self.__size)
-        setattr(self.queues, name, queue)
-
     def join(self):
         '''Blocks until all queues in the pool are empty.'''
-        for queue in self.listQueues():
-            queue.waitUntilEmpty()
-            # while True:
-            #     if queue.size() > 0:
-            #         sleep(0.1)
-            #     else:
-            #         break
+        for queue in self.list_all_queues():
+            queue.wait_until_empty()
 
 
 class Queue(gqueue.Queue):
@@ -221,18 +109,9 @@ class Queue(gqueue.Queue):
         - maxsize (int):   The max number of elements in the queue.
                             Default: 1
 
-    When a queue is created, it will drop all messages. This is by design.
-    When <disableFallThrough()> is called, the queue will keep submitted
-    messages.  The motivation for this is that when is queue is not connected
-    to any consumer it would just sit there filled and possibly blocking the
-    chain.
-
-    The <stats()> function will reveal whether any events have disappeared via
-    this queue.
-
     '''
 
-    def __init__(self, name, fallthrough=True, *args, **kwargs):
+    def __init__(self, name, *args, **kwargs):
         super(Queue, self).__init__(*args, **kwargs)
 
         self.name = name
@@ -240,7 +119,6 @@ class Queue(gqueue.Queue):
         self.__in = 0
         self.__out = 0
         self.__cache = {}
-        self.__content = Event()
 
     def get(self, *args, **kwargs):
         '''Gets an element from the queue.'''
@@ -251,7 +129,6 @@ class Queue(gqueue.Queue):
             raise QueueEmpty("Queue {0} has no waiting events".format(self.name))
 
         self.__out += 1
-        self.__content.clear()
         return element
 
     def rescue(self, element):
@@ -275,7 +152,6 @@ class Queue(gqueue.Queue):
             super(Queue, self).put(element, *args, **kwargs)
         except gqueue.Full:
             raise QueueFull("Queue {0} is full".format(self.name))
-        self.__content.set()
         self.__in += 1
 
     def __rate(self, name, value):
@@ -294,13 +170,14 @@ class Queue(gqueue.Queue):
         return self.__cache[name]["rate"]
 
     
-    def waitUntilContent(self):
+    def wait_until_content(self):
         '''Blocks until at least 1 slot is taken.'''
 
-        try:
-            self.__content.wait(timeout=0.1)
-        except:
-            pass
-    
-    def disableFallThrough(self):
-        pass
+        while self.qsize() == 0:
+            sleep(0.1)
+
+    def wait_until_empty(self):
+        '''Blocks until the queue is completely empty.'''
+
+        while self.qsize() > 0:
+            sleep(0.1)

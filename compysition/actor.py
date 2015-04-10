@@ -68,13 +68,11 @@ class Actor(object):
         self.threads = RestartPool(logger=self.logger, sleep_interval=1)
 
         if generate_metrics:
-            self.threads.spawn(self.__metricEmitter)
+            self.threads.spawn(self.__metric_emitter)
 
         self.__run = Event()
         self.__run.clear()
         self.__connections = {}
-        self.__children = {}
-        self.__parents = {}
         self.__block = Event()
         self.__block.clear()
         self.__blocking_consume = blocking_consume
@@ -83,101 +81,72 @@ class Actor(object):
     def block(self):
         self.__block.wait()
 
-    def connect_error(self, source_queue, destination, destination_queue, *args, **kwargs):
-        self.connect(source_queue, destination, destination_queue, error_queue=True, *args, **kwargs)
+    def connect_error(self, source_queue_name, destination, destination_queue_name, *args, **kwargs):
+        self.connect(source_queue_name, destination, destination_queue_name, error_queue=True, *args, **kwargs)
 
-    def connect(self, source_queue, destination, destination_queue, error_queue=False, check_existing=True):
+    def connect(self, source_queue_name, destination, destination_queue_name, error_queue=False, check_existing=True):
         '''Connects the <source> queue to the <destination> queue.
         In fact, the source queue overwrites the destination queue.'''
         """TODO: Refactor and simplify this"""
 
+        source_queue = self.pool.default_outbound_queues.get(source_queue_name, None)
+        source_queue_scope = self.pool.default_outbound_queues
+        if not source_queue:
+            source_queue = self.pool.outbound_queues.get(source_queue_name, None)
+            source_queue_scope = self.pool.outbound_queues
+
+        destination_queue = destination.pool.inbound_queues.get(destination_queue_name, None)
+
         if check_existing:
-            if source_queue in self.__children:
-                raise QueueConnected("Queue %s is already connected to %s." % (source_queue, self.__children[source_queue]))
-            else:
-                self.__children[source_queue] = "%s.%s" % (destination.name, destination_queue)
+            if source_queue:
+                raise QueueConnected("Queue {queue_name} is already connected".format(queue_name=source_queue_name))
 
-            if destination_queue in destination.__parents:
-                raise QueueConnected("Queue %s.%s is already connected to %s" % (destination.name, destination_queue, destination.__parents[destination_queue]))
-            else:
-                destination.__parents[destination_queue] = "%s.%s" % (self.name, source_queue)
+            if destination_queue:
+                raise QueueConnected("Queue {queue_name} is already connected".format(queue_name=destination_queue_name))
 
-        if not self.pool.hasQueue(source_queue):
-            if not destination.pool.hasQueue(destination_queue):
+        if not source_queue:
+            if not destination_queue:
                 if not error_queue:
-                    self.pool.createOutboundQueue(source_queue)
+                    source_queue = self.pool.add_outbound_queue(source_queue_name)
                 else:
-                    self.pool.createErrorQueue(source_queue)
+                    source_queue = self.pool.add_error_queue(source_queue_name)
 
-                destination.registerConsumer(destination.consume, destination_queue)
-                destination.pool.addInboundQueue(self.pool.getQueue(source_queue), name=destination_queue)
-            else:
-                if destination.is_consuming(destination_queue):
-                    if not error_queue:
-                        self.pool.addOutboundQueue(destination.pool.getQueue(destination_queue), name=source_queue)
-                    else:
-                        self.pool.addErrorQueue(destination.pool.getQueue(destination_queue), name=source_queue)
+                destination.register_consumer(destination_queue_name, source_queue)
+            elif destination_queue:
+                if not error_queue:
+                    source_queue = self.pool.add_outbound_queue(source_queue_name, queue=destination_queue)
+                else:
+                    source_queue = self.pool.add_error_queue(source_queue_name, queue=destination_queue)
 
-        elif source_queue in ["logs", "metrics", "failed"]:
-            if not destination.pool.hasQueue(destination_queue):
-                destination.registerConsumer(destination.consume, destination_queue)
-                destination.pool.addInboundQueue(self.pool.getQueue(source_queue), name=destination_queue)
-            else:
-                if destination.is_consuming(destination_queue):
-                    self.pool.moveQueue(self.pool.getQueue(source_queue), destination.pool.getQueue(destination_queue))
-
-        self.pool.getQueue(source_queue).disableFallThrough()
-        self.logger.info("Connected queue {0}.{1} <{2}> to {3}.{4} <{5}>".format(self.name, 
-                                                                      source_queue,
-                                                                      self.pool.getQueue(source_queue),
-                                                                      destination.name,
-                                                                      destination_queue,
-                                                                      destination.pool.getQueue(destination_queue)))
-
-
-    def flushQueuesToDisk(self):
-        '''Writes whatever event in the queue to disk for later retrieval. This has not yet been implemented'''
-
-        self.logger.debug("Writing queues to disk. Theoretically.")
-
-    def getChildren(self, queue=None):
-        '''Returns the queue name <queue> is connected to.'''
-
-        if queue is None:
-            return [self.__children[q] for q in self.__children.keys()]
         else:
-            return self.__children[queue]
+            if not destination_queue:
+                destination.register_consumer(destination_queue_name, source_queue)
+            else:
+                self.pool.move_queue(source_queue, destination_queue, queue_scope=source_queue_scope)
+
+        self.logger.info("Connected queue '{0}'' to '{1}.{2}'".format(source_queue_name, destination.name, destination_queue_name))
 
     def loop(self):
         '''The global lock for this module'''
 
         return self.__loop
 
-    def readQueuesFromDisk(self):
-        '''Reads events from disk into the queue.'''
+    def register_consumer(self, queue_name, queue):
+        '''
+        Add the passed queue and queue name to 
+        '''
+        self.pool.add_inbound_queue(queue_name, queue=queue)
+        self.threads.spawn(self.__consumer, self.consume, queue)
 
-        self.logger.debug("Reading queues from disk.")
-
-    def registerConsumer(self, function, queue):
-        '''Registers <function> to process all events in <queue>
-
-        Do not trap errors.  When <function> fails then the event will be
-        submitted to the "failed" queue,  If <function> succeeds to the
-        success queue.'''
-        self.__consumers.append(queue)
-        consumer = self.threads.spawn(self.__consumer, function, queue)
-
-    def is_consuming(self, queue_name):
-        return queue_name in self.__consumers
 
     def start(self):
         '''Starts the module.'''
 
-        self.logger.connect_logs_queue(self.pool.queues.logs)
+        self.logger.connect_logs_queue(self.pool.default_outbound_queues['logs'])
 
-        if hasattr(self, "preHook"):
-            self.logger.debug("preHook() found, executing")
-            self.preHook()
+        if hasattr(self, "pre_hook"):
+            self.logger.debug("pre_hook() found, executing")
+            self.pre_hook()
 
         self.__run.set()
         self.logger.debug("Started with max queue size of %s events and metrics interval of %s seconds." % (self.size, self.frequency))
@@ -190,9 +159,9 @@ class Actor(object):
         self.__block.set()
         self.threads.join()
 
-        if hasattr(self, "postHook"):
-            self.logger.debug("postHook() found, executing")
-            self.postHook()
+        if hasattr(self, "post_hook"):
+            self.logger.debug("post_hook() found, executing")
+            self.post_hook()
 
     def send_event(self, event, queues=None, queue=None):
         """
@@ -207,7 +176,7 @@ class Actor(object):
             if queues:
                 send_queues = iter(queues)
             else:
-                send_queues = self.pool.listOutboundQueues(default=False)
+                send_queues = self.pool.outbound_queues
             self.__loop_submit(event, send_queues)
 
     def send_error(self, event, queue=None, queues=None):
@@ -215,15 +184,16 @@ class Actor(object):
         Calls 'send_event' with all error queues as the 'queues' parameter
         """
         if not queues:
-            queues = self.pool.listErrorQueues()
+            queues = self.pool.error_queues
         self.send_event(event, queue=queue, queues=queues)
 
     def __loop_submit(self, event, queues):
+        queues = queues.iteritems()
         try:
-            queue = queues.next()
+            queue_name, queue = queues.next()
             self.__submit(event, queue)
             while True:
-                queue = queues.next()
+                queue_name, queue = queues.next()
                 self.__submit(deepcopy(event), queue)
         except StopIteration:
             pass
@@ -236,7 +206,7 @@ class Actor(object):
                 queue.put(event)
                 break
             except QueueFull as err:
-                err.waitUntilEmpty()
+                err.wait_until_empty()
 
     def __consumer(self, function, queue):
         '''Greenthread which applies <function> to each element from <queue>
@@ -244,55 +214,54 @@ class Actor(object):
 
         self.__run.wait()
         while self.loop():
-            queue_object = self.pool.getQueue(queue)
-            if queue_object.qsize() > 0:
+            if queue.qsize() > 0:
                 try:
-                    event = self.pool.getQueue(queue).get(timeout=10)
+                    event = queue.get(timeout=10)
                     original_data = deepcopy(event["data"])
                 except QueueEmpty as err:
-                    queue_object.waitUntilContent()
+                    queue.wait_until_contnt()
                 else:
                     if self.__blocking_consume:
-                        self.__doConsume(function, event, queue, original_data)
+                        self.__do_consume(function, event, queue, original_data)
                     else:
-                        self.threads.spawn(self.__doConsume, function, event, queue, original_data, restart=False)
+                        self.threads.spawn(self.__do_consume, function, event, queue, original_data, restart=False)
             else:
-                queue_object.waitUntilContent()
+                queue.wait_until_content()
 
         while True:
-            if self.pool.getQueue(queue).qsize() > 0:
+            if queue.qsize() > 0:
                 try:
-                    event = self.pool.getQueue(queue).get()
+                    event = queue.get()
                     original_data = deepcopy(event["data"])
                 except QueueEmpty as err:
                     break
                 else:
-                    self.threads.spawn(self.__doConsume, function, event, queue, original_data, restart=False)
+                    self.threads.spawn(self.__do_consume, function, event, queue, original_data, restart=False)
             else:
                 break
 
-    def __doConsume(self, function, event, queue, original_data):
+    def __do_consume(self, function, event, queue, original_data):
         """
         A function designed to be spun up in a greenlet to maximize concurrency for the __consumer method
         This function actually calls the consume function for the actor
         """
         try:
-            function(event, origin=queue)
+            function(event, origin=queue.name)
         except QueueFull as err:
             event["data"] = original_data
-            self.pool.getQueue(queue).rescue(event)
-            err.waitUntilFree()
+            queue.rescue(event)
+            err.wait_until_free()
         except Exception as err:
             print traceback.format_exc() # This is an unhappy path to get an exception at this point, so we want to print to STDOUT
                                             # In case this is a problem with the log_module itself. At least for now
             self.logger.error(traceback.format_exc())
 
-    def __metricEmitter(self):
+    def __metric_emitter(self):
         '''A greenthread which collects the queue metrics at the defined interval.'''
 
         self.__run.wait()
         while self.loop():
-            for queue in self.pool.listQueues():
+            for queue_name, queue in self.pool.outbound_queues.iteritems():
                 stats = queue.stats()
                 for item in stats:
                     while self.loop():
@@ -300,7 +269,7 @@ class Actor(object):
                             self.pool.queues.metrics.put({"header": {}, "data": (time(), "compysition", socket.gethostname(), "queue.%s.%s.%s" % (self.name, queue.name, item), stats[item], '', ())})
                             break
                         except QueueFull:
-                            self.pool.queues.metrics.waitUntilEmpty()
+                            self.pool.queues.metrics.wait_until_empty()
             sleep(self.frequency)
 
     def create_event(self, meta_id=None, service=DEFAULT_EVENT_SERVICE, data=""):

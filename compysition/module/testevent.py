@@ -50,7 +50,7 @@ class TestEvent(Actor):
                                     default: "test"
         - header_value (str):       Allows specification of test event header content
                                     default: {}
-        - delay (float):            The interval in seconds to wait after preHook is called
+        - delay (float):            The interval in seconds to wait after pre_hook is called
                                     to generate the first event. Should have a value of >= 0
                                     default: 0
         - max_events (int):         The max number of events to produce
@@ -71,7 +71,7 @@ class TestEvent(Actor):
         self.producer_pool = Pool(self.producers)
 
 
-    def preHook(self):
+    def pre_hook(self):
         for i in xrange(self.producers):
             self.producer_pool.spawn(self.produce)
 

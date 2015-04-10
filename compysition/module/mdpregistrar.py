@@ -149,5 +149,5 @@ class BrokerRegistrationService(Actor, RegistrationService):
             self.check_broker_liveness()
             #self.forward_broker_heartbeats()
 
-    def preHook(self):
+    def pre_hook(self):
         gevent.spawn(self.start_service)

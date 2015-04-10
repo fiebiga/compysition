@@ -91,7 +91,7 @@ class WSGI(Actor):
         self.run_server = run_server
         self.base_path = base_path
 
-    def preHook(self):
+    def pre_hook(self):
         if self.run_server:
             self.__serve()
 
@@ -149,7 +149,7 @@ class WSGI(Actor):
                 result.update({key:value})
         return json.dumps(result)
 
-    def postHook(self):
+    def post_hook(self):
         self.__server.stop()
         self.logger.info("Stopped serving.")
 

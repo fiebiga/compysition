@@ -25,3 +25,5 @@ from actor import Actor
 from queue import Queue
 from queue import QueuePool
 from qlogger import QLogger
+from director import Director
+from event import CompysitionEvent

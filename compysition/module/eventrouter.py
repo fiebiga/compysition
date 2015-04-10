@@ -60,7 +60,7 @@ class EventRouter(Actor):
         else:
             self.whitelist = False
 
-    def preHook(self):
+    def pre_hook(self):
         self._initialize_outboxes()
 
     def _initialize_outboxes(self):
@@ -85,7 +85,7 @@ class EventRouter(Actor):
 
     def _initialize_filter_outboxes(self):
         """
-        This method is called in preHook and converts the 'outboxes' on the provided filters from a string to the actual queue object
+        This method is called in pre_hook and converts the 'outboxes' on the provided filters from a string to the actual queue object
         """
         for filter in self.filters:
             outboxes = []

@@ -63,7 +63,7 @@ class FileLogger(Actor):
         self.file_logger.addHandler(logHandler)
         self.file_logger.setLevel(self.config.config['level'])
 
-    def preHook(self):
+    def pre_hook(self):
         self.threads.spawn(self.__go)
 
     def __go(self):

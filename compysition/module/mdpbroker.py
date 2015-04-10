@@ -360,7 +360,7 @@ class MajorDomoBroker(Actor):
 
         self.broker_socket.send_multipart(message)
 
-    def preHook(self):
+    def pre_hook(self):
         self.bind(self.port)
         gevent.spawn(self.mediate)
 

@@ -1,6 +1,16 @@
 Compysition changelog
 =====================
 
+Version
+1.1.00-dev
+~~~~~~~~~~~~~
+- Removed all list\_* methods from QueuePool. Use python dict iter tool to iterate over the queue pool values
+- Removed all camel case method calls. More pythonic
+- Added director and removed router, as the router does not actually have anything to do with routing beyond configuration. Director was more fitting with the project, and more aptly named
+- Immense refactoring, multiple instances of using reference rather than calling getters
+- Removed a lot of unused and overly complicated code
+- Added prototype for standardized CompysitonEvent, as mentioned previously in my TODO in Actor.create_event, this is overdue and just makes sense. The best practice for ZeroMQ and interprocess serialization is still TBD
+
 Version 1.0.65
 ~~~~~~~~~~~~~
 

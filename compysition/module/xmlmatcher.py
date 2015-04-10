@@ -56,7 +56,7 @@ class XMLMatcher(Actor):
         self.key = kwargs.get('key', self.name)
         self.purge_interval = purge_interval
 
-    def preHook(self):
+    def pre_hook(self):
         if self.purge_interval:
             self.threads.spawn(self.event_purger)
 

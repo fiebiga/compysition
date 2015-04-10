@@ -22,6 +22,10 @@
 #
 #
 
+"""
+Router is now deprecated, as the router does not actually route. Instead, please use the Director
+"""
+
 from compysition.module import Null
 from compysition.errors import ModuleInitFailure, NoSuchModule
 from gevent import signal, event, sleep
@@ -56,6 +60,7 @@ class ModulePool():
 class Default():
 
     def __init__(self, size=500, frequency=1, generate_metrics=False):
+        print("Warning: Router is deprecated and will soon be decommissioned. Please use the Director instead")
         signal(2, self.stop)
         signal(15, self.stop)
         self.pool = ModulePool()
