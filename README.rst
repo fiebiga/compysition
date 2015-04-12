@@ -63,7 +63,6 @@ and concurrent way. All steps and executions are spun up as spawned greenlet on 
 	router.connect(acknowledge_transform, 	wsgi)
 	
 	router.start()
-	router.block()
 	
 Note how modular each component is. It allows us to configure any steps in between class method executions and add
 any additional executions, authorizations, or transformations in between the request and response by simply
@@ -87,7 +86,6 @@ One-way messaging example
 	director.connect(event_generator, output_two)
     
 	director.start()
-	director.block()
     	
 	Output: 
 		[2015-02-13 16:56:35.850659] I am number two: test
@@ -129,7 +127,6 @@ could all be run outside this process in their own compysitionscript, scalable a
     director.connect(mdp_client,       wsgi)
 
     director.start()
-    director.block()
 
 After running this process, initiating a http request to http://127.0.0.1:7000/test_service would show the dataflow across MDP components
 
