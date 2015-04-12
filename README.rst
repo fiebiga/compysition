@@ -54,15 +54,15 @@ and concurrent way. All steps and executions are spun up as spawned greenlet on 
 	acknowledge_transform 	= director.register_module(Transformer, "acknowledge_transform", my_xsl_files['acknowledge.xsl'])
 	request_executor 	= director.register_module(SomeRequestExecutor, "request_executor")
 	
-	router.connect(wsgi, 			auth)
-	router.connect(auth, 			submit_transform)
-	router.connect_error(auth, 		wsgi) 			# Redirect auth errors to the wsgi server as a 401 Unaothorized Error
-	router.connect(submit_transform, 	request_executor)
-	router.connect_error(submit_transform, 	wsgi)
-	router.connect(request_executor, 	acknowledge_transform)
-	router.connect(acknowledge_transform, 	wsgi)
+	director.connect(wsgi, 			auth)
+	director.connect(auth, 			submit_transform)
+	director.connect_error(auth, 		wsgi) 			# Redirect auth errors to the wsgi server as a 401 Unaothorized Error
+	director.connect(submit_transform, 	request_executor)
+	director.connect_error(submit_transform, 	wsgi)
+	director.connect(request_executor, 	acknowledge_transform)
+	director.connect(acknowledge_transform, 	wsgi)
 	
-	router.start()
+	director.start()
 	
 Note how modular each component is. It allows us to configure any steps in between class method executions and add
 any additional executions, authorizations, or transformations in between the request and response by simply
