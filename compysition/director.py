@@ -49,10 +49,6 @@ class Director():
     def get_module(self, name):
         return self.modules.get(name, None)
 
-    def block(self):
-        '''Blocks until stop() is called.'''
-        self.__block.wait()
-
     def connect_error(self, source, destination, *args, **kwargs):
         self.connect(source, destination, error_queue=True, *args, **kwargs)
 
@@ -161,7 +157,7 @@ class Director():
     def is_running(self):
         return self.__running
 
-    def start(self):
+    def start(self, block=True):
         '''Starts all registered modules.'''
         self.__running = True
         self._setup_default_connections()
@@ -173,6 +169,13 @@ class Director():
         self.metric_module.start()
         if self.failed_module is not self.log_module:
             self.failed_module.start()
+
+        if block:
+            self.block()
+
+    def block(self):
+        '''Blocks until stop() is called.'''
+        self.__block.wait()
 
     def stop(self):
         '''Stops all input modules.'''
