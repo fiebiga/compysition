@@ -82,8 +82,7 @@ One-way messaging example
 	output_one 	= director.register_module(STDOUT, "output_one", prefix="I am number one: ", timestamp=True)
 	output_two 	= director.register_module(STDOUT, "output_two", prefix="I am number two: ", timestamp=True)
     
-	director.connect(event_generator, output_one)
-	director.connect(event_generator, output_two)
+	director.connect(event_generator, [output_one, output_two])
     
 	director.start()
     	
