@@ -129,8 +129,11 @@ class EventFilter(object):
         - value_regexes ([str] or str):         The value(s) that will cause this filter to match. This is evaluated as a regex
         - outbox_names ([str] or str):          The desired outbox that a positive filter match should place the event on
         - event_scope (tuple(str)):             The string address of the location of the string value to check against this filter in an event, provided as a tuple chain
-                                                    e.g. 'event["header"]["service"] == ("header", "service")'
-                                                    e.g. 'event["data"] == ("data")'
+                                                    The scope step can either be a dictionary key or an object property
+                                                    e.g. event.service == ("service",)
+                                                    e.g. event.data == ("data",)
+                                                    e.g. event.header['http'] == ("header", "http")
+                                                    e.g. event.header.someotherobj == ("header", "someotherobj")
         - next_filter(str):                     (Default: None) This grants the ability to create complex matching scenarios. "If X = match, then check Y"
                                                     A positive match on this filter (X), will trigger another check on filter (Y), and then use the filter configured on filter Y
                                                     in the event of a positive match
@@ -185,13 +188,17 @@ class EventFilter(object):
 
     def _get_value(self, event):
         """
-        This method iterates through the self.event_scope tuple in a series of get() calls on the event,
-        returning a None if the provided chain fails
+        This method iterates through the self.event_scope tuple in a series of getattr or get calls,
+        depending on if the event in the scope step is a dict or an object. More supported types may be added in the future
+        If the chain fails at any point, a None is returned
         """
         try:
             current_step = event
             for scope_step in self.event_scope:
-                current_step = current_step.get(scope_step, None)
+                if isinstance(current_step, dict):
+                    current_step = current_step.get(scope_step, None)
+                else isinstance(current_step, object):
+                    current_step = getattr(current_step, scope_step, None)
         except Exception as err:
             current_step = None
 

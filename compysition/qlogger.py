@@ -48,24 +48,24 @@ class QLogger(object):
         """
         if not log_entry_id:
             if event:
-                log_entry_id = event['header'].get("meta_id", None) or event['header']['event_id']
+                log_entry_id = event.meta_id
 
         while True:
             try:
-                log_event = {"header":  
-                                {   "log_entry_id": log_entry_id},
-                             "data":    
-                                {   "level":    level,
-                                    "time":     datetime.now().strftime('%Y-%m-%d %H:%M:%S,%f')[:-3],
-                                    "name":     self.name,
-                                    "message":  message}}
+                log_data = {"id":       log_entry_id
+                            "level":    level,
+                            "time":     datetime.now().strftime('%Y-%m-%d %H:%M:%S,%f')[:-3],
+                            "name":     self.name,
+                            "message":  message}
+
+                log_event = CompsitionEvent(data=log_data)
                 if self.logs is None:
                     self.buffer.append(log_event)
                 else:
                     self.logs.put(log_event)
                 break
             except QueueFull:
-                self.logs.waitUntilFree()
+                self.logs.wait_until_free()
 
     def critical(self, message, event=None, log_entry_id=None):
         """Generates a log message with priority logging.CRITICAL

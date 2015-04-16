@@ -41,8 +41,8 @@ class Data(Actor):
 
     def update_data(self, event):
         if self.key:
-            event["data"][self.key] = self.data
+            event.data[self.key] = self.data
         else:
-            event["data"] = self.data
+            event.data = self.data
 
         return event

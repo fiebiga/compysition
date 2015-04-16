@@ -95,11 +95,11 @@ class FileLogger(Actor):
 
 
     def consume(self, event, *args, **kwargs):
-        module_name = event["data"].get("name", None)
-        log_entry_id = event["header"].get("log_entry_id", None)
-        message = event["data"].get("message", None)
-        level = event["data"].get("level", None)
-        time = event["data"].get("time", None)
+        module_name = event.data.get("name", None)
+        log_entry_id = event.data.get("log_entry_id", None)
+        message = event.data.get("message", None)
+        level = event.data.get("level", None)
+        time = event.data.get("time", None)
 
         entry_prefix = "{0} {1} ".format(time, logging._levelNames.get(level)) # Use the time from the logging invocation as the timestamp
 

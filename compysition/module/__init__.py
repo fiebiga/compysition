@@ -30,7 +30,7 @@ from filelogger import FileLogger
 from wsgi import WSGI
 from basicauth import BasicAuth
 from transformer import Transformer
-from eventaggregator import EventDataXMLAggregator, EventDataAggregator
+from eventdataaggregator import EventDataXMLAggregator, EventDataAggregator
 from xmlfilter import XMLFilter
 from xmlmatcher import XMLMatcher
 from flowcontroller import FlowController

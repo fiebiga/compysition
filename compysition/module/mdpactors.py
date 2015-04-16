@@ -28,6 +28,7 @@ from gevent.queue import Queue
 from compysition import Actor
 from uuid import uuid4 as uuid
 from ast import literal_eval
+from compysition.event import CompysitionEvent
 import util.mdpdefinition as MDPDefinition
 
 """
@@ -154,7 +155,7 @@ class MDPClient(MDPActor):
                 empty = message.pop(0)
                 request_identity = message.pop(0)
 
-                event = literal_eval(message[0])
+                event = (message[0])
                 self.logger.info("Received reply from broker", event=event)
                 self.send_event(event)
 
@@ -214,7 +215,7 @@ class MDPWorker(MDPActor):
                 return_address = message.pop(0)
                 empty = message.pop(0)
                 broker_event_logging_id = message.pop(0)
-                event = literal_eval(message.pop(0))
+                event = Compysition.from_string(message.pop(0))
 
                 request_id = event['header']['event_id']
                 self.requests[request_id] = Request(return_address, origin_broker)
@@ -240,7 +241,7 @@ class MDPWorker(MDPActor):
             broker = request.origin_broker
             return_address = request.return_address
             broker_event_logging_id = event['header'].get("meta_id", None) or event['header']['event_id']
-            message = ['', MDPDefinition.W_WORKER, MDPDefinition.W_REPLY, return_address, '', broker_event_logging_id, b"{0}".format(event)]
+            message = ['', MDPDefinition.W_WORKER, MDPDefinition.W_REPLY, return_address, '', broker_event_logging_id, b"{0}".format(event.to_string())]
 
             if broker is not None:                  # Prioritize the originating broker first
                 try:

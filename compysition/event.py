@@ -32,41 +32,84 @@ class CompysitionEvent(object):
 
     """
     Anatomy of an event:
-        - header:
-            - event_id: The unique and functionally immutable ID for this new event
-            - meta_id:  The ID associated with other unique event data flows. This ID is used in logging
-            - service:  (default: default) Used for compatability with the ZeroMQ MajorDomo configuration. Scope this to specific types of interproces routing
-        - data:
-            <The data passed and worked on from event to event. Mutable and variable>
+        - event_id: The unique and functionally immutable ID for this new event
+        - meta_id:  The ID associated with other unique event data flows. This ID is used in logging
+        - service:  (default: default) Used for compatability with the ZeroMQ MajorDomo configuration. Scope this to specific types of interproces routing
+        - data:     <The data passed and worked on from event to event. Mutable and variable>
+        - kwargs:   All other kwargs passed upon CompysitionEvent instantiation will be added to the event dictionary
+
     """
 
-    def __init__(self, meta_id=None, service=None, data=None, header=None):
+    def __init__(self, meta_id=None, service=None, data=None, header={}, *args, **kwargs):
         self.event_id = uuid().get_hex()
         self.meta_id = meta_id or self.event_id
         self.service = service or DEFAULT_EVENT_SERVICE
         self.header = header
         self.data = data
+        self.__dict__.update(kwargs)
 
     def to_string(self):
-        return_dict = {}
-        keys = self.__dict__.keys()
-        for key in keys:
-            return_dict[key] = b"{0}".format(self.__dict__[key])
+        return str(self.__dict__)
 
-        return return_dict
+    def set(self, key, value):
+        try:
+            setattr(self, key, value)
+            return True
+        except:
+            return False
 
-    def from_string(self, string_value):
+    @staticmethod
+    def from_string(string_value):
         value_dict = literal_eval(string_value)
-        keys = value_dict.keys()
-        for key in keys:
-            setattr(self, key, value_dict[key])
+        return CompysitionEvent(**value_dict)
+
+    def get_properties(self):
+        """
+        Gets a dictionary of all event properties except for event.data
+        Useful when event data is too large to copy in a performant manner
+        """
+        return {k: v for k, v in self.__dict__.items() if k != "data"}
+
 
 if __name__ == "__main__":
     """
-    Event Test execution. Will be removed or migrated to a test suite
+    Event Test execution. Will be removed before version deployment or migrated to a test suite
     """
-    test = CompysitionEvent()
+
+    event = CompysitionEvent()
+    print event.get_properties()
+
+    import time
+    num_events = 100000
+    start = time.time()
+    for i in xrange(num_events):
+        test = CompysitionEvent()
+
+
+
+    end = time.time()
+    print("Instantiation time for {0} full events: {1}".format(num_events, (end-start)))
+
+    start = time.time()
+    for i in xrange(num_events):
+        test = CompysitionEvent.generate_lightweight_event()
+
+    end = time.time()
+    print("Instantiation time for {0} lightweight events: {1}".format(num_events, (end-start)))
+
+    exit()
+
+
+
+    test = CompysitionEvent(service="dealertrack")
+
+    test.data = "Happ happy fun time"
+    test.header = "This is an event header"
+    test.set("fun", "notreallyfun")
     str_value = test.to_string()
     print str_value
-    test_two = CompysitionEvent()
-    print test_two.from_string(str_value)
+    test_two = CompysitionEvent.from_string(str_value)
+    print test_two.__dict__
+
+    print CompysitionEvent.generate_lightweight_event(id="yodawg")
+    

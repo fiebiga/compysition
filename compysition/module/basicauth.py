@@ -36,7 +36,7 @@ class BasicAuth(Actor):
     def consume(self, event, *args, **kwargs):
         try:
             try:
-                authorization = event['header'][self.caller]['environment']['HTTP_AUTHORIZATION']
+                authorization = event.header[self.caller]['environment']['HTTP_AUTHORIZATION']
                 user, password = base64.decodestring(authorization.split(' ')[1]).split(':')
             except:
                 raise Exception("No auth headers present in submitted request")
@@ -50,8 +50,8 @@ class BasicAuth(Actor):
                 raise Exception(message)
         except Exception as err:
             self.logger.warn("Authorization Failed: {0}".format(err), event=event)
-            event['header'].get(self.caller, {}).update({'status': '401 Unauthorized'})
-            event['header'].get(self.caller, {}).get('http', []).append(('WWW-Authenticate', 'Basic realm="Compysition Authentication"'))
+            event.header.get(self.caller, {}).update({'status': '401 Unauthorized'})
+            event.header.get(self.caller, {}).get('http', []).append(('WWW-Authenticate', 'Basic realm="Compysition Authentication"'))
             self.send_error(event)
 
     def _authenticate(self, username, password):

@@ -59,5 +59,5 @@ class Header(Actor):
         self.send_event(event)
 
     def update_header_dict(self, event):
-        event["header"][self.key] = self.header
+        event.header[self.key] = self.header
         return event

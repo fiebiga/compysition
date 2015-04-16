@@ -28,6 +28,7 @@ from ast import literal_eval
 
 """
 Implementation of a TCP in and out connection using gevent sockets
+TODO: Add options like "Wait for response" and "Send response" for TCPIn and TCPOut, respectively
 """
 
 DEFAULT_PORT = 9000

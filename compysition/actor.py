@@ -26,6 +26,7 @@ from compysition.queue import QueuePool, Queue
 from compysition.qlogger import QLogger
 from compysition.errors import QueueEmpty, QueueFull, QueueConnected, SetupError, NoConnectedQueues
 from restartlet import RestartPool
+from compysition.event import CompysitionEvent
 from gevent import sleep, socket
 from gevent.event import Event
 from time import time
@@ -272,7 +273,11 @@ class Actor(object):
                             self.pool.queues.metrics.wait_until_empty()
             sleep(self.frequency)
 
-    def create_event(self, meta_id=None, service=DEFAULT_EVENT_SERVICE, data=""):
+
+    def create_event(self, *args, **kwargs):
+        return CompysitionEvent(**kwargs)
+
+    def old_create_event(self, meta_id=None, service=DEFAULT_EVENT_SERVICE, data=""):
         """
         Anatomy of an event:
             - header:

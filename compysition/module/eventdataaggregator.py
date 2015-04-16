@@ -25,8 +25,8 @@ from compysition import Actor
 from lxml import etree
 
 class EventDataAggregator(Actor):
-    '''**Simple module which aggregates all existing tags under event['data'] together as event['data']. Default module does simple string concatenation
-    e.g. event['data']['tagone'] and event['data']['tagtwo'] become event['data'], where data equals event['data']['tagone'] + event['data']['tagone']**
+    '''**Simple module which aggregates all existing tags under event.data together as event.data. Default module does simple string concatenation
+    e.g. event.data['tagone'] and event.data['tagtwo'] become event.data, where data equals event.data['tagone'] + event.data['tagone']**
     '''
 
     def __init__(self, name, *args, **kwargs):
@@ -34,9 +34,9 @@ class EventDataAggregator(Actor):
         self.key = kwargs.get("key", None) or name
 
     def consume(self, event, *args, **kwargs):
-        if isinstance(event['data'], dict):
+        if isinstance(event.data, dict):
             try:
-                event['data'] = self._do_aggregation(event['data'].values())
+                event.data = self._do_aggregation(event.data.values())
             except Exception as err:
                 self.logger.error("Could not aggregate tags under event data. Reason {0}".format(err))
 
@@ -51,7 +51,7 @@ class EventDataAggregator(Actor):
         return return_value
 
 class EventDataXMLAggregator(EventDataAggregator):
-    '''**Simple module which aggregates all existing tags under event['data'] together as event['data'], under a single root XML element**
+    '''**Simple module which aggregates all existing tags under event.data together as event.data, under a single root XML element**
     '''
 
     def _do_aggregation(self, values):
