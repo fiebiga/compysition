@@ -78,10 +78,10 @@ class EventRouter(Actor):
         # Determine default outboxes for a 'blacklist' routing scenario
         for default_outbox_regex in self.default_outbox_regexes:
             outbox_regex = re.compile(default_outbox_regex)
-            for outbox in self.pool.listOutboundQueues():
-                if outbox.name not in filtered_outboxes:
-                    if outbox_regex.search(outbox.name):
-                        self.default_outboxes.append(outbox)
+            for outbox_name in self.pool.outbound_queues:
+                if outbox_name not in filtered_outboxes:
+                    if outbox_regex.search(outbox_name):
+                        self.default_outboxes.append(self.pool.outbound_queues[outbox_name])
 
     def _initialize_filter_outboxes(self):
         """
@@ -91,9 +91,9 @@ class EventRouter(Actor):
             outboxes = []
             for outbox_name in filter.outbox_names:
                 try:
-                    filter.outboxes.append(self.pool.get_queue(outbox_name))
-                except:
-                    raise Exception("Queue {outbox_name} was referenced in a filter, but is not connected as a valid outbox for {name}".format(outbox_name=outbox_name, name=self.name))
+                    filter.outboxes.append(self.pool.outbound_queues[outbox_name])
+                except Exception as err:
+                    raise Exception("Queue {outbox_name} was referenced in a filter, but is not connected as a valid outbox for {name}. Connected outboxes are {queue_list}. Exception was: {exception}".format(outbox_name=outbox_name, name=self.name, queue_list=self.pool.outbound_queues, exception=err))
 
     def consume(self, event, *args, **kwargs):
         matched = False
