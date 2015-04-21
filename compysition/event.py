@@ -23,7 +23,7 @@
 from uuid import uuid4 as uuid
 from ast import literal_eval
 """
-Compysition event is created and passed by reference among modules
+Compysition event is created and passed by reference among actors
 """
 
 DEFAULT_EVENT_SERVICE="default"
@@ -41,12 +41,12 @@ class CompysitionEvent(object):
     """
 
     def __init__(self, meta_id=None, service=None, data=None, header={}, *args, **kwargs):
+        self.__dict__.update(kwargs)
         self.event_id = uuid().get_hex()
         self.meta_id = meta_id or self.event_id
         self.service = service or DEFAULT_EVENT_SERVICE
         self.header = header
         self.data = data
-        self.__dict__.update(kwargs)
 
     def to_string(self):
         return str(self.__dict__)
@@ -57,6 +57,9 @@ class CompysitionEvent(object):
             return True
         except:
             return False
+
+    def get(self, key, default=None):
+        return getattr(self, key, default)
 
     @staticmethod
     def from_string(string_value):
@@ -79,6 +82,11 @@ if __name__ == "__main__":
     event = CompysitionEvent()
     print event.get_properties()
 
+    event.testme = "yo breh"
+    print event.testme
+    setattr(event, "yesplease", "nosir")
+    print event.yesplease
+    exit()
     import time
     num_events = 100000
     start = time.time()

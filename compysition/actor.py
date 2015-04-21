@@ -36,7 +36,7 @@ from uuid import uuid4 as uuid
 
 class Actor(object):
     """
-    The actor class is the abstract base class for all implementing compysition modules. 
+    The actor class is the abstract base class for all implementing compysition actors. 
     In order to be a valid 'module' and connectable with the compysition event flow, a module must be an extension of this class.
 
     The Actor is responsible for putting events on outbox queues, and consuming incoming events on inbound queues.
@@ -46,7 +46,7 @@ class Actor(object):
 
     def __init__(self, name, size=0, frequency=1, generate_metrics=True, blocking_consume=False, *args, **kwargs):
         """
-        **Base class for all compysition modules**
+        **Base class for all compysition actors**
 
         Parameters:
 
@@ -82,10 +82,10 @@ class Actor(object):
     def block(self):
         self.__block.wait()
 
-    def connect_error(self, source_queue_name, destination, destination_queue_name, *args, **kwargs):
-        self.connect(source_queue_name, destination, destination_queue_name, error_queue=True, *args, **kwargs)
+    def connect_error_queue(self, source_queue_name, destination, destination_queue_name, *args, **kwargs):
+        self.connect_queue(source_queue_name, destination, destination_queue_name, error_queue=True, *args, **kwargs)
 
-    def connect(self, source_queue_name, destination, destination_queue_name, error_queue=False, check_existing=True):
+    def connect_queue(self, source_queue_name, destination, destination_queue_name, error_queue=False, check_existing=True):
         '''Connects the <source> queue to the <destination> queue.
         In fact, the source queue overwrites the destination queue.'''
         """TODO: Refactor and simplify this"""
@@ -218,7 +218,7 @@ class Actor(object):
             if queue.qsize() > 0:
                 try:
                     event = queue.get(timeout=10)
-                    original_data = deepcopy(event["data"])
+                    original_data = deepcopy(event.data)
                 except QueueEmpty as err:
                     queue.wait_until_contnt()
                 else:
@@ -233,7 +233,7 @@ class Actor(object):
             if queue.qsize() > 0:
                 try:
                     event = queue.get()
-                    original_data = deepcopy(event["data"])
+                    original_data = deepcopy(event.data)
                 except QueueEmpty as err:
                     break
                 else:
@@ -249,12 +249,12 @@ class Actor(object):
         try:
             function(event, origin=queue.name)
         except QueueFull as err:
-            event["data"] = original_data
+            event.data = original_data
             queue.rescue(event)
             err.wait_until_free()
         except Exception as err:
             print traceback.format_exc() # This is an unhappy path to get an exception at this point, so we want to print to STDOUT
-                                            # In case this is a problem with the log_module itself. At least for now
+                                            # In case this is a problem with the log_actor itself. At least for now
             self.logger.error(traceback.format_exc())
 
     def __metric_emitter(self):

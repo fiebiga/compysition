@@ -25,6 +25,7 @@ from compysition import Actor
 import gevent.socket as socket
 from gevent.server import StreamServer
 from ast import literal_eval
+from compysition.event import CompysitionEvent
 
 """
 Implementation of a TCP in and out connection using gevent sockets
@@ -50,7 +51,7 @@ class TCPOut(Actor):
     def consume(self, event, *args, **kwargs):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((self.host, self.port))
-        sock.send(str(event))
+        sock.send(event.to_string())
         sock.close()
 
 class TCPIn(Actor):
@@ -81,7 +82,7 @@ class TCPIn(Actor):
             event += l
 
         try:
-            event = literal_eval(event)
+            event = CompysitionEvent.from_string(event)
             self.send_event(event)
         except:
             pass

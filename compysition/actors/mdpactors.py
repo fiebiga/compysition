@@ -123,10 +123,10 @@ class MDPClient(MDPActor):
 
     def send_outbound_message(self, socket, event):
         try:
-            request_id = event['header'].get("meta_id", None) or event['header']['event_id'] # Set for broker logging so we can trace the path of an event easily
-            service = event['header']['service']
+            request_id = event.meta_id                  # Set for broker logging so we can trace the path of an event easily
+            service = event.service
             self.logger.info("Sending event to service '{0}'".format(service), event=event)
-            message = [request_id, b"{0}".format(event)]
+            message = [request_id, b"{0}".format(event.to_string())]
             self.send(service, message, broker_socket=socket)
         except Exception as err:
             self.logger.error("Unable to find necessary chains: {0}".format(err))
@@ -217,7 +217,7 @@ class MDPWorker(MDPActor):
                 broker_event_logging_id = message.pop(0)
                 event = Compysition.from_string(message.pop(0))
 
-                request_id = event['header']['event_id']
+                request_id = event.event_id
                 self.requests[request_id] = Request(return_address, origin_broker)
                 self.send_event(event)
 
@@ -234,13 +234,13 @@ class MDPWorker(MDPActor):
                 pass
 
     def send_outbound_message(self, socket, event):
-        request_id = event['header']['event_id']
+        request_id = event.event_id
         request = self.requests.get(request_id)
 
         if request is not None:
             broker = request.origin_broker
             return_address = request.return_address
-            broker_event_logging_id = event['header'].get("meta_id", None) or event['header']['event_id']
+            broker_event_logging_id = event.meta_id
             message = ['', MDPDefinition.W_WORKER, MDPDefinition.W_REPLY, return_address, '', broker_event_logging_id, b"{0}".format(event.to_string())]
 
             if broker is not None:                  # Prioritize the originating broker first

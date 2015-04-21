@@ -46,7 +46,7 @@ class STDOUT(Actor):
         if self.complete:
             data = "{0}{1}".format(self.prefix, event)
         else:
-            data = "{0}{1}".format(self.prefix, event['data'])
+            data = "{0}{1}".format(self.prefix, event.data)
 
         if self.timestamp:
             data = "[{0}] {1}".format(datetime.datetime.now(), data)

@@ -197,7 +197,7 @@ class EventFilter(object):
             for scope_step in self.event_scope:
                 if isinstance(current_step, dict):
                     current_step = current_step.get(scope_step, None)
-                else isinstance(current_step, object):
+                elif isinstance(current_step, object):
                     current_step = getattr(current_step, scope_step, None)
         except Exception as err:
             current_step = None

@@ -72,14 +72,14 @@ class XMLMatcher(Actor):
 
 
     def consume(self, event, *args, **kwargs):
-        request_id = event['header']['event_id']
+        request_id = event.event_id
         inbox_origin = kwargs.get('origin', None)
         waiting_event = self.events.get(request_id, None)
         try:
             if waiting_event:
-                waiting_event.report_inbox(inbox_origin, event['data'])
+                waiting_event.report_inbox(inbox_origin, event.data)
                 if waiting_event.all_inboxes_reported():
-                    event['data'] = waiting_event.get_aggregate_xml()
+                    event.data = waiting_event.get_aggregate_xml()
                     self.send_event(event)
                     del self.events[request_id]
             else:
@@ -88,7 +88,7 @@ class XMLMatcher(Actor):
                     inbound_queues.append(queue)
 
                 self.events[request_id] = MatchedEvent(self.key, inbound_queues)
-                self.events.get(request_id).report_inbox(inbox_origin, event['data'])
+                self.events.get(request_id).report_inbox(inbox_origin, event.data)
         except Exception as error:
             self.logger.warn("Could not process incoming event: {0}".format(error), event=event)
 

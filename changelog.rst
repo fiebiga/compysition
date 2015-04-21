@@ -2,6 +2,15 @@ Compysition changelog
 =====================
 
 Version
+1.1.01-dev
+~~~~~~~~~~~~~
+- Changed project structure to be more in line with what this framework is. It is an actor based event loop. Calling actors modules causes terminology collision with pythonic modules, and is inaccurate. Changed all instances of 'module' terminology to 'actor'
+- Added explicitness to some calls, most importantly 'connect' and 'connect_error', which are now 'connect_queue' and 'connect_error_queue' on Director, respectively
+- Changed all uses of event to use the new CompysitionEvent object. event['header'] was converted to be now simply a reference to a set attribute on the CompysitionEvent object. e.g. event['data'] is now event.data and event['header']['meta_id'] is now event.meta_id, etc
+- Removed 'data' and 'header' actors, in favor of "EventAttributeModifier" actor, which modifies an event with a static attribute value. It defaults to modifying the 'data' attribute. This single actor serves as the functionality for the old 'data' and 'header' actors, so they were removed
+- Fixed some typos and bugs in the last dev version
+ 
+Version
 1.1.00-dev
 ~~~~~~~~~~~~~
 - Removed all list\_* methods from QueuePool. Use python dict iter tool to iterate over the queue pool values
@@ -16,16 +25,16 @@ Version
 Version 1.0.65
 ~~~~~~~~~~~~~
 
-- Changed EventRouter to use the newly created 'queues' functionality of Actor.send_event. This fixed a bug where event references were passed uncopied to multiple queues, causing collision on event editing by multiple modules.
+- Changed EventRouter to use the newly created 'queues' functionality of Actor.send_event. This fixed a bug where event references were passed uncopied to multiple queues, causing collision on event editing by multiple actors.
 - Started using 'restartlet' for Actor.threads pool. All long-running greenlets spawned on actors from self.threads will auto restart on an exceptional exit.
-- Removed legacy support for router.connect() - strings in the format "modulename.outboxname" or "modulename.inboxname" will no longer be accepted
+- Removed legacy support for director.connect_queue() - strings in the format "modulename.outboxname" or "modulename.inboxname" will no longer be accepted
 
 Version 1.0.62
 ~~~~~~~~~~~~~
 
 - Added the concept of the 'meta_id' to an event. This is designed to allow a newly generated event to be associated to the data flow of an event that was previously persisted outside of the immediate event data-flow. To summarize the proper uses of 'event_id' vs 'meta_id':
-		- event_id:		Used for internal compysition operations. Should be unique and immutable for every event generated in compysition. Changing this value breaks certain control modules - it should not be altered once generated for a new event.
-		- meta_id:		This is an ID that associates it with an overall meta work, such as a series of generated events that all pertain to the same 'theme' of work. For example, a form of some sort waiting for human approval in a database won't be a part of the active compysition dataflow, but for logging purposes we would want the new series of compysition events that follow that approval to log with an ID that allows us to easily associate the 'form creation' and the 'post approval' steps. For this, we have the meta_id. Logging invocations that pass the 'event' variable to the qlogger will always use meta_id over the event_id. **Changing this value has no effect on the internal workings of compysition modules. It is purely for logging associations**
+		- event_id:		Used for internal compysition operations. Should be unique and immutable for every event generated in compysition. Changing this value breaks certain control actors - it should not be altered once generated for a new event.
+		- meta_id:		This is an ID that associates it with an overall meta work, such as a series of generated events that all pertain to the same 'theme' of work. For example, a form of some sort waiting for human approval in a database won't be a part of the active compysition dataflow, but for logging purposes we would want the new series of compysition events that follow that approval to log with an ID that allows us to easily associate the 'form creation' and the 'post approval' steps. For this, we have the meta_id. Logging invocations that pass the 'event' variable to the qlogger will always use meta_id over the event_id. **Changing this value has no effect on the internal workings of compysition actors. It is purely for logging associations**
 
 - Added "create_event" method on the Actor class. This allows a uniform and standardized event creation syntax, rather than re-creating events and event dict syntaxes in multiple locations. This will be a precursor to implementing an Event() object - The reason it was not done at this time is because testing is required to ensure that serialization works flawlessly across ZeroMQ sockets
 
@@ -51,9 +60,9 @@ Version 1.0.1
 	- Refactoring was done while maintaining differences of compysition Actor model pattern, which include:
 		- Support of N:1 producer to consumer queues (many actors can now use the reference of a single consuming queue). 
 			Note that 1:N is inherently NOT feasible with this instance of the Actor model, and the N:1 producer to consumer queue is currently only defaulted to being allowed
-			with the connected admin queues (logs, metrics, failed). This will be opened to all router.connect() calls in the next version
-		- Support of M:N queues connected to ANY module. Queue creation is done automatically at the time "router.connect()" is called, rather than
-			having to be done within the Actor module __init__ itself. Inboxes and Outboxes can be named anything, as defined in the "router.connect()" invocation
+			with the connected admin queues (logs, metrics, failed). This will be opened to all director.connect_queue() calls in the next version
+		- Support of M:N queues connected to ANY module. Queue creation is done automatically at the time "director.connect_queue()" is called, rather than
+			having to be done within the Actor module __init__ itself. Inboxes and Outboxes can be named anything, as defined in the "director.connect_queue()" invocation
 		- The default behavior is to invoke 'self.send_event(event)' on the Actor, which will send to ALL connect 'outbox' queues.
 
 - Changed actors to pass references to queues, rather than use a router to route. (The "router" name will be changed to "manager" in the future to reflect it's new role')

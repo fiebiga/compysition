@@ -8,7 +8,7 @@ What?
 	A Python application framework to build and manage async and highly concurrent event-driven data flow
 
 I have created **compysition** to build off the simple way in which Wishbone_ managed message flow across multiple
-modules. Compysition expands upon this module registration module to provide abstracted multi-process communication
+actors. Compysition expands upon this module registration module to provide abstracted multi-process communication
 via 0mq_, as well as the ability for full cyclical communication for in-process request/response behavior in a lightweight,
 fast, and fully concurrent manner, using gevent_ greenlets and concurrency patterns to consume and output events
 
@@ -30,33 +30,33 @@ and concurrent way. All steps and executions are spun up as spawned greenlet on 
     
 .. code-block:: python
 
-	from compysition.router import Default
-	from compysition.module import WSGI
-	from compysition.module import BasicAuth
-	from compysition.module import Transformer
-	from compysition.module import Funnel
+	from compysition import Director
+	from compysition.actors import WSGI
+	from compysition.actors import BasicAuth
+	from compysition.actors import Transformer
+	from compysition.actors import Funnel
 	
-	from mymodules.module import SomeRequestExecutor
+	from myactors.module import SomeRequestExecutor
 	
-	router = Default()
-	router.register(WSGIServer, "wsgi")
-	router.register(BasicAuth, "auth")
-	router.register(Funnel, "wsgi_collector")
-	router.register(Transformer, "submit_transform", 'SourceOne/xsls/submit.xsl')
-	router.register(Transformer, "acknowledge_transform", 'SourceOne/xsls/acknowledge.xsl', 'XML', 'submit_transform')  # *args are the subjects of transform
-	router.register(SomeRequestExecutor, "request_executor")
+	director = Director()
+	director.register(WSGIServer, "wsgi")
+	director.register(BasicAuth, "auth")
+	director.register(Funnel, "wsgi_collector")
+	director.register(Transformer, "submit_transform", 'SourceOne/xsls/submit.xsl')
+	director.register(Transformer, "acknowledge_transform", 'SourceOne/xsls/acknowledge.xsl', 'XML', 'submit_transform')  # *args are the subjects of transform
+	director.register(SomeRequestExecutor, "request_executor")
 	
-	router.connect('wsgi.outbox', 'auth.inbox')
-	router.connect('wsgi_collector.outbox', 'wsgi.inbox') # This collects messages from multiple sources and directs them to wsgi.inbox
-	router.connect('auth.outbox', 'submit_transform.inbox')
-	router.connect('auth.errors', 'wsgi_collector.auth_errors') # Redirect auth errors to the wsgi server as a 401 Unaothorized Error
-	router.connect('submit_transform.outbox', 'request_executor.inbox')
-	router.connect('submit_transform.errors', 'wsgi_collector.transformation_errors')
-	router.connect('request_executor.outbox', 'acknowledge_transform.inbox')
-	router.connect('acknowledge_transform.outbox', 'wsgi_collector.inbox')
+	director.connect_queue('wsgi.outbox', 'auth.inbox')
+	director.connect_queue('wsgi_collector.outbox', 'wsgi.inbox') # This collects messages from multiple sources and directs them to wsgi.inbox
+	director.connect_queue('auth.outbox', 'submit_transform.inbox')
+	director.connect_queue('auth.errors', 'wsgi_collector.auth_errors') # Redirect auth errors to the wsgi server as a 401 Unaothorized Error
+	director.connect_queue('submit_transform.outbox', 'request_executor.inbox')
+	director.connect_queue('submit_transform.errors', 'wsgi_collector.transformation_errors')
+	director.connect_queue('request_executor.outbox', 'acknowledge_transform.inbox')
+	director.connect_queue('acknowledge_transform.outbox', 'wsgi_collector.inbox')
 	
-	router.start()
-	router.block()
+	director.start()
+	
 	
 Note how modular each component is. It allows us to configure any steps in between class method executions and add
 any additional executions, authorizations, or transformations in between the request and response by simply
@@ -67,20 +67,20 @@ One-way messaging example
 
 .. code-block:: python
 
-	from compysition.router import Default
-	from compysition.module import TestEvent
-	from compysition.module import STDOUT
+	from compysition import Director
+	from compysition.actors import TestEvent
+	from compysition.actors import STDOUT
 
-	router = Default()
-	router.register(TestEvent, "event_generator", interval=1)
-	router.register(STDOUT, "output_one", prefix="I am number one: ", timestamp=True)
-	router.register(STDOUT, "output_two", prefix="I am number two: ", timestamp=True)
+	director = Director()
+	director.register(TestEvent, "event_generator", interval=1)
+	director.register(STDOUT, "output_one", prefix="I am number one: ", timestamp=True)
+	director.register(STDOUT, "output_two", prefix="I am number two: ", timestamp=True)
     
-    router.connect("event_generator.outbox_one_outbox", "output_one.inbox")
-	router.connect("event_generator.outbox_two_outbox", "output_two.inbox")
+    director.connect_queue("event_generator.outbox_one_outbox", "output_one.inbox")
+	director.connect_queue("event_generator.outbox_two_outbox", "output_two.inbox")
     
-    router.start()
-    router.block()
+    director.start()
+    
     	
 	Output: 
 	[2015-02-13 16:56:35.850659] I am number two: test

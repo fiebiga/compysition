@@ -113,13 +113,14 @@ class WSGI(Actor):
 
             response_queue = ManagedQueue()
             self.responders.update({response_queue.label: start_response})
+            #TODO: Remove request_id?
             environment_header = {"request_id": response_queue.label,
                                     "service": "",
                                     "environment": request.environment,
                                     "status": self.default_status,
                                     "http": [self.default_content_type]}
             event = self.create_event(data=request.input, service=service)
-            event['header'][self.key] = environment_header
+            event.set(self.key, environment_header)
 
             self.logger.info("Putting received message on outbox {0}".format(outbox), event=event)
             self.send_event(event, queue=self.pool.outbound_queues.get(outbox, None))
@@ -133,12 +134,12 @@ class WSGI(Actor):
 
     def consume(self, event, *args, **kwargs):
         self.logger.debug("WSGI Received Response from origin: {0}".format(kwargs.get('origin')), event=event)
-        header = event['header'][self.key]
+        header = event.get(self.key)
         request_id = header['request_id']
         response_queue = ManagedQueue(request_id)
         start_response = self.responders.pop(request_id)  # Run this needed or not to be sure it's removed from memory with pop()
         start_response(header['status'], header['http'])  # Make sure we have all the headers so far
-        response_queue.put(str(event['data']))
+        response_queue.put(str(event.data))
         response_queue.put(StopIteration)
 
     def serialize(self, dictionary):

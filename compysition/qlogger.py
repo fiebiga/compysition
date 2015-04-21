@@ -29,6 +29,7 @@ from time import time
 from os import getpid
 import logging
 from datetime import datetime
+from compysition.event import CompysitionEvent
 
 class QLogger(object):
 
@@ -52,13 +53,13 @@ class QLogger(object):
 
         while True:
             try:
-                log_data = {"id":       log_entry_id
+                log_data = {"id":       log_entry_id,
                             "level":    level,
                             "time":     datetime.now().strftime('%Y-%m-%d %H:%M:%S,%f')[:-3],
                             "name":     self.name,
                             "message":  message}
 
-                log_event = CompsitionEvent(data=log_data)
+                log_event = CompysitionEvent(data=log_data)
                 if self.logs is None:
                     self.buffer.append(log_event)
                 else:

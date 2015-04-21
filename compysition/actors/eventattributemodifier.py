@@ -26,38 +26,25 @@
 
 from compysition import Actor
 
+class EventAttributeModifier(Actor):
 
-class Header(Actor):
-
-    '''**Adds information to event headers.**
-
+    '''**Adds or updates static information to an event**
 
     Parameters:
 
-        - name(str)
-           |  The name of the module.
-
-        - key(str) (Default: name)
-           |  The header key to store the information.
-
-        - header(dict)({})
-           |  The data to store.
-
+        - name  (str):          The instance name.
+        - key   (str):          (Default: data) The key to set or update on the incoming event
+        - value (Anything):     (Default: {})   The value to assign to the key
     '''
 
-    def __init__(self, name, key=None, header={}, *args, **kwargs):
+    def __init__(self, name, key='data', value={}, *args, **kwargs):
         Actor.__init__(self, name, *args, **kwargs)
-        self.header = header
-
+        self.value = value
         if key is None:
             self.key = name
         else:
             self.key = key
 
     def consume(self, event, *args, **kwargs):
-        event = self.update_header_dict(event)
+        setattr(event, self.key, value)
         self.send_event(event)
-
-    def update_header_dict(self, event):
-        event.header[self.key] = self.header
-        return event

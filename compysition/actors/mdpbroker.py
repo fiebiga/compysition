@@ -60,7 +60,7 @@ class Worker(object):
         self.refresh_expiry()
         self.last_heartbeat = time.time()
         self.MAX_LIVENESS = max_liveness
-        self.liveness = self.MAX_LIVENESS # initialize worker liveness to max
+        self.liveness = self.MAX_LIVENESS
 
     def refresh_expiry(self):
         self.expiry = time.time() + 1e-3*self.lifetime

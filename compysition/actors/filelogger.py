@@ -23,7 +23,7 @@
 #
 
 from compysition import Actor
-from compysition.module.util import RotatingFileHandler, LoggingConfigLoader
+from compysition.actors.util import RotatingFileHandler, LoggingConfigLoader
 import gevent
 from compysition import Queue
 from os import getpid
@@ -79,7 +79,7 @@ class FileLogger(Actor):
                 except Exception as err:
                     print traceback.format_exc()
             else:
-                self.logger_queue.waitUntilContent()
+                self.logger_queue.wait_until_content()
 
         while True:
             if self.logger_queue.qsize() > 0:

@@ -34,7 +34,7 @@ class Transformer(Actor):
         - name (str):               The instance name.
         - xslt_path (str):          The path to the xslt to apply
         - add_to_header (Boolean):  If this option is specified, the results of the transform will be added to the
-                                        data header instead of replacing the event['data'] field
+                                        data header instead of replacing the event.data field
 
     Queues:
 
@@ -61,14 +61,14 @@ class Transformer(Actor):
 
     def consume(self, event, *args, **kwargs):
         try:
-            original_xml = etree.fromstring(event['data'])
+            original_xml = etree.fromstring(event.data)
             transformed_xml = self.transform(original_xml)
-            event['data'] = etree.tostring(transformed_xml)
+            event.data = etree.tostring(transformed_xml)
             self.logger.info("Successfully transformed XML", event=event)
             self.send_event(event)
         except KeyError:
-            event['header'].get(self.caller, {}).update({'status': '400 Bad Request'})
-            event['data'] = "Malformed Request"
+            event.get(self.caller, {}).update({'status': '400 Bad Request'})
+            event.data = "Malformed Request"
             self.send_error(event)
 
     def transform(self, etree_element):

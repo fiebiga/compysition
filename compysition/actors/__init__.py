@@ -31,15 +31,13 @@ from wsgi import WSGI
 from basicauth import BasicAuth
 from transformer import Transformer
 from eventdataaggregator import EventDataXMLAggregator, EventDataAggregator
-from xmlfilter import XMLFilter
 from xmlmatcher import XMLMatcher
 from flowcontroller import FlowController
 from mdpactors import MDPClient
 from mdpactors import MDPWorker
 from mdpbroker import MDPBroker
-from header import Header
 from mdpregistrar import MDPBrokerRegistrationService
 from eventlogger import EventLogger
 from eventrouter import EventRouter, EventXMLFilter, EventFilter
-from data import Data
+from eventattributemodifier import EventAttributeModifier
 from tcp import TCPIn, TCPOut
