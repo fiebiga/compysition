@@ -114,6 +114,10 @@ class MDPActor(Actor):
     def send_heartbeats(self):
         raise NotImplementedError("Please Implement method 'send_heartbeats'")
 
+    #TODO: Implement
+    def _format_message(self):
+        pass
+
 class MDPClient(MDPActor):
 
     client = None
@@ -155,7 +159,7 @@ class MDPClient(MDPActor):
                 empty = message.pop(0)
                 request_identity = message.pop(0)
 
-                event = (message[0])
+                event = CompysitionEvent.from_string(message[0])
                 self.logger.info("Received reply from broker", event=event)
                 self.send_event(event)
 
@@ -215,7 +219,7 @@ class MDPWorker(MDPActor):
                 return_address = message.pop(0)
                 empty = message.pop(0)
                 broker_event_logging_id = message.pop(0)
-                event = Compysition.from_string(message.pop(0))
+                event = CompysitionEvent.from_string(message.pop(0))
 
                 request_id = event.event_id
                 self.requests[request_id] = Request(return_address, origin_broker)
@@ -251,7 +255,7 @@ class MDPWorker(MDPActor):
                     socket.send_multipart(message)  # Use the current broker in the round-robin rotation
                     self.logger.info("Sent reply through non-originating broker", event=event)
         else:
-            self.logger.error("Received event response but was unable to find client return address: {0}".format(event), event=event)
+            self.logger.error("Received event response but was unable to find client return address for id {0}".format(request_id), event=event)
 
 
     def send_heartbeats(self):
