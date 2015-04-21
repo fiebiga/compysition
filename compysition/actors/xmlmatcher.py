@@ -26,6 +26,7 @@ from compysition import Actor
 from util import MatchedEvent
 from time import time
 import gevent
+import traceback
 
 class XMLMatcher(Actor):
     '''**Holds event data until a matching request id, then appends the match to the specified xpath of the XML in the data.**
@@ -72,23 +73,18 @@ class XMLMatcher(Actor):
 
 
     def consume(self, event, *args, **kwargs):
-        request_id = event.event_id
-        inbox_origin = kwargs.get('origin', None)
-        waiting_event = self.events.get(request_id, None)
+        inbox_origin = kwargs.get('origin_queue', None)
+        waiting_event = self.events.get(event.event_id, None)
         try:
             if waiting_event:
                 waiting_event.report_inbox(inbox_origin, event.data)
                 if waiting_event.all_inboxes_reported():
                     event.data = waiting_event.get_aggregate_xml()
                     self.send_event(event)
-                    del self.events[request_id]
+                    del self.events[event.event_id]
             else:
-                inbound_queues = []
-                for queue in self.pool.listInboundQueues(names=True):
-                    inbound_queues.append(queue)
-
-                self.events[request_id] = MatchedEvent(self.key, inbound_queues)
-                self.events.get(request_id).report_inbox(inbox_origin, event.data)
+                self.events[event.event_id] = MatchedEvent(self.key, self.pool.inbound_queues.values())
+                self.events.get(event.event_id).report_inbox(inbox_origin, event.data)
         except Exception as error:
-            self.logger.warn("Could not process incoming event: {0}".format(error), event=event)
+            self.logger.warn("Could not process incoming event: {0}".format(traceback.format_exc()), event=event)
 
