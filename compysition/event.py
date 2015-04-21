@@ -40,12 +40,11 @@ class CompysitionEvent(object):
 
     """
 
-    def __init__(self, meta_id=None, service=None, data=None, header={}, *args, **kwargs):
+    def __init__(self, meta_id=None, service=None, data=None, *args, **kwargs):
         self.__dict__.update(kwargs)
         self.event_id = uuid().get_hex()
         self.meta_id = meta_id or self.event_id
         self.service = service or DEFAULT_EVENT_SERVICE
-        self.header = header
         self.data = data
 
     def to_string(self):
@@ -64,7 +63,11 @@ class CompysitionEvent(object):
     @staticmethod
     def from_string(string_value):
         value_dict = literal_eval(string_value)
-        return CompysitionEvent(**value_dict)
+        event = CompysitionEvent(**value_dict)
+        if value_dict.get('event_id', None):
+            event.event_id = value_dict.get('event_id')
+
+        return event
 
     def get_properties(self):
         """
