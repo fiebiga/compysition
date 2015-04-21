@@ -133,7 +133,6 @@ class WSGI(Actor):
         
 
     def consume(self, event, *args, **kwargs):
-        self.logger.debug("WSGI Received Response from origin: {0}".format(kwargs.get('origin')), event=event)
         header = event.get(self.key)
         request_id = header['request_id']
         response_queue = ManagedQueue(request_id)
