@@ -46,5 +46,5 @@ class EventAttributeModifier(Actor):
             self.key = key
 
     def consume(self, event, *args, **kwargs):
-        setattr(event, self.key, value)
+        setattr(event, self.key, self.value)
         self.send_event(event)
