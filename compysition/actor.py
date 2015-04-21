@@ -175,9 +175,9 @@ class Actor(object):
             self.__submit(event, queue)
         else:
             if queues:
-                send_queues = iter(queues)
+                send_queues = queues
             else:
-                send_queues = self.pool.outbound_queues
+                send_queues = self.pool.outbound_queues.values()
             self.__loop_submit(event, send_queues)
 
     def send_error(self, event, queue=None, queues=None):
@@ -185,16 +185,19 @@ class Actor(object):
         Calls 'send_event' with all error queues as the 'queues' parameter
         """
         if not queues:
-            queues = self.pool.error_queues
+            queues = self.pool.error_queues.values() 
         self.send_event(event, queue=queue, queues=queues)
 
     def __loop_submit(self, event, queues):
-        queues = queues.iteritems()
+        """
+        Loop through 'queues' and submit events to them. Expects 'queues' to be an array of compysition.queue.Queue objects
+        """
+        queues = iter(queues)
         try:
-            queue_name, queue = queues.next()
+            queue = queues.next()
             self.__submit(event, queue)
             while True:
-                queue_name, queue = queues.next()
+                queue = queues.next()
                 self.__submit(deepcopy(event), queue)
         except StopIteration:
             pass
@@ -208,6 +211,8 @@ class Actor(object):
                 break
             except QueueFull as err:
                 err.wait_until_empty()
+            except Exception as err:
+                raise Exception("Tried to put to {queue}. Exception was {err}".format(queue=queue, err=err))
 
     def __consumer(self, function, queue):
         '''Greenthread which applies <function> to each element from <queue>
@@ -220,7 +225,7 @@ class Actor(object):
                     event = queue.get(timeout=10)
                     original_data = deepcopy(event.data)
                 except QueueEmpty as err:
-                    queue.wait_until_contnt()
+                    queue.wait_until_content()
                 else:
                     if self.__blocking_consume:
                         self.__do_consume(function, event, queue, original_data)
@@ -247,7 +252,7 @@ class Actor(object):
         This function actually calls the consume function for the actor
         """
         try:
-            function(event, origin=queue.name)
+            function(event, origin=queue.name, origin_queue=queue)
         except QueueFull as err:
             event.data = original_data
             queue.rescue(event)
@@ -276,32 +281,6 @@ class Actor(object):
 
     def create_event(self, *args, **kwargs):
         return CompysitionEvent(**kwargs)
-
-    def old_create_event(self, meta_id=None, service=DEFAULT_EVENT_SERVICE, data=""):
-        """
-        Anatomy of an event:
-            - header:
-                - event_id: The unique and functionally immutable ID for this new event
-                - meta_id:  The ID associated with other unique event data flows. This ID is used in logging
-                - service:  (default: default) Used for compatability with the ZeroMQ MajorDomo configuration. Scope this to specific types of interproces routing
-            - data:
-                <The data passed and worked on from event to event. Mutable and variable>
-        """
-
-        # TODO: Create and test an easily serialized Event() object. 
-        # For the moment, a standard create_event dictionary structure will suffice
-        event_id = uuid().get_hex()
-        meta_id = meta_id or event_id
-
-        event = {
-            "header": {
-                "event_id": event_id,
-                "meta_id":  meta_id,
-                "service":  service
-                },
-            "data": data
-        }
-        return event
 
     def consume(self, event, *args, **kwargs):
         """Raises error when user didn't define this function in his module.
