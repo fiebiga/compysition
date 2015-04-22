@@ -54,13 +54,13 @@ and concurrent way. All steps and executions are spun up as spawned greenlet on 
 	acknowledge_transform 	= director.register_module(Transformer, "acknowledge_transform", my_xsl_files['acknowledge.xsl'])
 	request_executor 	= director.register_module(SomeRequestExecutor, "request_executor")
 	
-	director.connect(wsgi, 			auth)
-	director.connect(auth, 			submit_transform)
-	director.connect_error(auth, 		wsgi) 			# Redirect auth errors to the wsgi server as a 401 Unaothorized Error
-	director.connect(submit_transform, 	request_executor)
-	director.connect_error(submit_transform, 	wsgi)
-	director.connect(request_executor, 	acknowledge_transform)
-	director.connect(acknowledge_transform, 	wsgi)
+	director.connect_queue(wsgi, 			auth)
+	director.connect_queue(auth, 			submit_transform)
+	director.connect_queue_error(auth, 		wsgi) 			# Redirect auth errors to the wsgi server as a 401 Unaothorized Error
+	director.connect_queue(submit_transform, 	request_executor)
+	director.connect_queue_error(submit_transform, 	wsgi)
+	director.connect_queue(request_executor, 	acknowledge_transform)
+	director.connect_queue(acknowledge_transform, 	wsgi)
 	
 	director.start()
 	
@@ -82,7 +82,7 @@ One-way messaging example
 	output_one 	= director.register_module(STDOUT, "output_one", prefix="I am number one: ", timestamp=True)
 	output_two 	= director.register_module(STDOUT, "output_two", prefix="I am number two: ", timestamp=True)
     
-	director.connect(event_generator, [output_one, output_two])
+	director.connect_queue(event_generator, [output_one, output_two])
     
 	director.start()
     	
@@ -120,10 +120,10 @@ could all be run outside this process in their own compysitionscript, scalable a
     wsgi                = director.register_module(WSGI,                          "wsgi", run_server=True, address="0.0.0.0", port=7000)
     director.register_log_module(STDOUT,                                          "stdoutmodule", timestamp=True)
 
-    director.connect(wsgi,             mdp_client)
-    director.connect(mdp_worker,       data)
-    director.connect(data,             mdp_worker)
-    director.connect(mdp_client,       wsgi)
+    director.connect_queue(wsgi,             mdp_client)
+    director.connect_queue(mdp_worker,       data)
+    director.connect_queue(data,             mdp_worker)
+    director.connect_queue(mdp_client,       wsgi)
 
     director.start()
 

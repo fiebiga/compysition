@@ -5,10 +5,10 @@ What?
 -----
 ::
 
-	A Python application framework to build and manage async and highly concurrent event-driven data flow
+	A Python application framework to build and manage asynchronous and highly concurrent event-driven data flow
 
 I have created **compysition** to build off the simple way in which Wishbone_ managed message flow across multiple
-actors. Compysition expands upon this module registration module to provide abstracted multi-process communication
+modules. Compysition expands upon this module registration method to provide abstracted multi-process communication
 via 0mq_, as well as the ability for full cyclical communication for in-process request/response behavior in a lightweight,
 fast, and fully concurrent manner, using gevent_ greenlets and concurrency patterns to consume and output events
 
@@ -19,44 +19,50 @@ fast, and fully concurrent manner, using gevent_ greenlets and concurrency patte
 **Compysition is currently new and in pre-Beta release. It will be undergoing many deep changes in the coming months**
 The **compysition** project is built upon the original work of the Wishbone_ project
 
+Variations from the traditional Actor Model
+-----
+
+The traditional and strict actor model requires that all actors have exactly one inbox and one outbox. I found that this was
+overly constraining for creating and crafting complex data flow models. So compysition inherently supports multiple inboxes
+and multiple outboxes on every single actor.
+
+To put it in actor model terms, every actor is also a "funnel" and a "fanout". 
+
+The default behavior, unless stated otherwise in the module documentation, is that all modules will send/copy an event to ALL
+connected outbox queues
+
 Full Circle WSGI Example
 -------
 
 For the example below, we want to execute an XML transformation on a request and send it back to the client in a fast
 and concurrent way. All steps and executions are spun up as spawned greenlet on the router
     
-.. image:: docs/examples/full_circle_wsgi_example.jpg
-    :align: center
-    
 .. code-block:: python
 
 	from compysition import Director
-	from compysition.actors import WSGI
-	from compysition.actors import BasicAuth
-	from compysition.actors import Transformer
-	from compysition.actors import Funnel
+	from compysition.module import WSGI
+	from compysition.module import BasicAuth
+	from compysition.module import Transformer
 	
-	from myactors.module import SomeRequestExecutor
+	from mymodules.module import SomeRequestExecutor
+	from myprojectresources import my_xsl_files as xsls
 	
 	director = Director()
-	director.register(WSGIServer, "wsgi")
-	director.register(BasicAuth, "auth")
-	director.register(Funnel, "wsgi_collector")
-	director.register(Transformer, "submit_transform", 'SourceOne/xsls/submit.xsl')
-	director.register(Transformer, "acknowledge_transform", 'SourceOne/xsls/acknowledge.xsl', 'XML', 'submit_transform')  # *args are the subjects of transform
-	director.register(SomeRequestExecutor, "request_executor")
+	wsgi 			= director.register_module(WSGIServer, "wsgi")
+	auth 			= director.register_module(BasicAuth, "auth")
+	submit_transform 	= director.register_module(Transformer, "submit_transform", xsls['submit'])
+	acknowledge_transform 	= director.register_module(Transformer, "acknowledge_transform", my_xsl_files['acknowledge.xsl'])
+	request_executor 	= director.register_module(SomeRequestExecutor, "request_executor")
 	
-	director.connect_queue('wsgi.outbox', 'auth.inbox')
-	director.connect_queue('wsgi_collector.outbox', 'wsgi.inbox') # This collects messages from multiple sources and directs them to wsgi.inbox
-	director.connect_queue('auth.outbox', 'submit_transform.inbox')
-	director.connect_queue('auth.errors', 'wsgi_collector.auth_errors') # Redirect auth errors to the wsgi server as a 401 Unaothorized Error
-	director.connect_queue('submit_transform.outbox', 'request_executor.inbox')
-	director.connect_queue('submit_transform.errors', 'wsgi_collector.transformation_errors')
-	director.connect_queue('request_executor.outbox', 'acknowledge_transform.inbox')
-	director.connect_queue('acknowledge_transform.outbox', 'wsgi_collector.inbox')
+	director.connect_queue(wsgi, 			auth)
+	director.connect_queue(auth, 			submit_transform)
+	director.connect_queue_error(auth, 		wsgi) 			# Redirect auth errors to the wsgi server as a 401 Unaothorized Error
+	director.connect_queue(submit_transform, 	request_executor)
+	director.connect_queue_error(submit_transform, 	wsgi)
+	director.connect_queue(request_executor, 	acknowledge_transform)
+	director.connect_queue(acknowledge_transform, 	wsgi)
 	
 	director.start()
-	
 	
 Note how modular each component is. It allows us to configure any steps in between class method executions and add
 any additional executions, authorizations, or transformations in between the request and response by simply
@@ -68,40 +74,67 @@ One-way messaging example
 .. code-block:: python
 
 	from compysition import Director
-	from compysition.actors import TestEvent
-	from compysition.actors import STDOUT
+	from compysition.module import TestEvent
+	from compysition.module import STDOUT
 
 	director = Director()
-	director.register(TestEvent, "event_generator", interval=1)
-	director.register(STDOUT, "output_one", prefix="I am number one: ", timestamp=True)
-	director.register(STDOUT, "output_two", prefix="I am number two: ", timestamp=True)
+	event_generator = director.register_module(TestEvent, "event_generator", interval=1)
+	output_one 	= director.register_module(STDOUT, "output_one", prefix="I am number one: ", timestamp=True)
+	output_two 	= director.register_module(STDOUT, "output_two", prefix="I am number two: ", timestamp=True)
     
-    director.connect_queue("event_generator.outbox_one_outbox", "output_one.inbox")
-	director.connect_queue("event_generator.outbox_two_outbox", "output_two.inbox")
+	director.connect_queue(event_generator, [output_one, output_two])
     
-    director.start()
-    
+	director.start()
     	
 	Output: 
-	[2015-02-13 16:56:35.850659] I am number two: test
-	[2015-02-13 16:56:35.850913] I am number one: test
-	[2015-02-13 16:56:36.851588] I am number two: test
-	[2015-02-13 16:56:36.851856] I am number one: test
-	[2015-02-13 16:56:37.852456] I am number two: test
-	[2015-02-13 16:56:37.852737] I am number one: test
-	[2015-02-13 16:56:38.858107] I am number two: test
-	[2015-02-13 16:56:38.858400] I am number one: test
-	[2015-02-13 16:56:39.860292] I am number two: test
-	[2015-02-13 16:56:39.860570] I am number one: test
+		[2015-02-13 16:56:35.850659] I am number two: test
+		[2015-02-13 16:56:35.850913] I am number one: test
+		[2015-02-13 16:56:36.851588] I am number two: test
+		[2015-02-13 16:56:36.851856] I am number one: test
+		[2015-02-13 16:56:37.852456] I am number two: test
+		[2015-02-13 16:56:37.852737] I am number one: test
+		[2015-02-13 16:56:38.858107] I am number two: test
+		[2015-02-13 16:56:38.858400] I am number one: test
+		[2015-02-13 16:56:39.860292] I am number two: test
+		[2015-02-13 16:56:39.860570] I am number one: test
 
+ZeroMQ MajorDomo Implementation Example
+-------
+The following example is a single-process example of the multi-process MajorDomo Protocal from ZMQ. The pieces noted 
+could all be run outside this process in their own compysitionscript, scalable across multiple hosts and cores
 
+.. code-block:: python
+
+    from compysition.module import MDPClient, MDPWorker, MDPBroker, WSGI, MDPBrokerRegistrationService, STDOUT, Data
+    from compysition import Director
+
+    director = Director()
+
+    mdp_client          = director.register_module(MDPClient,                     "mdp_client")
+    mdp_broker          = director.register_module(MDPBroker,                     "mdp_broker")     # This could be it's own process
+    mdp_regservice      = director.register_module(MDPBrokerRegistrationService,  "mdp_regservice") # This could be it's own process
+    mdp_worker          = director.register_module(MDPWorker,                     "mdp_worker", "test_service") # This (These) would be their own processes
+    stdout              = director.register_module(STDOUT,                        "stdout")
+    data                = director.register_module(Data,                          "data", data="Hello, this has been a test")
+
+    wsgi                = director.register_module(WSGI,                          "wsgi", run_server=True, address="0.0.0.0", port=7000)
+    director.register_log_module(STDOUT,                                          "stdoutmodule", timestamp=True)
+
+    director.connect_queue(wsgi,             mdp_client)
+    director.connect_queue(mdp_worker,       data)
+    director.connect_queue(data,             mdp_worker)
+    director.connect_queue(mdp_client,       wsgi)
+
+    director.start()
+
+After running this process, initiating a http request to http://127.0.0.1:7000/test_service would show the dataflow across MDP components
 
 Installing
 ----------
 
 Through Pypi:
 
-	$ easy_install compysition
+	$ pip install compysition
 
 Or the latest development branch from Github:
 
@@ -110,7 +143,6 @@ Or the latest development branch from Github:
 	$ cd compysition
 
 	$ sudo python setup.py install
-
 
 Support
 -------
