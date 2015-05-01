@@ -164,7 +164,7 @@ class Actor(object):
             self.logger.debug("post_hook() found, executing")
             self.post_hook()
 
-    def send_event(self, event, queues=None, queue=None):
+    def send_event(self, event, queue=None, queues=None):
         """
         Sends event to all registered outbox queues. If multiple queues are consuming the event,
         a deepcopy of the event is sent instead of raw event.
@@ -185,7 +185,9 @@ class Actor(object):
         Calls 'send_event' with all error queues as the 'queues' parameter
         """
         if not queues:
-            queues = self.pool.error_queues.values() 
+            queues = self.pool.error_queues.values()
+            self.logger.info("Error queues: {0}".format(self.pool.error_queues))
+            self.logger.info("Outbox queues: {0}".format(self.pool.outbound_queues))
         self.send_event(event, queue=queue, queues=queues)
 
     def __loop_submit(self, event, queues):

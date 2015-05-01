@@ -24,6 +24,7 @@
 from compysition import Actor
 from pprint import pformat
 from lxml import etree
+from lxml.etree import XSLTApplyError
 import os
 
 class Transformer(Actor):
@@ -44,7 +45,6 @@ class Transformer(Actor):
 
     def __init__(self, name, xslt=None, xslt_path=None, add_to_header=False, *args, **kwargs):
         Actor.__init__(self, name, *args, **kwargs)
-        self.logger.info("Initialized")
         self.subjects = args or None
         self.add_to_header = add_to_header or kwargs.get('add_to_header', False) or False
         self.key = kwargs.get('key', None) or self.name
@@ -68,7 +68,13 @@ class Transformer(Actor):
             self.send_event(event)
         except KeyError:
             event.get(self.caller, {}).update({'status': '400 Bad Request'})
-            event.data = "Malformed Request"
+            event.data = "Malformed Request: Invalid XML"
+            self.send_error(event)
+        except XSLTApplyError as err:
+            event.get(self.caller, {}).update({'status': '400 Bad Request'})
+            original_xml.append(etree.fromstring("<transform_error>{0}</transform_error>".format(err.message)))
+            event.data = etree.tostring(original_xml)
+            self.logger.error(event.data)
             self.send_error(event)
 
     def transform(self, etree_element):
