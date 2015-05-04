@@ -186,8 +186,6 @@ class Actor(object):
         """
         if not queues:
             queues = self.pool.error_queues.values()
-            self.logger.info("Error queues: {0}".format(self.pool.error_queues))
-            self.logger.info("Outbox queues: {0}".format(self.pool.outbound_queues))
         self.send_event(event, queue=queue, queues=queues)
 
     def __loop_submit(self, event, queues):

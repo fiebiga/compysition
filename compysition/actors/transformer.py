@@ -74,7 +74,6 @@ class Transformer(Actor):
             event.get(self.caller, {}).update({'status': '400 Bad Request'})
             original_xml.append(etree.fromstring("<transform_error>{0}</transform_error>".format(err.message)))
             event.data = etree.tostring(original_xml)
-            self.logger.error(event.data)
             self.send_error(event)
 
     def transform(self, etree_element):
