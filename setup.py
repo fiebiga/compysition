@@ -26,9 +26,9 @@
 from setuptools import setup, find_packages
 from setuptools.command.test import test as TestCommand
 import sys
+import compysition
 
 PROJECT = 'compysition'
-VERSION = '1.1.05'
 
 install_requires = ['gevent>=1.0',
                     'greenlet>=0.3.2',
@@ -56,7 +56,7 @@ except IOError:
 
 setup(
     name=PROJECT,
-    version=VERSION,
+    version=compysition.__version__,
 
     description='Build event pipeline servers with minimal effort.',
     long_description=long_description,

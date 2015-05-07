@@ -27,3 +27,6 @@ from queue import QueuePool
 from qlogger import QLogger
 from director import Director
 from event import CompysitionEvent
+
+__version__ = '1.1.06'
+version = __version__
