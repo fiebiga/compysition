@@ -221,22 +221,25 @@ class EventXMLFilter(EventFilter):
     def _get_value(self, event):
         value = super(EventXMLFilter, self)._get_value(event)
 
-        xml = etree.XML(value)
+        try:
+            xml = etree.XML(value)
 
-        if self.xslt:
-            xml = self.xslt(xml)
+            if self.xslt:
+                xml = self.xslt(xml)
 
-        lookup = XPathLookup(xml)
-        xpath_lookup = lookup.lookup(self.xpath)
+            lookup = XPathLookup(xml)
+            xpath_lookup = lookup.lookup(self.xpath)
 
-        if len(xpath_lookup) == 0:
+            if len(xpath_lookup) == 0:
+                value = None
+            else:
+                value = xpath_lookup[0].text
+
+                # We want to be able to mimic the behavior of "If this tag exists at all, even if it's blank, forward it"
+                if value is None:
+                    value = ""
+        except Exception as err:
             value = None
-        else:
-            value = xpath_lookup[0].text
-
-            # We want to be able to mimic the behavior of "If this tag exists at all, even if it's blank, forward it"
-            if value is None:
-                value = ""
 
         return value
 
