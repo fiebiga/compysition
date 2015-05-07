@@ -25,6 +25,7 @@ from compysition import Actor
 from pprint import pformat
 from lxml import etree
 from lxml.etree import XSLTApplyError
+import traceback
 import os
 
 class Transformer(Actor):
@@ -74,6 +75,10 @@ class Transformer(Actor):
             event.get(self.caller, {}).update({'status': '400 Bad Request'})
             original_xml.append(etree.fromstring("<transform_error>{0}</transform_error>".format(err.message)))
             event.data = etree.tostring(original_xml)
+            self.send_error(event)
+        except Exception as err:
+            event.get(self.caller, {}).update({'status': '400 Bad Request'})
+            self.logger.error("Unknown error occurred: {0}".format(traceback.format_exc()), event=event)
             self.send_error(event)
 
     def transform(self, etree_element):
