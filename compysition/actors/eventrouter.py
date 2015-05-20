@@ -172,15 +172,19 @@ class EventFilter(object):
             self.next_filter = None
 
     def matches(self, event):
-        value = self._get_value(event)
+        values = self._get_value(event)
         try:
-            if value is not None:
-                for value_regex in self.value_regexes:
-                    if value_regex.search(str(value)):
-                        if self.next_filter:
-                            return self.next_filter.matches(event)
-                        else:
-                            return True
+            while True:
+                value = next(values)
+                if value is not None:
+                    for value_regex in self.value_regexes:
+                        if value_regex.search(str(value)):
+                            if self.next_filter:
+                                return self.next_filter.matches(event)
+                            else:
+                                return True
+        except StopIteration:
+            pass
         except Exception as err:
             self.logger.error("Error in attempting to apply regex patterns {0} to {1}: {2}".format(self.value_regexes, value, err), event=event)
 
@@ -202,7 +206,7 @@ class EventFilter(object):
         except Exception as err:
             current_step = None
 
-        return current_step
+        yield current_step
 
 class EventXMLFilter(EventFilter):
     '''
@@ -219,7 +223,7 @@ class EventXMLFilter(EventFilter):
             self.xslt = None
 
     def _get_value(self, event):
-        value = super(EventXMLFilter, self)._get_value(event)
+        value = next(super(EventXMLFilter, self)._get_value(event))
 
         try:
             xml = etree.XML(value)
@@ -231,15 +235,24 @@ class EventXMLFilter(EventFilter):
             xpath_lookup = lookup.lookup(self.xpath)
 
             if len(xpath_lookup) == 0:
-                value = None
+                yield None
             else:
-                value = xpath_lookup[0].text
+                for result in xpath_lookup:
+                    yield self._parse_xpath_result(result)
+        except Exception as err:
+            yield None
 
-                # We want to be able to mimic the behavior of "If this tag exists at all, even if it's blank, forward it"
-                if value is None:
-                    value = ""
+    def _parse_xpath_result(self, lookup_result):
+        try:
+            if isinstance(lookup_result, etree._ElementStringResult):
+                value = lookup_result
+            else:
+                value = lookup_result.text
+
+            # We want to be able to mimic the behavior of "If this tag exists at all, even if it's blank, forward it"
+            if value is None:
+                value = ""
         except Exception as err:
             value = None
 
         return value
-
