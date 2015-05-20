@@ -70,10 +70,12 @@ class Transformer(Actor):
         except KeyError:
             event.get(self.caller, {}).update({'status': '400 Bad Request'})
             event.data = "Malformed Request: Invalid XML"
+            self.logger.error("Error applying transform. Error was: {0}".format(event.data), event=event)
             self.send_error(event)
         except XSLTApplyError as err:
             event.get(self.caller, {}).update({'status': '400 Bad Request'})
             original_xml.append(etree.fromstring("<transform_error>{0}</transform_error>".format(err.message)))
+            self.logger.error("Error applying transform. Error was: {0}".format(err.message), event=event)
             event.data = etree.tostring(original_xml)
             self.send_error(event)
         except Exception as err:
