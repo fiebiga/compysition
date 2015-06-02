@@ -68,8 +68,7 @@ class Actor(object):
         self.__loop = True
         self.threads = RestartPool(logger=self.logger, sleep_interval=1)
 
-        if generate_metrics:
-            self.threads.spawn(self.__metric_emitter)
+        self.generate_metrics = generate_metrics
 
         self.__run = Event()
         self.__run.clear()
@@ -144,6 +143,8 @@ class Actor(object):
         '''Starts the module.'''
 
         self.logger.connect_logs_queue(self.pool.default_outbound_queues['logs'])
+        if self.generate_metrics:
+            self.threads.spawn(self.__metric_emitter)
 
         if hasattr(self, "pre_hook"):
             self.logger.debug("pre_hook() found, executing")

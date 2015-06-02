@@ -47,7 +47,16 @@ class Director():
         self.__block.clear()
 
     def get_actor(self, name):
-        return self.actors.get(name, None)
+        actor = self.actors.get(name, None)
+        if not actor:
+            if self.metric_actor.name == name:
+                return self.metric_actor
+            elif self.log_actor.name == name:
+                return self.log_actor
+            elif self.failed_actor == name:
+                return self.failed_actor
+        else:
+            return actor
 
     def connect_error_queue(self, source, destination, *args, **kwargs):
         self.connect_queue(source, destination, error_queue=True, *args, **kwargs)
@@ -163,6 +172,9 @@ class Director():
         self._setup_default_connections()
 
         for actor in self.actors.values():
+            if isinstance(self.metric_actor, Null):
+                actor.generate_metrics = False
+
             actor.start()
 
         self.log_actor.start()
