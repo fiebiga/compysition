@@ -26,75 +26,41 @@ from compysition import Actor
 from compysition.actors.util import RotatingFileHandler, LoggingConfigLoader
 import gevent
 from compysition import Queue
-from os import getpid
-from time import strftime, localtime
-from time import time
 import logging
 import logging.handlers
-import os
 import traceback
 
 class FileLogger(Actor):
     '''**Prints incoming events to a log file for debugging.**
     '''
 
-    def __init__(self, name, filename, colorize=False, *args, **kwargs):
+    def __init__(self, name, default_filename="compysition.log", *args, **kwargs):
         super(FileLogger, self).__init__(name, *args, **kwargs)
+        self.default_filename = default_filename
 
         self.config = LoggingConfigLoader(**kwargs)
-        self.filepath = "{0}/{1}".format(self.config.config['directory'], filename)
-        self.colorize = colorize
-        
-        self.colors={
-            logging.CRITICAL:"\x1B[0;35m",  # Purple
-            logging.ERROR:"\x1B[1;31m",     # Red
-            logging.WARNING:"\x1B[1;33m",   # Orange
-            logging.INFO:None,              # No Coloring
-            logging.DEBUG:"\x1B[1;37m"}     # White
+        self.loggers = {}
 
-        self.logger_queue = Queue("logger_queue") 
-
-        self.file_logger = logging.getLogger(self.name)
-
-        logHandler = RotatingFileHandler(r'{0}'.format(self.filepath), maxBytes=int(self.config.config['maxBytes']), backupCount=int(self.config.config['backupCount']))
+    def _create_logger(self, filepath):
+        file_logger = logging.getLogger(filepath)
+        logHandler = RotatingFileHandler(r'{0}'.format(filepath), maxBytes=int(self.config.config['maxBytes']), backupCount=int(self.config.config['backupCount']))
         logFormatter = logging.Formatter('%(message)s') # We will do ALL formatting ourselves in qlogger, as we want to be extremely literal to make sure the timestamp
                                                         # is generated at the time that logger.log was invoked, not the time it was written to file
         logHandler.setFormatter(logFormatter)
-        self.file_logger.addHandler(logHandler)
-        self.file_logger.setLevel(self.config.config['level'])
+        file_logger.addHandler(logHandler)
+        file_logger.setLevel(self.config.config['level'])
+        return file_logger
 
-    def pre_hook(self):
-        self.threads.spawn(self.__go)
+    def _process_log_entry(self, event):
+        event_filename = event.get("logger_filename", self.default_filename)
+        logger = self.loggers.get(event_filename, None)
+        if not logger:
+            logger = self._create_logger("{0}/{1}".format(self.config.config['directory'], event_filename))
+            self.loggers[event_filename] = logger
 
-    def __go(self):
-        """
-        Consumes a private queue, expects the event in the queue to be in a tuple,
-        in the format of (log_level (int), message)
-        """
-        while self.loop():
-            if self.logger_queue.qsize() > 0:
-                entry = self.logger_queue.get()
-                try:
-                    self.file_logger.log(entry[0], entry[1])
-                except Exception as err:
-                    print traceback.format_exc()
-            else:
-                self.logger_queue.wait_until_content()
+        self._do_log(logger, event)
 
-        while True:
-            if self.logger_queue.qsize() > 0:
-                entry = self.logger_queue.get()
-                
-                try:
-                    self.file_logger.log(entry[0], entry[1])
-                except Exception as err:
-                    print traceback.format_exc()
-            else:
-                break
-
-
-
-    def consume(self, event, *args, **kwargs):
+    def _do_log(self, logger, event):
         module_name = event.data.get("name", None)
         id = event.data.get("id", None)
         message = event.data.get("message", None)
@@ -108,13 +74,10 @@ class FileLogger(Actor):
         else:
             entry = "module={0} :: {1}".format(module_name, message)
 
-        if self.colorize:
-            entry = self.colorize_entry(entry, level)
+        try:
+            logger.log(level, "{0}{1}".format(entry_prefix, entry))
+        except:
+            print traceback.format_exc()
 
-        self.logger_queue.put((level, "{0}{1}".format(entry_prefix, entry)))
-
-    def colorize_entry(self, message, level):
-        color = self.colors[level]
-        if color is not None:
-            message = color + message + "\x1B[0m"
-        return message
+    def consume(self, event, *args, **kwargs):
+        self._process_log_entry(event)
