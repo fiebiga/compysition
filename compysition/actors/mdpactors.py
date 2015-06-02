@@ -58,9 +58,9 @@ class MDPActor(Actor):
         self.broker_manager = BrokerManager(controller_identity=self.socket_identity, logger=self.logger)
 
     def pre_hook(self):
-        gevent.spawn(self.__listen)
-        gevent.spawn(self.__consume_outbound_queue)
-        gevent.spawn(self.verify_brokers)
+        self.threads.spawn(self.__listen)
+        self.threads.spawn(self.__consume_outbound_queue)
+        self.threads.spawn(self.verify_brokers)
 
     def consume(self, event, *args, **kwargs):
         self.outbound_queue.put(event)
