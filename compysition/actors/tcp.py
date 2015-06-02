@@ -24,7 +24,7 @@
 from compysition import Actor
 import gevent.socket as socket
 from gevent.server import StreamServer
-from ast import literal_eval
+import gevent
 from compysition.event import CompysitionEvent
 
 """
@@ -33,7 +33,7 @@ TODO: Add options like "Wait for response" and "Send response" for TCPIn and TCP
 """
 
 DEFAULT_PORT = 9000
-BUFFER_SIZE  = 8142
+BUFFER_SIZE  = 1024
 
 class TCPOut(Actor):
 
@@ -45,14 +45,21 @@ class TCPOut(Actor):
         Actor.__init__(self, name, *args, **kwargs)
         self.port = port or DEFAULT_PORT
         self.host = host or socket.gethostbyname(socket.gethostname())
-        self.listen = listen
-        self.socket_lsteners = []
 
     def consume(self, event, *args, **kwargs):
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.connect((self.host, self.port))
-        sock.send(event.to_string())
-        sock.close()
+        self._send(event)
+
+    def _send(self, event):
+        while True:
+            try:
+                sock = socket.socket()
+                sock.connect((self.host, self.port))
+                sock.send(event.to_string())
+                sock.close()
+                break
+            except Exception as err:
+                self.logger.error("Unable to send event over tcp to {host}:{port}: {error}".format(host=self.host, port=self.port, error=err))
+                gevent.sleep(0)
 
 class TCPIn(Actor):
 
@@ -64,28 +71,28 @@ class TCPIn(Actor):
         Actor.__init__(self, name, *args, **kwargs)
         self.port = port or DEFAULT_PORT
         self.host = host or "0.0.0.0"
-        print "Connecting to {0} on {1}".format(self.host, self.port)
         self.server = StreamServer((self.host, self.port), self.connection_handler)
 
     def consume(self, event, *args, **kwargs):
      pass
 
     def pre_hook(self):
+        self.logger.info("Connecting to {0} on {1}".format(self.host, self.port))
         self.server.start()
 
     def post_hook(self):
         self.server.stop()
 
     def connection_handler(self, socket, address):
-        event = ""
+        event_string = ""
         for l in socket.makefile('r'):
-            event += l
+            event_string += l
 
         try:
-            event = CompysitionEvent.from_string(event)
+            event = CompysitionEvent.from_string(event_string)
             self.send_event(event)
         except:
-            pass
+            self.logger.error("Received invalid event format: {0}".format(event_string))
 
 
 
