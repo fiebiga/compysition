@@ -41,3 +41,4 @@ from eventlogger import EventLogger
 from eventrouter import EventRouter, EventXMLFilter, EventFilter
 from eventattributemodifier import EventAttributeModifier
 from tcp import TCPIn, TCPOut
+from zmqpushpull import ZMQPush, ZMQPull

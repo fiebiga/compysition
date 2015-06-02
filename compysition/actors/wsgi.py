@@ -96,7 +96,7 @@ class WSGI(Actor):
             self.__serve()
 
 
-    def application(self, env, start_response):        
+    def application(self, env, start_response):     
         try:
             request = Request(env)
         except Exception as err:
