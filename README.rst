@@ -46,18 +46,18 @@ and concurrent way. All steps and executions are spun up as spawned greenlet on 
 	from myprojectresources import my_xsl_files as xsls
 	
 	director = Director()
-	wsgi 					= director.register_actor(WSGIServer, "wsgi")
-	auth 					= director.register_actor(BasicAuth, "auth")
-	submit_transform 		= director.register_actor(Transformer, "submit_transform", xsls['submit'])
+	wsgi 			= director.register_actor(WSGIServer, "wsgi")
+	auth 			= director.register_actor(BasicAuth, "auth")
+	submit_transform 	= director.register_actor(Transformer, "submit_transform", xsls['submit'])
 	acknowledge_transform 	= director.register_actor(Transformer, "acknowledge_transform", my_xsl_files['acknowledge.xsl'])
-	request_executor 		= director.register_actor(SomeRequestExecutor, "request_executor")
+	request_executor 	= director.register_actor(SomeRequestExecutor, "request_executor")
 	
-	director.connect_queue(wsgi, 					auth)
-	director.connect_queue(auth, 					submit_transform)
-	director.connect_queue_error(auth, 				wsgi) 			# Redirect auth errors to the wsgi server as a 401 Unaothorized Error
-	director.connect_queue(submit_transform, 		request_executor)
+	director.connect_queue(wsgi, 			auth)
+	director.connect_queue(auth, 			submit_transform)
+	director.connect_queue_error(auth, 		wsgi) 			# Redirect auth errors to the wsgi server as a 401 Unaothorized Error
+	director.connect_queue(submit_transform, 	request_executor)
 	director.connect_queue_error(submit_transform, 	wsgi)
-	director.connect_queue(request_executor, 		acknowledge_transform)
+	director.connect_queue(request_executor, 	acknowledge_transform)
 	director.connect_queue(acknowledge_transform, 	wsgi)
 	
 	director.start()
