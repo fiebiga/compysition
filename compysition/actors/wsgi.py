@@ -97,11 +97,18 @@ class WSGI(Actor):
 
 
     def application(self, env, start_response):     
+        
         try:
             request = Request(env)
         except Exception as err:
             start_response('400 Bad Request', [self.default_content_type])
-            return "Malformed or empty request"
+            return """  <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+                        <html>
+                          <body>
+                            Invalid content submitted
+                          </body>
+                        </html>"""
 
         try:
             if env['PATH_INFO'] == self.base_path:
@@ -112,7 +119,6 @@ class WSGI(Actor):
                 service = outbox
 
             response_queue = ManagedQueue()
-            self.responders.update({response_queue.label: start_response})
             #TODO: Remove request_id?
             environment_header = {"request_id": response_queue.label,
                                     "service": "",
@@ -123,7 +129,14 @@ class WSGI(Actor):
             event.set(self.key, environment_header)
 
             self.logger.info("Putting received message on outbox {0}".format(outbox), event=event)
-            self.send_event(event, queue=self.pool.outbound_queues.get(outbox, None))
+            queue = self.pool.outbound_queues.get(outbox, None)
+
+            if queue:
+                self.send_event(event, queue=queue)
+            else:
+                raise Exception("Service {0} not found".format(outbox))
+
+            self.responders.update({response_queue.label: start_response})
             start_response(self.default_status, [self.default_content_type])
             return response_queue
         except Exception as err:
