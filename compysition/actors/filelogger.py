@@ -36,6 +36,7 @@ class FileLogger(Actor):
 
     def __init__(self, name, default_filename="compysition.log", *args, **kwargs):
         super(FileLogger, self).__init__(name, *args, **kwargs)
+        self.blockdiag_config["shape"] = "note"
         self.default_filename = default_filename
 
         self.config = LoggingConfigLoader(**kwargs)

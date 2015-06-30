@@ -50,8 +50,10 @@ class MDPActor(Actor):
     socket_identity = None
     outbound_queue = None
 
+
     def __init__(self, name, *args, **kwargs):
         Actor.__init__(self, name, *args, **kwargs)
+        self.blockdiag_config["shape"] = "cloud"
         self.socket_identity = uuid().get_hex()
         self.context = zmq.Context()
         self.outbound_queue = Queue()

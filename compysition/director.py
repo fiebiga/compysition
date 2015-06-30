@@ -20,23 +20,24 @@
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #  MA 02110-1301, USA.
 #
-#
 
 from compysition.actors import Null
 from compysition.errors import ModuleInitFailure, NoSuchModule
 from gevent import signal, event, sleep
+import os
 import traceback
 from compysition.actor import Actor
 
 class Director():
 
-    def __init__(self, size=500, frequency=1, generate_metrics=False):
+    def __init__(self, size=500, frequency=1, generate_metrics=False, name="default", generate_blockdiag=True, blockdiag_dir="./blockdiag"):
         signal(2, self.stop)
         signal(15, self.stop)
+        self.name = name
         self.actors = {}
         self.size = size
         self.frequency = frequency
-        self.generate_metrics=generate_metrics
+        self.generate_metrics = generate_metrics
 
         self.metric_actor = self.__create_actor(Null, "null_metrics")
         self.log_actor = self.__create_actor(Null, "null_logs")
@@ -45,6 +46,11 @@ class Director():
         self.__running = False
         self.__block = event.Event()
         self.__block.clear()
+
+        self.blockdiag_dir = blockdiag_dir
+        self.generate_blockdiag = generate_blockdiag
+        if generate_blockdiag:
+            self.blockdiag_out = """diagram admin {\n"""
 
     def get_actor(self, name):
         actor = self.actors.get(name, None)
@@ -89,6 +95,8 @@ class Director():
         source = self.get_actor(source_name)
 
         for destination in destinations:
+            if self.generate_blockdiag:
+                self.blockdiag_out += "{0} -> {1};\n".format(source.name, destination.name)
             (destination_name, destination_queue_name) = self._parse_connect_arg(destination)
             destination = self.get_actor(destination_name)
             if destination_queue_name is None:
@@ -103,6 +111,23 @@ class Director():
                 source.connect_queue(destination_source_queue_name, destination, destination_queue_name)
             else:
                 source.connect_error_queue(destination_source_queue_name, destination, destination_queue_name)
+
+    def finalize_blockdiag(self):
+        #TODO: Make this into an object pattern
+        img_dir = "{0}{1}img".format(self.blockdiag_dir, os.sep)
+        self.blockdiag_out += "\n}"
+
+        if not os.path.exists(img_dir):
+            os.makedirs(img_dir)
+        from blockdiag.command import BlockdiagApp
+
+        f = open("{0}{1}{2}.diag".format(self.blockdiag_dir, os.sep, self.name),'w')
+        f.write(self.blockdiag_out)
+        f.close()
+        BlockdiagApp().run(["{0}{1}{2}.diag".format(self.blockdiag_dir, os.sep, self.name),
+                            "-Tsvg",
+                            "-o",
+                            "{0}{1}img{1}{2}.svg".format(self.blockdiag_dir, os.sep, self.name)])
 
     def _parse_connect_arg(self, input):
         if isinstance(input, tuple):
@@ -122,6 +147,11 @@ class Director():
         try:
             new_actor = self.__create_actor(actor, name, *args, **kwargs)
             self.actors[name] = new_actor
+            if self.generate_blockdiag:
+                self.blockdiag_out += "{0} [".format(new_actor.name)
+                for config_item in new_actor.blockdiag_config.items():
+                    self.blockdiag_out += "{0} = \"{1}\"".format(config_item[0], config_item[1])
+                self.blockdiag_out += "]\n"
             return new_actor
         except Exception:
             raise ModuleInitFailure(traceback.format_exc())
@@ -182,6 +212,8 @@ class Director():
         if self.failed_actor is not self.log_actor:
             self.failed_actor.start()
 
+        if self.generate_blockdiag:
+            self.finalize_blockdiag()
         if block:
             self.block()
 

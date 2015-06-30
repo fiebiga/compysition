@@ -57,8 +57,11 @@ class TestEvent(Actor):
 
     '''
 
+
     def __init__(self, name, data_value="test", header_value={}, producers=1, interval=1, delay=0, max_events=0, *args, **kwargs):
         Actor.__init__(self, name, *args, **kwargs)
+        self.blockdiag_config["shape"] = "flowchart.input"
+
         self.name = name
         self.interval = interval
         self.delay = delay

@@ -25,6 +25,8 @@
 #
 
 from compysition import Actor
+from lxml import etree
+from util import XPathLookup
 
 class EventAttributeModifier(Actor):
 
@@ -35,9 +37,10 @@ class EventAttributeModifier(Actor):
         - name  (str):          The instance name.
         - key   (str):          (Default: data) The key to set or update on the incoming event
         - value (Anything):     (Default: {})   The value to assign to the key
+        - type  (static, xpath) (Default: static) Determines how the value is evaluated.
     '''
 
-    def __init__(self, name, key='data', value={}, *args, **kwargs):
+    def __init__(self, name, key='data', value={}, type="static", log_change=False, *args, **kwargs):
         Actor.__init__(self, name, *args, **kwargs)
         self.value = value
         if key is None:
@@ -45,6 +48,40 @@ class EventAttributeModifier(Actor):
         else:
             self.key = key
 
+        self.modify_event = getattr(self, "{0}_modify_event".format(type))
+        self.log_change = log_change
+
     def consume(self, event, *args, **kwargs):
-        setattr(event, self.key, self.value)
+        self.modify_event(event)
         self.send_event(event)
+
+    def static_modify_event(self, event):
+        return self._do_modify_event(event, self.key, self.value)
+
+    def xpath_modify_event(self, event):
+        xml = etree.XML(event.data)
+        lookup = XPathLookup(xml)
+        xpath_lookup = lookup.lookup(self.value)
+
+        if len(xpath_lookup) <= 0:
+            value = None
+        elif len(xpath_lookup) == 1:
+            if isinstance(xpath_lookup[0], etree._ElementStringResult):
+                value = xpath_lookup[0]
+            else:
+                value = xpath_lookup[0].text
+        else:
+            value = []
+            for result in xpath_lookup:
+                if isinstance(result, etree._ElementStringResult):
+                    value.append = result
+                else:
+                    value.append = result.text
+
+        return self._do_modify_event(event, self.key, value)
+
+    def _do_modify_event(self, event, key, value):
+        if self.log_change:
+            self.logger.info("Changed event.{key} to {value}".format(key=self.key, value=value), event=event)
+
+        return setattr(event, key, value)

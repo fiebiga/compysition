@@ -78,6 +78,9 @@ class WSGI(Actor):
 
     def __init__(self, name, base_path='/', address="0.0.0.0", port=8080, keyfile=None, certfile=None, delimiter=None, key=None, run_server=False, *args, **kwargs):
         Actor.__init__(self, name, *args, **kwargs)
+
+        self.blockdiag_config["shape"] = "cloud"
+
         self.name=name
         self.address=address
         self.port=port

@@ -41,8 +41,11 @@ class TCPOut(Actor):
     Send events over TCP
     """
 
+
     def __init__(self, name, port=None, host=None, listen=True, *args, **kwargs):
         Actor.__init__(self, name, *args, **kwargs)
+
+        self.blockdiag_config["shape"] = "cloud"
         self.port = port or DEFAULT_PORT
         self.host = host or socket.gethostbyname(socket.gethostname())
 
@@ -69,6 +72,7 @@ class TCPIn(Actor):
 
     def __init__(self, name, port=None, host=None, *args, **kwargs):
         Actor.__init__(self, name, *args, **kwargs)
+        self.blockdiag_config["shape"] = "cloud"
         self.port = port or DEFAULT_PORT
         self.host = host or "0.0.0.0"
         self.server = StreamServer((self.host, self.port), self.connection_handler)

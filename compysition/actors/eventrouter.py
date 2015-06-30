@@ -46,6 +46,7 @@ class EventRouter(Actor):
     
     def __init__(self, name, routing_filters=[], type="whitelist", default_outbox_regexes=[".*"], *args, **kwargs):
         Actor.__init__(self, name, *args, **kwargs)
+        self.blockdiag_config["shape"] = "flowchart.condition"
         self.filters = []
         self.default_outbox_regexes = default_outbox_regexes
         self.default_outboxes = []

@@ -85,7 +85,6 @@ class MDPBroker(Actor):
     Majordomo Protocol broker
     A minimal implementation of http:#rfc.zeromq.org/spec:7 and spec:8
     """
-
     HEARTBEAT_LIVENESS = 3 # 3-5 is reasonable
     HEARTBEAT_INTERVAL = 2500 # msecs
     HEARTBEAT_EXPIRY = HEARTBEAT_INTERVAL * HEARTBEAT_LIVENESS
@@ -110,6 +109,7 @@ class MDPBroker(Actor):
     def __init__(self, name, port=5555, *args, **kwargs):
         """Initialize broker state."""
         super(MDPBroker, self).__init__(name, *args, **kwargs)
+        self.blockdiag_config["shape"] = "cloud"
         self.port = port
         self.broker_identity = uuid().get_hex()
         self.services = {}

@@ -43,6 +43,7 @@ class ZMQPush(Actor):
 
     def __init__(self, name, port=None, host=None, listen=True, mode="connect", *args, **kwargs):
         Actor.__init__(self, name, *args, **kwargs)
+        self.blockdiag_config["shape"] = "cloud"
         self.port = port or DEFAULT_PORT
         self.host = host or socket.gethostbyname(socket.gethostname())
         self.context = zmq.Context()

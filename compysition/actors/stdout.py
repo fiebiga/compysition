@@ -52,3 +52,4 @@ class STDOUT(Actor):
             data = "[{0}] {1}".format(datetime.datetime.now(), data)
 
         print data
+        self.send_event(event)

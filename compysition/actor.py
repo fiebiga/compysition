@@ -59,7 +59,7 @@ class Actor(object):
                                         only necessary if executing work on an event in the order that it was received is critical.                             (Default: False) 
 
         """
-        
+        self.blockdiag_config = {"shape": "box"}
         self.name = name
         self.size = size
         self.frequency = frequency
