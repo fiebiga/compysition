@@ -49,7 +49,8 @@ install_requires = ['gevent>=1.0',
                     'pycrypto==2.6.1',
                     'configobj',
                     'restartlet',
-                    'lxml']
+                    'lxml',
+                    'blockdiag']
 
 try:
     long_description = open('README.rst', 'rt').read()
