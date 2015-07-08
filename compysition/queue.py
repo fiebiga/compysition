@@ -169,15 +169,14 @@ class Queue(gqueue.Queue):
 
         return self.__cache[name]["rate"]
 
-    
     def wait_until_content(self):
         '''Blocks until at least 1 slot is taken.'''
 
         while self.qsize() == 0:
-            sleep(0.1)
+            sleep(0.00000001)
 
     def wait_until_empty(self):
         '''Blocks until the queue is completely empty.'''
 
         while self.qsize() > 0:
-            sleep(0.1)
+            sleep(0.00000001)
