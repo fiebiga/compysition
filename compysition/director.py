@@ -108,9 +108,9 @@ class Director():
                 destination_source_queue_name = source_queue_name
 
             if not error_queue:
-                source.connect_queue(destination_source_queue_name, destination, destination_queue_name)
+                source.connect_queue(destination_source_queue_name, destination, destination_queue_name, *args, **kwargs)
             else:
-                source.connect_error_queue(destination_source_queue_name, destination, destination_queue_name)
+                source.connect_error_queue(destination_source_queue_name, destination, destination_queue_name, *args, **kwargs)
 
     def finalize_blockdiag(self):
         #TODO: Make this into an object pattern

@@ -22,63 +22,45 @@
 #  MA 02110-1301, USA.
 
 from compysition import Actor
-from compysition.errors import QueueLocked
-from util.wsgi import Request
-from util.managedqueue import ManagedQueue
-from gevent import pywsgi, spawn, queue
-from uuid import uuid4 as uuid
-import pdb
+from compysition.actors.util.managedqueue import ManagedQueue
+from gevent import pywsgi, spawn, sleep
 import traceback
 
-class WSGI(Actor):
-    '''**Receive events over HTTP.**
+from bottle import *
 
+class WSGI(Actor, Bottle):
+    '''**Receive events over HTTP.**
     This module starts a webserver to which events can be submitted using the
     http protocol.
-
     Parameters:
-
         - name (str):       The instance name.
-
         - address(str):     The address to bind to.
                             Default: 0.0.0.0
-
         - port(str):        The port to bind to.
                             Default: 10080
-
         - keyfile(str):     In case of SSL the location of the keyfile to use.
                             Default: None
-
         - certfile(str):    In case of SSL the location of the certfile to use.
                             Default: None
-
         - delimiter(str):   The delimiter between multiple events.
                             Default: None
-
         - run_server(bool): Specify whether or not to run a WSGI server on the specified
                             port and address
                             Default: False
-
         - base_path(str):   The path the use as the base when stripping out an outbox path.
                             Example:    base_path="/foo"
                                         Incoming Path Info = "/foo/bar"
                                         Outbox Used: "bar"
-
     Queues:
-
         - outbox:   Events coming from the outside world and submitted to /
-
-
     When more queues are connected to this module instance, they are
     automatically mapped to the URL resource.
-
     For example http://localhost:10080/fubar is mapped to the <fubar> queue.
     The root resource "/" is mapped the <outbox> queue.
     '''
 
     def __init__(self, name, base_path='/', address="0.0.0.0", port=8080, keyfile=None, certfile=None, delimiter=None, key=None, run_server=False, *args, **kwargs):
         Actor.__init__(self, name, *args, **kwargs)
-
         self.blockdiag_config["shape"] = "cloud"
 
         self.name=name
@@ -93,14 +75,13 @@ class WSGI(Actor):
         self.default_content_type = ("Content-Type", "text/html")
         self.run_server = run_server
         self.base_path = base_path
+        self.wsgi_app = self.application
 
     def pre_hook(self):
         if self.run_server:
             self.__serve()
 
-
-    def application(self, env, start_response):     
-        
+    def application(self, env, start_response):
         try:
             request = Request(env)
         except Exception as err:
@@ -146,7 +127,6 @@ class WSGI(Actor):
             self.logger.warn("Exception on application processing: {0}".format(traceback.format_exc()), event=event)
             start_response('404 Not Found', [self.default_content_type])
             return "A problem occurred processing your request. Reason: {0}".format(err)
-        
 
     def consume(self, event, *args, **kwargs):
         header = event.get(self.key)
@@ -157,22 +137,59 @@ class WSGI(Actor):
         response_queue.put(str(event.data))
         response_queue.put(StopIteration)
 
-    def serialize(self, dictionary):
-        result = {}
-        allowed = (dict, list, basestring, int, long, float, bool)
-        for key, value in dictionary.items():
-            if isinstance(value, allowed) or value is None:
-                result.update({key:value})
-        return json.dumps(result)
-
     def post_hook(self):
         self.__server.stop()
         self.logger.info("Stopped serving.")
 
     def __serve(self):
-        if self.keyfile != None and self.certfile != None:
-            self.__server = pywsgi.WSGIServer((self.address, self.port), self.application, keyfile=self.keyfile, certfile=self.certfile)
+        if self.keyfile is not None and self.certfile is not None:
+            self.__server = pywsgi.WSGIServer((self.address, self.port), self, keyfile=self.keyfile, certfile=self.certfile)
         else:
-            self.__server = pywsgi.WSGIServer((self.address, self.port), self.application, log=None)
+            self.__server = pywsgi.WSGIServer((self.address, self.port), self, log=None)
         self.logger.info("Serving on %s:%s"%(self.address, self.port))
         self.__server.start()
+
+class BottleWSGI(WSGI, Bottle):
+
+    def __init__(self, *args, **kwargs):
+        WSGI.__init__(self, *args, **kwargs)
+        Bottle.__init__(self)
+        self.wsgi_app = self
+
+    def pre_hook(self):
+        self.set_routes()
+        super(BottleWSGI, self).pre_hook()
+
+    def set_routes(self):
+        self.route(path="/<url:re:.+>", callback=self.default_callback, method=['POST'])
+        self.route(path="/explicit", callback=self.explicit_callback, method=['POST'])
+
+    def explicit_callback(self, *args, **kwargs):
+        event = self.create_event(environment=request.environ, data=request.forms.items())
+        print event.data
+        response_queue = ManagedQueue()
+        spawn(self.test, response_queue)
+        return response_queue
+
+    def default_callback(self, *args, **kwargs):
+        event = self.create_event(environment=request.environ, data=request.forms.items())
+        print event.data
+        response_queue = ManagedQueue()
+        spawn(self.test, response_queue)
+        return response_queue
+
+    def test(self, response_queue):
+        response = HTTPResponse()
+        response.status = 404
+        response.body = "Hi there"
+        response_queue.put(response)
+        response_queue.put(StopIteration)
+
+    def callback(self):
+        pass
+
+    def connect_queue(self, bottle_route_kwargs=None, *args, **kwargs):
+        bottle_route_kwargs = kwargs.pop('bottle_route_kwargs', None)
+        if bottle_route_kwargs:
+            self.route(**bottle_route_kwargs)
+        WSGI.connect_queue(self, *args, **kwargs)
