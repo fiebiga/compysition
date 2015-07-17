@@ -187,7 +187,9 @@ class Actor(object):
         """
         if not queues:
             queues = self.pool.error_queues.values()
-        self.send_event(event, queue=queue, queues=queues)
+
+        if queues or queue:
+            self.send_event(event, queue=queue, queues=queues)
 
     def __loop_submit(self, event, queues):
         """

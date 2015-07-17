@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-#  __init__.py
+#  rest.py
 #
-#  Copyright 2014 Adam Fiebig <fiebig.adam@gmail.com>
+#  Copyright 2015 Adam Fiebig <fiebig.adam@gmail.com>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -19,14 +19,21 @@
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #  MA 02110-1301, USA.
-#
 
-from actor import Actor
-from queue import Queue
-from queue import QueuePool
-from qlogger import QLogger
-from director import Director
-from event import CompysitionEvent
+from compysition.event import CompysitionEvent
 
-__version__ = '1.1.12'
-version = __version__
+
+class RestEntityModel(object):
+    """
+    Abstract model class
+    """
+
+    url_key = "default"
+    parents = []
+    is_collection = False
+    url_key_property = None
+
+    def __init__(self, *args, **kwargs):
+        self.properties = {}
+
+

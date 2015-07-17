@@ -151,45 +151,78 @@ class WSGI(Actor, Bottle):
 
 class BottleWSGI(WSGI, Bottle):
 
+    def __call__(self, e, h):
+        """
+        Override Bottle.__call__ to strip trailing slash
+        """
+        e['PATH_INFO'] = e['PATH_INFO'].rstrip('/')
+        print e['PATH_INFO']
+        return Bottle.__call__(self, e,h)
+
     def __init__(self, *args, **kwargs):
         WSGI.__init__(self, *args, **kwargs)
         Bottle.__init__(self)
         self.wsgi_app = self
 
-    def pre_hook(self):
-        self.set_routes()
-        super(BottleWSGI, self).pre_hook()
+    def consume(self, event, *args, **kwargs):
+        header = event.wsgi
+        response_queue = self.responders.pop(event.event_id, None)
+        local_response = HTTPResponse()
+        local_response.status = header['status']
 
-    def set_routes(self):
-        self.route(path="/<url:re:.+>", callback=self.default_callback, method=['POST'])
-        self.route(path="/explicit", callback=self.explicit_callback, method=['POST'])
+        for header in header['http']:
+            local_response.set_header(header[0], header[1])
 
-    def explicit_callback(self, *args, **kwargs):
-        event = self.create_event(environment=request.environ, data=request.forms.items())
-        print event.data
-        response_queue = ManagedQueue()
-        spawn(self.test, response_queue)
-        return response_queue
-
-    def default_callback(self, *args, **kwargs):
-        event = self.create_event(environment=request.environ, data=request.forms.items())
-        print event.data
-        response_queue = ManagedQueue()
-        spawn(self.test, response_queue)
-        return response_queue
-
-    def test(self, response_queue):
-        response = HTTPResponse()
-        response.status = 404
-        response.body = "Hi there"
-        response_queue.put(response)
+        local_response.body = str(event.data)
+        response_queue.put(local_response)
         response_queue.put(StopIteration)
 
-    def callback(self):
-        pass
+    def filter_environment(self, environ):
+        """
+        Filters the bottle environment and removes elements that cannot be serialized
+        :param Raw environment from wsgi:
+        :return:Environment with non-string values filtered out, for event serialization compatibility
+        """
+        return_environ = {}
+        for key in environ:
+            if isinstance(environ[key], (str, tuple, bool)):
+                return_environ[key] = environ[key]
 
-    def connect_queue(self, bottle_route_kwargs=None, *args, **kwargs):
-        bottle_route_kwargs = kwargs.pop('bottle_route_kwargs', None)
-        if bottle_route_kwargs:
-            self.route(**bottle_route_kwargs)
-        WSGI.connect_queue(self, *args, **kwargs)
+        return return_environ
+
+    def callback(self, *args, **kwargs):
+        wsgi = {"environment": self.filter_environment(request.environ),
+                "status": "200 OK",
+                "http": [("Content-Type", "text/html")]}
+
+        request_body = {}
+        if request.content_type.startswith("text/plain"):
+            request_body['raw'] = request.body.read()
+        else:
+            for item in request.forms.items():
+                request_body.update({item[0]: item[1]})
+
+        entity = kwargs.get('entity')
+        event = self.create_event(wsgi=wsgi, service=entity, data=request_body)
+        queue = self.pool.outbound_queues.get(entity, None)
+
+        if queue:
+            self.send_event(event, queue=queue)
+            self.logger.info("Received {0} request for service {1}".format(request.method, entity), event=event)
+        else:
+            raise Exception("Service {0} not found".format(entity))
+
+        response_queue = ManagedQueue()
+        self.responders.update({event.event_id: response_queue})
+        return response_queue
+
+    def connect_queue(self, destination_source_queue_name, destination, destination_queue_name, routes=None, entity=None, *args, **kwargs):
+        entity = entity or destination_source_queue_name
+        if routes:
+            if not isinstance(routes, list):
+                routes = [routes]
+
+            for local_route in routes:
+                self.logger.info("Registering path {0} with methods {1}".format(local_route.get('path'), local_route.get('method')))
+                self.route(callback=self.callback, **local_route)
+        WSGI.connect_queue(self, entity, destination, destination_queue_name, *args, **kwargs)

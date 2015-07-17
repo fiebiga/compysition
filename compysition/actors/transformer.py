@@ -59,7 +59,6 @@ class Transformer(Actor):
         else:
             self.template = etree.XSLT(etree.XML(xslt))
 
-
     def consume(self, event, *args, **kwargs):
         try:
             original_xml = etree.fromstring(event.data)

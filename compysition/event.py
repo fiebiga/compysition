@@ -62,6 +62,7 @@ class CompysitionEvent(object):
 
     @staticmethod
     def from_string(string_value):
+        string_value = string_value.strip()
         value_dict = literal_eval(string_value)
         event = CompysitionEvent(**value_dict)
         if value_dict.get('event_id', None):
@@ -123,4 +124,3 @@ if __name__ == "__main__":
     print test_two.__dict__
 
     print CompysitionEvent.generate_lightweight_event(id="yodawg")
-    

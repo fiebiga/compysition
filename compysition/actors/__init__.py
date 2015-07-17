@@ -43,3 +43,4 @@ from eventattributemodifier import EventAttributeModifier
 from tcp import TCPIn, TCPOut
 from zmqpushpull import ZMQPush, ZMQPull
 from wsgi import BottleWSGI
+from xmlvalidator import XMLValidator

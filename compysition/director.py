@@ -67,7 +67,6 @@ class Director():
     def connect_error_queue(self, source, destination, *args, **kwargs):
         self.connect_queue(source, destination, error_queue=True, *args, **kwargs)
 
-
     def connect_queue(self, source, destinations, error_queue=False, *args, **kwargs):
         '''**Connects one queue to the other.**
 
@@ -91,14 +90,14 @@ class Director():
         if not isinstance(destinations, list):
             destinations = [destinations]
 
-        (source_name, source_queue_name) = self._parse_connect_arg(source)
+        (source_name, source_queue_name) = self._parse_connect_arg(source, error_queue=error_queue)
         source = self.get_actor(source_name)
 
         for destination in destinations:
+            (destination_name, destination_queue_name) = self._parse_connect_arg(destination, error_queue=error_queue)
+            destination = self.get_actor(destination_name)
             if self.generate_blockdiag:
                 self.blockdiag_out += "{0} -> {1};\n".format(source.name, destination.name)
-            (destination_name, destination_queue_name) = self._parse_connect_arg(destination)
-            destination = self.get_actor(destination_name)
             if destination_queue_name is None:
                 destination_queue_name = source.name
 
@@ -129,7 +128,7 @@ class Director():
                             "-o",
                             "{0}{1}img{1}{2}.svg".format(self.blockdiag_dir, os.sep, self.name)])
 
-    def _parse_connect_arg(self, input):
+    def _parse_connect_arg(self, input, error_queue=False):
         if isinstance(input, tuple):
             (actor, queue_name) = input
             if isinstance(actor, Actor):
@@ -137,7 +136,8 @@ class Director():
         elif isinstance(input, Actor):
             actor_name = input.name
             queue_name = None                # Will have to be generated deterministically
-
+        if error_queue:
+            queue_name = "error_{0}".format(queue_name)
         return (actor_name, queue_name)
 
     def register_actor(self, actor, name, *args, **kwargs):

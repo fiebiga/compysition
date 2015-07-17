@@ -57,11 +57,10 @@ class TestEvent(Actor):
 
     '''
 
-
-    def __init__(self, name, data_value="test", header_value={}, producers=1, interval=1, delay=0, max_events=0, *args, **kwargs):
+    def __init__(self, name, data_value="test", header_value={}, producers=1, interval=1, delay=0, max_events=0, generate_error=True, *args, **kwargs):
         Actor.__init__(self, name, *args, **kwargs)
         self.blockdiag_config["shape"] = "flowchart.input"
-
+        self.generate_error = generate_error
         self.name = name
         self.interval = interval
         self.delay = delay
@@ -72,7 +71,6 @@ class TestEvent(Actor):
         self.max_events = max_events
         self.generated_events = 0
         self.producer_pool = Pool(self.producers)
-
 
     def pre_hook(self):
         for i in xrange(self.producers):
@@ -87,6 +85,10 @@ class TestEvent(Actor):
             self.generated_events += 1
             event = self.create_event(data=self.data_value)
             self.send_event(event)
+            if self.generate_error:
+                self.generated_events += 1
+                event = self.create_event(data=self.data_value)
+                self.send_error(event)
             gevent.sleep(self.interval)
 
         self.logger.info("Stopped producing events.")
