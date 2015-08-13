@@ -50,7 +50,8 @@ install_requires = ['gevent>=1.0',
                     'configobj',
                     'restartlet',
                     'lxml',
-                    'blockdiag']
+                    'blockdiag',
+                    'bottle']
 
 try:
     long_description = open('README.rst', 'rt').read()
