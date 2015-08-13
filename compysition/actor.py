@@ -141,7 +141,6 @@ class Actor(object):
 
     def start(self):
         '''Starts the module.'''
-
         self.logger.connect_logs_queue(self.pool.default_outbound_queues['logs'])
         if self.generate_metrics:
             self.threads.spawn(self.__metric_emitter)
@@ -151,7 +150,8 @@ class Actor(object):
             self.pre_hook()
 
         self.__run.set()
-        self.logger.debug("Started with max queue size of %s events and metrics interval of %s seconds." % (self.size, self.frequency))
+        self.logger.debug("Started with max queue size of {size} events and metrics interval of {interval} seconds.".format(size=self.size,
+                                                                                                                            interval=self.frequency))
 
     def stop(self):
         '''Stops the loop lock and waits until all registered consumers have exit.'''
@@ -261,7 +261,7 @@ class Actor(object):
             queue.rescue(event)
             err.wait_until_free()
         except Exception as err:
-            print traceback.format_exc() # This is an unhappy path to get an exception at this point, so we want to print to STDOUT
+            print traceback.format_exc()    # This is an unhappy path to get an exception at this point, so we want to print to STDOUT
                                             # In case this is a problem with the log_actor itself. At least for now
             self.logger.error(traceback.format_exc())
 
@@ -280,7 +280,6 @@ class Actor(object):
                         except QueueFull:
                             self.pool.queues.metrics.wait_until_empty()
             sleep(self.frequency)
-
 
     def create_event(self, *args, **kwargs):
         return CompysitionEvent(**kwargs)
