@@ -206,7 +206,6 @@ class Director():
         for actor in self.actors.values():
             if isinstance(self.metric_actor, Null):
                 actor.generate_metrics = False
-
             actor.start()
 
         self.log_actor.start()
