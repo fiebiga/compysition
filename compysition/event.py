@@ -22,6 +22,8 @@
 #
 from uuid import uuid4 as uuid
 from ast import literal_eval
+from copy import deepcopy
+
 """
 Compysition event is created and passed by reference among actors
 """
@@ -77,50 +79,3 @@ class CompysitionEvent(object):
         """
         return {k: v for k, v in self.__dict__.items() if k != "data"}
 
-
-if __name__ == "__main__":
-    """
-    Event Test execution. Will be removed before version deployment or migrated to a test suite
-    """
-
-    event = CompysitionEvent()
-    print event.get_properties()
-
-    event.testme = "yo breh"
-    print event.testme
-    setattr(event, "yesplease", "nosir")
-    print event.yesplease
-    exit()
-    import time
-    num_events = 100000
-    start = time.time()
-    for i in xrange(num_events):
-        test = CompysitionEvent()
-
-
-
-    end = time.time()
-    print("Instantiation time for {0} full events: {1}".format(num_events, (end-start)))
-
-    start = time.time()
-    for i in xrange(num_events):
-        test = CompysitionEvent.generate_lightweight_event()
-
-    end = time.time()
-    print("Instantiation time for {0} lightweight events: {1}".format(num_events, (end-start)))
-
-    exit()
-
-
-
-    test = CompysitionEvent(service="dealertrack")
-
-    test.data = "Happ happy fun time"
-    test.header = "This is an event header"
-    test.set("fun", "notreallyfun")
-    str_value = test.to_string()
-    print str_value
-    test_two = CompysitionEvent.from_string(str_value)
-    print test_two.__dict__
-
-    print CompysitionEvent.generate_lightweight_event(id="yodawg")
