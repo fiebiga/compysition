@@ -86,6 +86,16 @@ class Director():
         Both syntaxes may be used interchangeably, such as in:
             director.connect_queue(test_event, (stdout, "custom_inbox_name"))
         '''
+        #TODO: This is currently unsupported (weird formatting to hook into pycharm 'TODO' tracker)
+        '''
+            director.connect_queue((test_event, "custom_outbox_name"), [actor_one, actor_two]).
+
+            This is due to the way that queue 'keying' is done. I would like to modify the logic for queue connection
+            on the actors in the future to allow this. Probably by removing the 'name' attribute from a queue altogether,
+            and having the 'name' exist solely as a key on QueuePool, or the actor, which can link to a list of queues
+            as well as a single queue. This would use the same "send_event" logic, but allowing the key to be used as
+            an alias to a specific set of queues.
+        '''
 
         if not isinstance(destinations, list):
             destinations = [destinations]
