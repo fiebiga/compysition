@@ -225,7 +225,6 @@ class EventXMLFilter(EventFilter):
 
     def _get_value(self, event):
         value = next(super(EventXMLFilter, self)._get_value(event))
-
         try:
             xml = etree.XML(value)
 
