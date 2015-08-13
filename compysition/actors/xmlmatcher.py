@@ -45,7 +45,7 @@ class XMLMatcher(Actor):
 
         'header': {
             'wsgi': {
-                'request_id': 1
+                'id': 1
             }
         }
     }
