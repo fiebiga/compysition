@@ -52,7 +52,7 @@ class EventAttributeModifier(Actor):
         self.log_change = log_change
 
     def consume(self, event, *args, **kwargs):
-        self.modify_event(event)
+        event = self.modify_event(event)
         self.send_event(event)
 
     def static_modify_event(self, event):
@@ -84,4 +84,5 @@ class EventAttributeModifier(Actor):
         if self.log_change:
             self.logger.info("Changed event.{key} to {value}".format(key=self.key, value=value), event=event)
 
-        return setattr(event, key, value)
+        event.set(key, value)
+        return event
