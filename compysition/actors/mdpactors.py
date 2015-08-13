@@ -51,13 +51,15 @@ class MDPActor(Actor):
     outbound_queue = None
 
 
-    def __init__(self, name, *args, **kwargs):
+    def __init__(self, name, service_prefix="", service_postfix="", *args, **kwargs):
         Actor.__init__(self, name, *args, **kwargs)
         self.blockdiag_config["shape"] = "cloud"
         self.socket_identity = uuid().get_hex()
         self.context = zmq.Context()
         self.outbound_queue = Queue()
         self.broker_manager = BrokerManager(controller_identity=self.socket_identity, logger=self.logger)
+        self.service_prefix = service_prefix
+        self.service_postfix = service_postfix
 
     def pre_hook(self):
         self.threads.spawn(self.__listen)
@@ -130,7 +132,7 @@ class MDPClient(MDPActor):
     def send_outbound_message(self, socket, event):
         try:
             request_id = event.meta_id                  # Set for broker logging so we can trace the path of an event easily
-            service = event.service
+            service = self.service_prefix + event.service + self.service_postfix
             self.logger.info("Sending event to service '{0}'".format(service), event=event)
             message = [request_id, b"{0}".format(event.to_string())]
             self.send(service, message, broker_socket=socket)
