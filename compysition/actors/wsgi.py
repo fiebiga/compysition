@@ -25,6 +25,7 @@ from compysition import Actor
 from compysition.actors.util.managedqueue import ManagedQueue
 from gevent import pywsgi, spawn, sleep
 import traceback
+import json
 
 from bottle import *
 
@@ -63,12 +64,12 @@ class WSGI(Actor, Bottle):
         Actor.__init__(self, name, *args, **kwargs)
         self.blockdiag_config["shape"] = "cloud"
 
-        self.name=name
-        self.address=address
-        self.port=port
-        self.keyfile=keyfile
-        self.certfile=certfile
-        self.delimiter=delimiter
+        self.name = name
+        self.address = address
+        self.port = port
+        self.keyfile = keyfile
+        self.certfile = certfile
+        self.delimiter = delimiter
         self.key = key or self.name
         self.responders = {}
         self.default_status = "200 OK"
@@ -102,13 +103,9 @@ class WSGI(Actor, Bottle):
                 outbox = env['PATH_INFO'].replace("{0}/".format(self.base_path), "", 1).lstrip('/').split('/')[0]
                 service = outbox
 
-            response_queue = ManagedQueue()
-            #TODO: Remove request_id?
-            environment_header = {"request_id": response_queue.label,
-                                    "service": "",
-                                    "environment": request.environment,
-                                    "status": self.default_status,
-                                    "http": [self.default_content_type]}
+            environment_header = {"environment": request.environment,
+                                  "status": self.default_status,
+                                  "http": [self.default_content_type]}
             event = self.create_event(data=request.input, service=service)
             event.set(self.key, environment_header)
 
@@ -120,7 +117,8 @@ class WSGI(Actor, Bottle):
             else:
                 raise Exception("Service {0} not found".format(outbox))
 
-            self.responders.update({response_queue.label: start_response})
+            response_queue = ManagedQueue()
+            self.responders.update({event.event_id: start_response})
             start_response(self.default_status, [self.default_content_type])
             return response_queue
         except Exception as err:
@@ -130,10 +128,9 @@ class WSGI(Actor, Bottle):
 
     def consume(self, event, *args, **kwargs):
         header = event.get(self.key)
-        request_id = header['request_id']
-        response_queue = ManagedQueue(request_id)
-        start_response = self.responders.pop(request_id)  # Run this needed or not to be sure it's removed from memory with pop()
-        start_response(header['status'], header['http'])  # Make sure we have all the headers so far
+        response_queue = ManagedQueue(event.event_id)
+        start_response = self.responders.pop(event.event_id)    # Run this needed or not to be sure it's removed from memory with pop()
+        start_response(header['status'], header['http'])        # Make sure we have all the headers so far
         response_queue.put(str(event.data))
         response_queue.put(StopIteration)
 
@@ -146,7 +143,7 @@ class WSGI(Actor, Bottle):
             self.__server = pywsgi.WSGIServer((self.address, self.port), self, keyfile=self.keyfile, certfile=self.certfile)
         else:
             self.__server = pywsgi.WSGIServer((self.address, self.port), self, log=None)
-        self.logger.info("Serving on %s:%s"%(self.address, self.port))
+        self.logger.info("Serving on {address}:{port}".format(address=self.address, port=self.port))
         self.__server.start()
 
 class BottleWSGI(WSGI, Bottle):
@@ -156,12 +153,22 @@ class BottleWSGI(WSGI, Bottle):
         Override Bottle.__call__ to strip trailing slash
         """
         e['PATH_INFO'] = e['PATH_INFO'].rstrip('/')
-        print e['PATH_INFO']
         return Bottle.__call__(self, e,h)
 
     def __init__(self, *args, **kwargs):
+        routes_json = kwargs.pop('routes_json', None)
+        self.filter_environment = kwargs.pop('filter_environment', True)
         WSGI.__init__(self, *args, **kwargs)
         Bottle.__init__(self)
+        if routes_json:
+            try:
+                routes_json = json.loads(routes_json).get('routes')
+                for json_route in routes_json:
+                    callback = getattr(self, json_route.get('callback', 'callback'))
+                    self.route(callback=callback, **json_route)
+            except Exception as error:
+                raise AttributeError("Malformed JSON object: {0}".format(error))
+
         self.wsgi_app = self
 
     def consume(self, event, *args, **kwargs):
@@ -177,7 +184,7 @@ class BottleWSGI(WSGI, Bottle):
         response_queue.put(local_response)
         response_queue.put(StopIteration)
 
-    def filter_environment(self, environ):
+    def _filter_environment(self, environ):
         """
         Filters the bottle environment and removes elements that cannot be serialized
         :param Raw environment from wsgi:
@@ -185,13 +192,34 @@ class BottleWSGI(WSGI, Bottle):
         """
         return_environ = {}
         for key in environ:
-            if isinstance(environ[key], (str, tuple, bool)):
+            if isinstance(environ[key], (str, tuple, bool, dict)):
                 return_environ[key] = environ[key]
 
         return return_environ
 
+    def _format_bottle_env(self, environ):
+        """
+        This function adds some specific configurations that make compatibility with other wsgi interfaces.
+        As of now this involves:
+            1) Adding QUERY_STRING_DATA, a dict object of the URL query string parms
+            2) if self.filter_environment is set, filter out the bottle environment for event serialization
+                and transmission over a tcp or ZermMQ socket
+        :param environ: The bottle environment to filter to our standards for use in the event loop
+        :return:
+        """
+
+        query_string_data = {}
+        for key in environ["bottle.request"].query.iterkeys():
+            query_string_data[key] = environ["bottle.request"].query.get(key)
+
+        if self.filter_environment:
+            environ = self._filter_environment(environ)
+        environ['QUERY_STRING_DATA'] = query_string_data
+
+        return environ
+
     def callback(self, *args, **kwargs):
-        wsgi = {"environment": self.filter_environment(request.environ),
+        wsgi = {"environment": self._format_bottle_env(request.environ),
                 "status": "200 OK",
                 "http": [("Content-Type", "text/html")]}
 
@@ -202,27 +230,22 @@ class BottleWSGI(WSGI, Bottle):
             for item in request.forms.items():
                 request_body.update({item[0]: item[1]})
 
-        entity = kwargs.get('entity')
-        event = self.create_event(wsgi=wsgi, service=entity, data=request_body)
-        queue = self.pool.outbound_queues.get(entity, None)
+        queue_name = kwargs.get('queue', self.name)
+        event = self.create_event(wsgi=wsgi, service=queue_name, data=request_body, **kwargs)
+        queue = self.pool.outbound_queues.get(queue_name, None)
 
         if queue:
             self.send_event(event, queue=queue)
-            self.logger.info("Received {0} request for service {1}".format(request.method, entity), event=event)
+            self.logger.info("Received {0} request for service {1}".format(request.method, queue_name), event=event)
+            response_queue = ManagedQueue()
+            self.responders.update({event.event_id: response_queue})
+            local_response = response_queue
         else:
-            raise Exception("Service {0} not found".format(entity))
+            response.body = "Service '{0}' not found".format(queue_name)
+            response.status = "404 Not Found"
+            self.logger.error("Received {method} request with URL '{url}'. Queue name '{queue_name}' was not found".format(method=request.method,
+                                                                                                                       url=request.path,
+                                                                                                                       queue_name=queue_name), event=event)
+            local_response = response
 
-        response_queue = ManagedQueue()
-        self.responders.update({event.event_id: response_queue})
-        return response_queue
-
-    def connect_queue(self, destination_source_queue_name, destination, destination_queue_name, routes=None, entity=None, *args, **kwargs):
-        entity = entity or destination_source_queue_name
-        if routes:
-            if not isinstance(routes, list):
-                routes = [routes]
-
-            for local_route in routes:
-                self.logger.info("Registering path {0} with methods {1}".format(local_route.get('path'), local_route.get('method')))
-                self.route(callback=self.callback, **local_route)
-        WSGI.connect_queue(self, entity, destination, destination_queue_name, *args, **kwargs)
+        return local_response
