@@ -23,24 +23,25 @@
 #
 #
 
-from null import Null
-from stdout import STDOUT
-from testevent import TestEvent
-from filelogger import FileLogger
-from wsgi import WSGI
-from basicauth import BasicAuth
-from transformer import Transformer
-from eventdataaggregator import EventDataXMLAggregator, EventDataAggregator
-from xmlmatcher import XMLMatcher
-from flowcontroller import FlowController
-from mdpactors import MDPClient
-from mdpactors import MDPWorker
-from mdpbroker import MDPBroker
-from mdpregistrar import MDPBrokerRegistrationService
-from eventlogger import EventLogger
-from eventrouter import EventRouter, EventXMLFilter, EventFilter
-from eventattributemodifier import EventAttributeModifier
-from tcp import TCPIn, TCPOut
-from zmqpushpull import ZMQPush, ZMQPull
-from wsgi import BottleWSGI
-from xmlvalidator import XMLValidator
+from .null import Null
+from .stdout import STDOUT
+from .testevent import TestEvent
+from .filelogger import FileLogger
+from .wsgi import WSGI
+from .basicauth import BasicAuth
+from .transformer import Transformer
+from .eventdataaggregator import EventDataXMLAggregator, EventDataAggregator
+from .xmlmatcher import XMLMatcher
+from .flowcontroller import FlowController
+from .mdpactors import MDPClient
+from .mdpactors import MDPWorker
+from .mdpbroker import MDPBroker
+from .mdpregistrar import MDPBrokerRegistrationService
+from .eventlogger import EventLogger
+from .eventrouter import EventRouter, EventXMLFilter, EventFilter
+from .eventattributemodifier import EventAttributeModifier
+from .tcp import TCPIn, TCPOut
+from .zmqpushpull import ZMQPush, ZMQPull
+from .wsgi import BottleWSGI
+from .xmlvalidator import XMLValidator
+from .udpeventgenerator import UDPEventGenerator
