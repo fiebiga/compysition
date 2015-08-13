@@ -210,10 +210,10 @@ class MDPBroker(Actor):
                     worker.register_heartbeat()
                     self.dispatch(worker.service)
                     self.logger.info("Registered new worker {0} with service {1}. Service has {2} workers total".format(worker.identity, worker.service.name, len(worker.service.workers)))
+                    self.send_to_worker(worker, MDPDefinition.B_VERIFICATION_RESPONSE, self.broker_identity)
                 else:
                     self.logger.info("Received verification and registration request from existing downstream worker {0} for service {1}".format(sender, service))
-                
-                self.send_to_worker(worker, MDPDefinition.B_VERIFICATION_RESPONSE, self.broker_identity)
+
 
         elif (MDPDefinition.W_REPLY == command):
             client = b"{0}_receiver".format(msg.pop(0))
