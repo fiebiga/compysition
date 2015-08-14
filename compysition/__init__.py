@@ -28,5 +28,5 @@ from qlogger import QLogger
 from director import Director
 from event import CompysitionEvent
 
-__version__ = '1.1.15'
+__version__ = '1.1.16'
 version = __version__
