@@ -31,22 +31,22 @@ class EventDataAggregator(Actor):
 
     def __init__(self, name, *args, **kwargs):
         Actor.__init__(self, name, *args, **kwargs)
-        self.key = kwargs.get("key", None) or name
+        self.key = kwargs.get("key", name)
 
     def consume(self, event, *args, **kwargs):
         if isinstance(event.data, dict):
             try:
-                event.data = self._do_aggregation(event.data.values())
+                event.data = self._do_aggregation(event.data)
             except Exception as err:
                 self.logger.error("Could not aggregate tags under event data. Reason {0}".format(err))
 
         self.send_event(event)
 
-    def _do_aggregation(self, values):
+    def _do_aggregation(self, data_dict):
         return_value = ""
-        for value in values:
-            if value is not None:
-                return_value += value
+        for key in data_dict:
+            if data_dict[key] is not None:
+                return_value += data_dict[key]
 
         return return_value
 
@@ -54,18 +54,19 @@ class EventDataXMLAggregator(EventDataAggregator):
     '''**Simple module which aggregates all existing tags under event.data together as event.data, under a single root XML element**
     '''
 
-    def _do_aggregation(self, values):
-        if len(values) > 1:
+    def _do_aggregation(self, data_dict):
+        return_value = None
+        if len(data_dict) > 1:
             root_node = etree.Element(self.key)
-            for value in values:
+            for key in data_dict:
                 try:
-                    value = etree.XML(value)
-                    root_node.append(value)
+                    xml = etree.XML(data_dict[key])
+                    root_node.append(xml)
                 except Exception as err:
                     self.logger.error("Submitted tag value was not valid XML. Skipping: {0}".format(err))
 
             return_value = etree.tostring(root_node)
-        else:
-            return_value = value
+        elif len(data_dict) == 1:
+            return_value = dict.itervalues().next()
 
         return return_value
