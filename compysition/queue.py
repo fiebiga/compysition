@@ -115,7 +115,6 @@ class Queue(gqueue.Queue):
         super(Queue, self).__init__(*args, **kwargs)
 
         self.name = name
-
         self.__in = 0
         self.__out = 0
         self.__cache = {}
@@ -132,7 +131,7 @@ class Queue(gqueue.Queue):
         return element
 
     def rescue(self, element):
-        self.put(event)
+        self.put(element)
 
     def stats(self):
         '''Returns statistics of the queue.'''
@@ -173,10 +172,10 @@ class Queue(gqueue.Queue):
         '''Blocks until at least 1 slot is taken.'''
 
         while self.qsize() == 0:
-            sleep(0.00000001)
+            sleep(0.001)
 
     def wait_until_empty(self):
         '''Blocks until the queue is completely empty.'''
 
         while self.qsize() > 0:
-            sleep(0.00000001)
+            sleep(0.001)
