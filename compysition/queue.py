@@ -172,10 +172,10 @@ class Queue(gqueue.Queue):
         '''Blocks until at least 1 slot is taken.'''
 
         while self.qsize() == 0:
-            sleep(0.001)
+            sleep(0.01)
 
     def wait_until_empty(self):
         '''Blocks until the queue is completely empty.'''
 
         while self.qsize() > 0:
-            sleep(0.001)
+            sleep(0.01)
