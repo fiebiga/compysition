@@ -45,3 +45,4 @@ from .zmqpushpull import ZMQPush, ZMQPull
 from .wsgi import BottleWSGI
 from .xmlvalidator import XMLValidator
 from .udpeventgenerator import UDPEventGenerator
+from .smtp import SMTPIn, SMTPOut
