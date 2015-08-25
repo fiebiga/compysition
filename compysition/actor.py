@@ -202,6 +202,7 @@ class Actor(object):
             while True:
                 queue = queues.next()
                 self.__submit(deepcopy(event), queue)
+                sleep(0)
         except StopIteration:
             pass
 
@@ -223,19 +224,17 @@ class Actor(object):
 
         self.__run.wait()
         while self.loop():
-            if queue.qsize() > 0:
-                try:
-                    event = queue.get(timeout=10)
-                    original_data = deepcopy(event.data)
-                except QueueEmpty as err:
-                    queue.wait_until_content()
-                else:
-                    if self.__blocking_consume:
-                        self.__do_consume(function, event, queue, original_data)
-                    else:
-                        self.threads.spawn(self.__do_consume, function, event, queue, original_data, restart=False)
+            queue.wait_until_content()
+            try:
+                event = queue.get(timeout=10)
+                original_data = deepcopy(event.data)
+            except QueueEmpty as err:
+                pass
             else:
-                queue.wait_until_content()
+                if self.__blocking_consume:
+                    self.__do_consume(function, event, queue, original_data)
+                else:
+                    self.threads.spawn(self.__do_consume, function, event, queue, original_data, restart=False)
 
         while True:
             if queue.qsize() > 0:

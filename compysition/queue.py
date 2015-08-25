@@ -118,6 +118,8 @@ class Queue(gqueue.Queue):
         self.__in = 0
         self.__out = 0
         self.__cache = {}
+        self.__has_content = Event()
+        self.__has_content.clear()
 
     def get(self, *args, **kwargs):
         '''Gets an element from the queue.'''
@@ -125,6 +127,7 @@ class Queue(gqueue.Queue):
         try:
             element = super(Queue, self).get(block=False, *args, **kwargs)
         except gqueue.Empty:
+            self.__has_content.clear()
             raise QueueEmpty("Queue {0} has no waiting events".format(self.name))
 
         self.__out += 1
@@ -146,9 +149,9 @@ class Queue(gqueue.Queue):
 
     def put(self, element, *args, **kwargs):
         '''Puts element in queue.'''
-
         try:
             super(Queue, self).put(element, *args, **kwargs)
+            self.__has_content.set()
         except gqueue.Full:
             raise QueueFull("Queue {0} is full".format(self.name))
         self.__in += 1
@@ -170,12 +173,11 @@ class Queue(gqueue.Queue):
 
     def wait_until_content(self):
         '''Blocks until at least 1 slot is taken.'''
+        self.__has_content.wait()
 
-        while self.qsize() == 0:
-            sleep(0.01)
 
     def wait_until_empty(self):
         '''Blocks until the queue is completely empty.'''
 
-        while self.qsize() > 0:
-            sleep(0.01)
+        while not self.__has_content.is_set():
+            sleep(0)
