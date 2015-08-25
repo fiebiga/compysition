@@ -51,7 +51,9 @@ install_requires = ['gevent>=1.0',
                     'restartlet',
                     'lxml',
                     'blockdiag',
-                    'bottle']
+                    'bottle',
+                    'dicttoxml',
+                    'gsmtpd']
 
 try:
     long_description = open('README.rst', 'rt').read()
