@@ -46,3 +46,4 @@ from .wsgi import BottleWSGI
 from .xmlvalidator import XMLValidator
 from .udpeventgenerator import UDPEventGenerator
 from .smtp import SMTPIn, SMTPOut
+from .rest import RESTTranslator
