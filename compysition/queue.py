@@ -37,7 +37,6 @@ class QueuePool(object):
         self.default_outbound_queues = {}
         self.default_outbound_queues['metrics'] = Queue("metrics", maxsize=size)
         self.default_outbound_queues['logs'] = Queue("logs", maxsize=size)
-        self.default_outbound_queues['failed'] = Queue("failed", maxsize=size)
         self.inbound_queues = {}
         self.outbound_queues = {}
         self.error_queues = {}
