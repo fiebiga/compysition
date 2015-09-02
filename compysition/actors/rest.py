@@ -21,56 +21,69 @@
 #  MA 02110-1301, USA.
 
 from compysition import Actor
-from compysition.model.rest import RestEntityModel
 
-class RestEntity(Actor):
+class RESTTranslator(Actor):
+    """
+    The purpose of this actor is to translate a returning event into a proper RESTful
+    response.
 
-    def __init__(self, name, model, *args, **kwargs):
-        Actor.__init__(self, name, *args, **kwargs)
-        self.model = model
-        self.parents = None
-        self.passthrough_methods = ["GET", "UPDATE", "PATCH"]
+    e.g. method = POST and status = "200 OK" "method = 201 Created"
+    """
 
-    def parse_url_at_current_step(self, url):
-        parsed_url = {"next_entity": None,
-                      "entity_key": None}
-
-        url_steps = url.split("/")
-        url_step_pos = url_steps.index(self.model.url_key)
-        if url_step_pos < len(url_steps):
-            if self.model.is_collection:
-                url_step_pos += 1
-                parsed_url["entity_key"] = url_steps[url_step_pos]
-
-            if url_step_pos != len(url_steps):
-                parsed_url["next_entity"] = url_steps[url_step_pos + 1]
-
-        return parsed_url
+    def __init__(self, name, web_interface="wsgi", url_post_location=None, *args, **kwargs):
+        super(RESTTranslator, self).__init__(name, *args, **kwargs)
+        self.web_interface = web_interface
+        self.default_status = "200 OK"
+        self.url_post_location = url_post_location
 
     def consume(self, event, *args, **kwargs):
-        current_step_properties = self.parse_url_at_current_step(event.http.url)
+        headers = event.get(self.web_interface, {})
+        if len(headers) == 0:
+            self.logger.warn("No HTTP headers were defined for incoming event", event=event)
 
-        self.validate_parents(event)
-        # This isn't working, this is conceptual
-        if event.get_the_current_rest_step == self.url_key:
-            # Do work on this event
+        method = headers.get("environment", {}).get("REQUEST_METHOD", None)
+
+        event = getattr(self, "translate_{method}".format(method=method))(event)
+        self.send_event(event)
+
+    def translate_POST(self, event):
+        headers = event.get(self.web_interface, {})
+        status_code = int(headers.get("status", self.default_status).split(' ')[0])
+
+        if status_code == 200:
+            headers['status'] = "201 Created"
+            local_url = self.url_post_location or headers.get("environment", {}).get("PATH_INFO", None)
+            entity_id = event.get("entity_id", event.meta_id)
+
+            if local_url is not None:
+                if "{entity_id}" in local_url:
+                    location = local_url.format(entity_id=entity_id)
+                else:
+                    location = local_url + "/" + entity_id
+
+                headers['http'].append(('Location', location))
+        else:
             pass
-        if event.http.request_type in self.passthrough_methods:
+
+        return event
+
+    def translate_UPDATE(self, event):
+        headers = event.get(self.web_interface, {})
+        status_code = int(headers.get("status", self.default_status)).split(' ')[0]
+
+        if status_code == 200:
+            if event.data is None or event.data == "" or len(event.data) == 0:
+                headers['status'] = "204 No Content"
+        else:
             pass
 
-    def validate_parents(self, event):
-        """
-        If all required parents have not been populated on l event
-        no work may be done on this entity at this stage
-        """
-        for parent in self.model.parents:
-            if isinstance(parent, RestEntityModel):
-                if not getattr(event, str(parent.key), None):
-                    return False
+        return event
 
-        return True
+    def translate_GET(self, event):
+        return self.translate_UPDATE(event)
 
-if __name__ == "__main__":
-    model = RestEntityModel(url_key="applications", is_collection=True)
-    entity = RestEntity("one", model)
-    print entity.parse_url_at_current_step("/loans/applications/411231/decision")
+    def translate_PUT(self, event):
+        return self.translate_UPDATE(event)
+
+    def translate_DELETE(self, event):
+        return self.translate_UPDATE(event)
