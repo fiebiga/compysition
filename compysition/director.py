@@ -41,7 +41,6 @@ class Director():
 
         self.metric_actor = self.__create_actor(Null, "null_metrics")
         self.log_actor = self.__create_actor(Null, "null_logs")
-        self.failed_actor = self.__create_actor(Null, "null_faileds")
 
         self.__running = False
         self.__block = event.Event()
@@ -59,8 +58,6 @@ class Director():
                 return self.metric_actor
             elif self.log_actor.name == name:
                 return self.log_actor
-            elif self.failed_actor == name:
-                return self.failed_actor
         else:
             return actor
 
@@ -178,29 +175,15 @@ class Director():
         self.metric_actor = self.__create_actor(actor, name, *args, **kwargs)
         return self.metric_actor
 
-    def register_failed_actor(self, actor, name, *args, **kwargs):
-        """Initialize a failed actor for the director instance"""
-        self.failed_actor = self.__create_actor(actor, name, *args, **kwargs)
-        return self.failed_actor
-
     def __create_actor(self, actor, name, *args, **kwargs):
         return actor(name, size=self.size, frequency=self.frequency, generate_metrics=self.generate_metrics, *args, **kwargs)
 
     def _setup_default_connections(self):
-        '''Connect all log, metric, and failed queues to their respective actors
-           If a log actor has been registered but a failed actor has not been, the failed actor
-           will default to also using the log actor
-        '''
-
-        if isinstance(self.failed_actor, Null) and not isinstance(self.log_actor, Null):
-            self.failed_actor = self.log_actor
-        else:
-            self.failed_actor.connect_queue("logs", self.log_actor, "inbox", check_existing=False)
+        '''Connect all log andmetric, and failed queues to their respective actors'''
 
         for actor in self.actors.values():
             actor.connect_queue("logs", self.log_actor, "inbox", check_existing=False) 
             actor.connect_queue("metrics", self.metric_actor, "inbox", check_existing=False)
-            actor.connect_queue("failed", self.failed_actor, "inbox", check_existing=False)
 
         self.log_actor.connect_queue("logs", self.log_actor, "inbox", check_existing=False)
         self.metric_actor.connect_queue("logs", self.log_actor, "inbox", check_existing=False)
@@ -220,9 +203,7 @@ class Director():
 
         self.log_actor.start()
         self.metric_actor.start()
-        if self.failed_actor is not self.log_actor:
-            self.failed_actor.start()
-
+        
         if self.generate_blockdiag:
             self.finalize_blockdiag()
         if block:
@@ -239,7 +220,6 @@ class Director():
             actor.stop()
 
         self.metric_actor.stop()
-        self.failed_actor.stop()
         self.log_actor.stop()
         self.__running = False
         self.__block.set()
