@@ -57,7 +57,7 @@ class TestEvent(Actor):
 
     '''
 
-    def __init__(self, name, data_value="test", header_value={}, producers=1, interval=1, delay=0, max_events=0, generate_error=True, *args, **kwargs):
+    def __init__(self, name, data_value="test", headers={}, producers=1, interval=1, delay=0, max_events=0, generate_error=True, *args, **kwargs):
         Actor.__init__(self, name, *args, **kwargs)
         self.blockdiag_config["shape"] = "flowchart.input"
         self.generate_error = generate_error
@@ -65,7 +65,7 @@ class TestEvent(Actor):
         self.interval = interval
         self.delay = delay
         self.data_value = data_value or "test"
-        self.header_value = header_value or {}
+        self.headers = headers or {}
         self.interval = interval
         self.producers = producers
         self.max_events = max_events
@@ -83,11 +83,11 @@ class TestEvent(Actor):
                     break
 
             self.generated_events += 1
-            event = self.create_event(data=self.data_value)
+            event = self.create_event(data=self.data_value, **self.headers)
             self.send_event(event)
             if self.generate_error:
                 self.generated_events += 1
-                event = self.create_event(data=self.data_value)
+                event = self.create_event(data=self.data_value, **self.headers)
                 self.send_error(event)
             gevent.sleep(self.interval)
 
