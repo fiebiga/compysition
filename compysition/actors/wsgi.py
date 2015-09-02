@@ -153,7 +153,7 @@ class BottleWSGI(WSGI, Bottle):
         Override Bottle.__call__ to strip trailing slash
         """
         e['PATH_INFO'] = e['PATH_INFO'].rstrip('/')
-        return Bottle.__call__(self, e,h)
+        return Bottle.__call__(self, e, h)
 
     def __init__(self, *args, **kwargs):
         routes_json = kwargs.pop('routes_json', None)
