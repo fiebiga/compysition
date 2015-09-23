@@ -107,7 +107,6 @@ class BrokerConnector(Broker):
             inbound_socket.identity = b"foo_receiver"
     """
 
-
     def __init__(self, context=None, socket_identity=None, *args, **kwargs):
         Broker.__init__(self, *args, **kwargs)
         self.context = context or kwargs.get('context', None) or RegistratorContext()
@@ -369,8 +368,8 @@ class BrokerRegistrator(RegistrationService):
     registration_manager = None     # Used to control frequency of registration
 
     def __init__(self, broker_port=None, broker_identity=None, registration_service_endpoint=None, *args, **kwargs):
-
         RegistrationService.__init__(self, *args, **kwargs)
+
         self.broker_port = broker_port or kwargs.get('broker_port', None) or 5555
         self.broker_identity = broker_identity or kwargs.get('broker_identity', None)
         self.registration_service_endpoint = registration_service_endpoint or kwargs.get('registration_service_endpoint', None) or "tcp://localhost:{0}".format(self.registration_service_port)
