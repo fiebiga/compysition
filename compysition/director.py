@@ -175,6 +175,10 @@ class Director():
         self.metric_actor = self.__create_actor(actor, name, *args, **kwargs)
         return self.metric_actor
 
+    def register_default_error_actor(self, actor, name, *args, **kwargs):
+        self.error_actor = self.__create_actor(actor, name, *args, **kwargs)
+        return self.error_actor
+
     def __create_actor(self, actor, name, *args, **kwargs):
         return actor(name, size=self.size, frequency=self.frequency, generate_metrics=self.generate_metrics, *args, **kwargs)
 
@@ -203,7 +207,7 @@ class Director():
 
         self.log_actor.start()
         self.metric_actor.start()
-        
+
         if self.generate_blockdiag:
             self.finalize_blockdiag()
         if block:
