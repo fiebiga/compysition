@@ -50,14 +50,13 @@ class MDPActor(Actor):
     socket_identity = None
     outbound_queue = None
 
-
     def __init__(self, name, service_prefix="", service_postfix="", *args, **kwargs):
         Actor.__init__(self, name, *args, **kwargs)
         self.blockdiag_config["shape"] = "cloud"
         self.socket_identity = uuid().get_hex()
         self.context = zmq.Context()
         self.outbound_queue = Queue()
-        self.broker_manager = BrokerManager(controller_identity=self.socket_identity, logger=self.logger)
+        self.broker_manager = BrokerManager(controller_identity=self.socket_identity, logger=self.logger, *args, **kwargs)
         self.service_prefix = service_prefix
         self.service_postfix = service_postfix
 
