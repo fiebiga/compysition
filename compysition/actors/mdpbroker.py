@@ -105,7 +105,6 @@ class MDPBroker(Actor):
 
     # ---------------------------------------------------------------------
 
-
     def __init__(self, name, port=5555, *args, **kwargs):
         """Initialize broker state."""
         super(MDPBroker, self).__init__(name, *args, **kwargs)
@@ -122,6 +121,7 @@ class MDPBroker(Actor):
         self.poller.register(self.broker_socket, zmq.POLLIN)
 
         self.logger.info("MDPBroker {0} initialized. Client/Worker ID will be {1}".format(self.broker_identity, self.broker_identity))
+        self.bind(self.port, *args, **kwargs)
 
     # ---------------------------------------------------------------------
 
@@ -262,14 +262,14 @@ class MDPBroker(Actor):
 
         return service
 
-    def bind(self, port):
+    def bind(self, port, *args, **kwargs):
         """Bind broker to endpoint, can call this multiple times.
 
         We use a single socket for both clients and workers.
         """
         endpoint = "tcp://*:{0}".format(port)
         self.broker_socket.bind(endpoint)
-        self.registrator = BrokerRegistrator(broker_port=port, broker_identity=self.broker_identity)
+        self.registrator = BrokerRegistrator(broker_port=port, broker_identity=self.broker_identity, *args, **kwargs)
         self.logger.info("MDPBroker {0} is bound and listening at {1}".format(self.broker_identity, endpoint))
 
     def purge_workers(self):
@@ -361,7 +361,6 @@ class MDPBroker(Actor):
         self.broker_socket.send_multipart(message)
 
     def pre_hook(self):
-        self.bind(self.port)
         gevent.spawn(self.mediate)
 
     def consume(self, *args, **kwargs):
