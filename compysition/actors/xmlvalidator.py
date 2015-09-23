@@ -55,7 +55,7 @@ class XMLValidator(Actor):
             self.send_event(event)
         except Exception as error:
             event.get(self.caller, {}).update({'status': '400 Bad Request'})
-            event.data = "Malformed Request: Invalid XML"
+            event.data = "Malformed Request (Invalid XML): {0}".format(error)
             self.logger.error("Error validating incoming XML: {0}".format(error), event=event)
             self.send_error(event)
 
