@@ -23,9 +23,10 @@
 
 from compysition import Actor
 from lxml import etree
+import re
 
 class XMLValidator(Actor):
-    '''**A sample module which applies a provided XSLT to an incoming event XML data**
+    '''**A sample module which applies a provided XSD to an incoming event XML data**
 
     Parameters:
 
@@ -38,24 +39,29 @@ class XMLValidator(Actor):
         Actor.__init__(self, name, *args, **kwargs)
         if xsd:
             self.schema = etree.XMLSchema(etree.XML(xsd))
-            self.parser = etree.XMLParser(schema=self.schema)
         else:
-            self.parser = None
+            self.schema = None
 
         self.caller = "wsgi"
 
     def consume(self, event, *args, **kwargs):
         try:
-            if self.parser:
-                etree.fromstring(event.data, self.parser)
-            else:
-                etree.fromstring(event.data)
+            xml = etree.fromstring(event.data)
+
+            if self.schema:
+                self.schema.assertValid(xml)
 
             self.logger.info("Incoming XML successfully validated", event=event)
             self.send_event(event)
+        except etree.DocumentInvalid as xml_errors:
+            messages = xml_errors.error_log.filter_levels([1, 2])
+            message = ''.join(["{0}\n".format(message.message) for message in messages ])
+            self.process_error(event, message)
         except Exception as error:
-            event.get(self.caller, {}).update({'status': '400 Bad Request'})
-            event.data = "Malformed Request (Invalid XML): {0}".format(error)
-            self.logger.error("Error validating incoming XML: {0}".format(error), event=event)
-            self.send_error(event)
+            self.process_error(event, error)
 
+    def process_error(self, event, message):
+        event.get(self.caller, {}).update({'status': '400 Bad Request'})
+        event.data = "Malformed Request (Invalid XML): {0}".format(message)
+        self.logger.error("Error validating incoming XML: {0}".format(message), event=event)
+        self.send_error(event)
