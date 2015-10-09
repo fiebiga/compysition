@@ -38,7 +38,7 @@ class EventDataAggregator(Actor):
             try:
                 event.data = self._do_aggregation(event.data)
             except Exception as err:
-                self.logger.error("Could not aggregate tags under event data. Reason {0}".format(err))
+                self.logger.error("Could not aggregate tags under event data. Reason {0}".format(err), event=event)
 
         self.send_event(event)
 
