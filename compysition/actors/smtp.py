@@ -14,6 +14,7 @@ import gsmtpd.server
 import email
 import dicttoxml
 import traceback
+import ssl
 
 class SMTPOut(Actor):
     '''**Module which sends mime emails with propertied specified in XML event data.**
@@ -65,11 +66,12 @@ class SMTPIn(Actor):
         - name (str):       The instance name.
     '''
 
-    def __init__(self, name, host="localhost", output='xml', *args, **kwargs):
+    def __init__(self, name, host="localhost", output='xml', keyfile=None, certfile=None,
+                 ssl_version=ssl.PROTOCOL_TLSv1, *args, **kwargs):
         Actor.__init__(self, name, *args, **kwargs)
         self.blockdiag_config["shape"] = "mail"
         self.output = output
-        self.server = gsmtpd.server.SMTPServer(host)
+        self.server = gsmtpd.server.SMTPServer(host, keyfile=keyfile, certfile=certfile, ssl_version=ssl_version)
         self.server.process_message = self.process_message
         self.server.logger = self.logger
 
@@ -77,13 +79,16 @@ class SMTPIn(Actor):
         self.server.start()
 
     def process_message(self, peer, mailfrom, rcpttos, data):
+        event = self.create_event(data=None)
+        self.logger.info("Received email message", event=event)
         headers = email.message_from_string(data)
         new_data = dict(zip(headers.keys(), headers.values()))
         new_data['payload'] = headers.get_payload()
         if self.output == 'xml':
             new_data = dicttoxml.dicttoxml(new_data, custom_root="email")
 
-        self.send_event(self.create_event(data=new_data))
+        event.data = new_data
+        self.send_event(event)
 
 
     def consume(self, event, *args, **kwargs):
