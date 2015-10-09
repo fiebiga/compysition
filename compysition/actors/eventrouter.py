@@ -209,6 +209,7 @@ class EventFilter(object):
 
         yield current_step
 
+
 class EventXMLFilter(EventFilter):
     '''
     **A filter class for the EventRouter module that will additionally use xpath lookup values to apply a regex comparison**
@@ -256,3 +257,21 @@ class EventXMLFilter(EventFilter):
             value = None
 
         return value
+
+
+class HTTPMethodEventRouter(EventRouter):
+
+    HTTP_METHODS = ["GET", "POST", "DELETE", "PATCH", "HEAD", "PUT", "OPTIONS"]
+
+    def __init__(self, name, *args, **kwargs):
+        super(HTTPMethodEventRouter, self).__init__(name, type="blacklist", *args, **kwargs)
+
+    def pre_hook(self):
+        for queue in self.pool.outbound_queues:
+            if queue in self.HTTP_METHODS:
+
+                self.set_filter(EventFilter(queue, queue, event_scope=("wsgi", "environment", "REQUEST_METHOD")))
+            else:
+                self.logger.warn("Queue {queue} is not a valid HTTP method and was not added as a routing option")
+
+        super(HTTPMethodEventRouter, self).pre_hook()
