@@ -2,7 +2,7 @@
 #
 # -*- coding: utf-8 -*-
 #
-#  flowcontroller.py
+#  cookietest.py
 #
 #  Copyright 2014 Adam Fiebig <adam.fiebig@cuanswers.com>
 #
