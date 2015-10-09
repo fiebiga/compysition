@@ -172,6 +172,9 @@ class BottleWSGI(WSGI, Bottle):
         self.wsgi_app = self
 
     def consume(self, event, *args, **kwargs):
+        # There is an error that results in responding with an empty list that will cause an internal server error
+        if isinstance(event.data, list) and len(event.data) == 0:
+            event.data = ""
         header = event.wsgi
         response_queue = self.responders.pop(event.event_id, None)
         local_response = HTTPResponse()
