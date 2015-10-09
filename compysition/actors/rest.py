@@ -69,8 +69,7 @@ class RESTTranslator(Actor):
 
     def translate_UPDATE(self, event):
         headers = event.get(self.web_interface, {})
-        status_code = int(headers.get("status", self.default_status)).split(' ')[0]
-
+        status_code = int(headers.get("status", self.default_status).split(' ')[0])
         if status_code == 200:
             if event.data is None or event.data == "" or len(event.data) == 0:
                 headers['status'] = "204 No Content"
