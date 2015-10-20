@@ -38,7 +38,7 @@ from .mdpactors import MDPWorker
 from .mdpbroker import MDPBroker
 from .mdpregistrar import MDPBrokerRegistrationService
 from .eventlogger import EventLogger
-from .eventrouter import EventRouter, EventXMLFilter, EventFilter, HTTPMethodEventRouter
+from .eventrouter import EventRouter, EventXMLFilter, EventFilter, HTTPMethodEventRouter, EventJSONFilter
 from .eventattributemodifier import EventAttributeModifier
 from .tcp import TCPIn, TCPOut
 from .zmqpushpull import ZMQPush, ZMQPull
