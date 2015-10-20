@@ -28,6 +28,7 @@ from ast import literal_eval
 from compysition.errors import QueueMissing
 import traceback
 from util import XPathLookup
+import json
 
 class EventRouter(Actor):
     '''**A module that filters incoming events to specific outboxes depending the input "Filter" args**
@@ -121,6 +122,23 @@ class EventRouter(Actor):
         else:
             raise TypeError("The provided filter is not a valid EventFilter type")
 
+class HTTPMethodEventRouter(EventRouter):
+
+    HTTP_METHODS = ["GET", "POST", "DELETE", "PATCH", "HEAD", "PUT", "OPTIONS"]
+
+    def __init__(self, name, *args, **kwargs):
+        super(HTTPMethodEventRouter, self).__init__(name, type="blacklist", *args, **kwargs)
+
+    def pre_hook(self):
+        for queue in self.pool.outbound_queues:
+            if queue in self.HTTP_METHODS:
+
+                self.set_filter(EventFilter(queue, queue, event_scope=("wsgi", "environment", "REQUEST_METHOD")))
+            else:
+                self.logger.warn("Queue {queue} is not a valid HTTP method and was not added as a routing option")
+
+        super(HTTPMethodEventRouter, self).pre_hook()
+
 class EventFilter(object):
     '''
     **A filter class to be used as a constructor argument for the EventRouter class. This class contains information about event
@@ -173,7 +191,7 @@ class EventFilter(object):
             self.next_filter = None
 
     def matches(self, event):
-        values = self._get_value(event)
+        values = self._get_value(event, self.event_scope)
         try:
             while True:
                 value = next(values)
@@ -187,11 +205,11 @@ class EventFilter(object):
         except StopIteration:
             pass
         except Exception as err:
-            self.logger.error("Error in attempting to apply regex patterns {0} to {1}: {2}".format(self.value_regexes, value, err), event=event)
+            raise Exception("Error in attempting to apply regex patterns {0} to {1}: {2}".format(self.value_regexes, values, err))
 
         return False
 
-    def _get_value(self, event):
+    def _get_value(self, event, event_scope):
         """
         This method iterates through the self.event_scope tuple in a series of getattr or get calls,
         depending on if the event in the scope step is a dict or an object. More supported types may be added in the future
@@ -199,7 +217,7 @@ class EventFilter(object):
         """
         try:
             current_step = event
-            for scope_step in self.event_scope:
+            for scope_step in event_scope:
                 if isinstance(current_step, dict):
                     current_step = current_step.get(scope_step, None)
                 elif isinstance(current_step, object):
@@ -224,8 +242,8 @@ class EventXMLFilter(EventFilter):
         else:
             self.xslt = None
 
-    def _get_value(self, event):
-        value = next(super(EventXMLFilter, self)._get_value(event))
+    def _get_value(self, event, event_scope):
+        value = next(super(EventXMLFilter, self)._get_value(event, event_scope))
         try:
             xml = etree.XML(value)
 
@@ -259,19 +277,28 @@ class EventXMLFilter(EventFilter):
         return value
 
 
-class HTTPMethodEventRouter(EventRouter):
+class EventJSONFilter(EventFilter):
+    '''
+    **A filter class for the EventRouter module that will additionally use json lookup values to apply a regex comparison**
+    '''
 
-    HTTP_METHODS = ["GET", "POST", "DELETE", "PATCH", "HEAD", "PUT", "OPTIONS"]
+    def __init__(self, json_scope, *args, **kwargs):
+        super(EventJSONFilter, self).__init__(*args, **kwargs)
+        self.json_scope = json_scope
 
-    def __init__(self, name, *args, **kwargs):
-        super(HTTPMethodEventRouter, self).__init__(name, type="blacklist", *args, **kwargs)
+    def _get_value(self, event, event_scope):
+        values = next(super(EventJSONFilter, self)._get_value(event, self.event_scope))
 
-    def pre_hook(self):
-        for queue in self.pool.outbound_queues:
-            if queue in self.HTTP_METHODS:
+        try:
 
-                self.set_filter(EventFilter(queue, queue, event_scope=("wsgi", "environment", "REQUEST_METHOD")))
+            if not isinstance(values, dict) and isinstance(values, str):
+                values = json.loads(values)
+
+            if isinstance(values, list):
+                for value in values:
+                    json_value = next(super(EventJSONFilter, self)._get_value(value, self.json_scope))
+                    yield json_value
             else:
-                self.logger.warn("Queue {queue} is not a valid HTTP method and was not added as a routing option")
-
-        super(HTTPMethodEventRouter, self).pre_hook()
+                json_value = next(super(EventJSONFilter, self)._get_value(values, self.json_scope))
+        except Exception as err:
+            yield None
