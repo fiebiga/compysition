@@ -246,7 +246,7 @@ class BottleWSGI(WSGI, Bottle):
                 "http": [("Content-Type", "text/html")]}
 
         request_body = {}
-        if request.content_type.startswith("text/") and request.content_type != "text/xml":
+        if request.content_type.startswith("text/"):
             request_body['raw'] = request.body.read()
         else:
             for item in request.forms.items():
