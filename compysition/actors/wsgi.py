@@ -26,6 +26,7 @@ from compysition.actors.util.managedqueue import ManagedQueue
 from gevent import pywsgi, spawn, sleep
 import traceback
 import json
+from functools import wraps
 
 from bottle import *
 
@@ -148,6 +149,23 @@ class WSGI(Actor, Bottle):
 
 class BottleWSGI(WSGI, Bottle):
 
+    def log_to_logger(self, fn):
+        '''
+        Wrap a Bottle request so that a log line is emitted after it's handled.
+        (This decorator can be extended to take the desired logger as a param.)
+        '''
+        @wraps(fn)
+        def _log_to_logger(*args, **kwargs):
+            request_time = datetime.now()
+            actual_response = fn(*args, **kwargs)
+            # modify this to log exactly what you need:
+            self.logger.info('[{address}] {status} {method} {url}'.format(address=request.remote_addr,
+                                                        status=response.status,
+                                                        method=request.method,
+                                                        url=request.url))
+            return actual_response
+        return _log_to_logger
+
     def __call__(self, e, h):
         """
         Override Bottle.__call__ to strip trailing slash
@@ -170,6 +188,7 @@ class BottleWSGI(WSGI, Bottle):
                 raise AttributeError("Malformed JSON object: {0}".format(error))
 
         self.wsgi_app = self
+        self.wsgi_app.install(self.log_to_logger)
 
     def consume(self, event, *args, **kwargs):
         # There is an error that results in responding with an empty list that will cause an internal server error
@@ -227,7 +246,7 @@ class BottleWSGI(WSGI, Bottle):
                 "http": [("Content-Type", "text/html")]}
 
         request_body = {}
-        if request.content_type.startswith("text/"):
+        if request.content_type.startswith("text/") and request.content_type != "text/xml":
             request_body['raw'] = request.body.read()
         else:
             for item in request.forms.items():
