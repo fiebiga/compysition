@@ -33,6 +33,8 @@ from time import time
 from copy import deepcopy
 import traceback
 from uuid import uuid4 as uuid
+import functools
+
 
 class Actor(object):
     """
@@ -191,7 +193,7 @@ class Actor(object):
         if queues or queue:
             self.send_event(event, queue=queue, queues=queues)
 
-    def __loop_submit(self, event, queues):
+    def __loop_submit_OLD(self, event, queues):
         """
         Loop through 'queues' and submit events to them. Expects 'queues' to be an array of compysition.queue.Queue objects
         """
@@ -205,6 +207,22 @@ class Actor(object):
                 sleep(0)
         except StopIteration:
             pass
+
+    def __loop_submit(self, event, queues):
+        """
+        :param event:
+        :param queues:
+        :return:
+        """
+        if queues:
+            self.__submit_test(queues.pop(), event=event)
+            #map(lambda queue: queue.put(deepcopy(event)), queues)
+            map(functools.partial(self.__submit_test, event=event), queues)
+
+    def __submit_test(self, queue, event=None):
+        if event is not None:
+            queue.put(deepcopy(event))
+            sleep(0)
 
     def __submit(self, event, queue):
         '''A convenience function which submits <event> to <queue>
