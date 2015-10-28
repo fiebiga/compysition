@@ -288,7 +288,7 @@ class EventJSONFilter(EventFilter):
 
     def _get_value(self, event, event_scope):
         values = next(super(EventJSONFilter, self)._get_value(event, self.event_scope))
-
+        print values
         try:
 
             if not isinstance(values, dict) and isinstance(values, str):
