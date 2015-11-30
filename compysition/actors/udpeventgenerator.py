@@ -15,24 +15,12 @@ class UDPEventGenerator(Actor):
     will generate an event at the specified interval
     """
 
-    def __init__(self, name, service="default", interval=120, config_filepath=None, environment='default', event_kwargs={}, *args, **kwargs):
+    def __init__(self, name, service="default", interval=120, environment_scope='default', event_kwargs={}, *args, **kwargs):
         super(UDPEventGenerator, self).__init__(name, *args, **kwargs)
-
-        if config_filepath:
-            try:
-                config_obj = ConfigObj(config_filepath)
-                environment = config_obj['general']['environment']
-            except:
-                self.logger.warn("Environment not found in {config_filepath}, using '{environment}'".format(config_filepath=config_filepath,
-                                                                                                            environment=environment))
-                environment = environment
-        else:
-            environment = environment
-
         self.event_kwargs = event_kwargs
         self.interval = interval
         self.generate_at = time.time()
-        self.peers_interface = UDPInterface("{0}-{1}".format(service, environment), logger=self.logger)
+        self.peers_interface = UDPInterface("{0}-{1}".format(service, environment_scope), logger=self.logger)
 
     def pre_hook(self):
         self.peers_interface.start()

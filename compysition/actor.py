@@ -175,7 +175,7 @@ class Actor(object):
         If 'queue' is provided, it supercedes all others and submits ONLY to that queue
         """
         if queue is not None: 
-            self.__submit(event, queue)
+            self.__submit_test(queue, event=event)
         else:
             if queues:
                 send_queues = queues
@@ -193,21 +193,6 @@ class Actor(object):
         if queues or queue:
             self.send_event(event, queue=queue, queues=queues)
 
-    def __loop_submit_OLD(self, event, queues):
-        """
-        Loop through 'queues' and submit events to them. Expects 'queues' to be an array of compysition.queue.Queue objects
-        """
-        queues = iter(queues)
-        try:
-            queue = queues.next()
-            self.__submit(event, queue)
-            while True:
-                queue = queues.next()
-                self.__submit(deepcopy(event), queue)
-                sleep(0)
-        except StopIteration:
-            pass
-
     def __loop_submit(self, event, queues):
         """
         :param event:
@@ -215,8 +200,6 @@ class Actor(object):
         :return:
         """
         if queues:
-            self.__submit_test(queues.pop(), event=event)
-            #map(lambda queue: queue.put(deepcopy(event)), queues)
             map(functools.partial(self.__submit_test, event=event), queues)
 
     def __submit_test(self, queue, event=None):
@@ -224,17 +207,18 @@ class Actor(object):
             queue.put(deepcopy(event))
             sleep(0)
 
-    def __submit(self, event, queue):
+    def __submit(self, queue, event=None):
         '''A convenience function which submits <event> to <queue>
         and deals with QueueFull and the module lock set to False.'''
-        while self.loop():
-            try:
-                queue.put(event)
-                break
-            except QueueFull as err:
-                err.wait_until_empty()
-            except Exception as err:
-                raise Exception("Tried to put to {queue}. Exception was {err}".format(queue=queue, err=err))
+        if event is not None:
+            while self.loop():
+                try:
+                    queue.put(deepcopy(event))
+                    sleep(0)
+                except QueueFull as err:
+                    err.wait_until_empty()
+                except Exception as err:
+                    raise Exception("Tried to put to {queue}. Exception was {err}".format(queue=queue, err=err))
 
     def __consumer(self, function, queue):
         '''Greenthread which applies <function> to each element from <queue>

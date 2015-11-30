@@ -30,6 +30,7 @@ import traceback
 from util import XPathLookup
 import json
 
+
 class EventRouter(Actor):
     '''**A module that filters incoming events to specific outboxes depending the input "Filter" args**
 
@@ -44,7 +45,7 @@ class EventRouter(Actor):
                                                         regex(es) provided
 
     '''
-    
+
     def __init__(self, name, routing_filters=[], type="whitelist", default_outbox_regexes=[".*"], *args, **kwargs):
         Actor.__init__(self, name, *args, **kwargs)
         self.blockdiag_config["shape"] = "flowchart.condition"
@@ -95,7 +96,10 @@ class EventRouter(Actor):
                 try:
                     filter.outboxes.append(self.pool.outbound_queues[outbox_name])
                 except Exception as err:
-                    raise Exception("Queue {outbox_name} was referenced in a filter, but is not connected as a valid outbox for {name}. Connected outboxes are {queue_list}. Exception was: {exception}".format(outbox_name=outbox_name, name=self.name, queue_list=self.pool.outbound_queues, exception=err))
+                    raise Exception(
+                        "Queue {outbox_name} was referenced in a filter, but is not connected as a valid outbox for {name}. Connected outboxes are {queue_list}. Exception was: {exception}".format(
+                            outbox_name=outbox_name, name=self.name, queue_list=self.pool.outbound_queues,
+                            exception=err))
 
     def consume(self, event, *args, **kwargs):
         matched = False
@@ -103,16 +107,21 @@ class EventRouter(Actor):
             if filter.matches(event):
                 matched = True
                 self.send_event(event, queues=filter.outboxes)
-                self.logger.debug("EventFilter matched for outbound queues ({outbox_names}). Event successfully forwarded".format(outbox_names=filter.outbox_names), 
-                                    event=event)
+                self.logger.debug(
+                    "EventFilter matched for outbound queues ({outbox_names}). Event successfully forwarded".format(
+                        outbox_names=filter.outbox_names),
+                    event=event)
 
         if not matched:
             if not self.whitelist:
                 if len(self.default_outboxes) > 0:
                     self.send_event(event, queues=self.default_outboxes)
-                    self.logger.debug("No EventFilters matched for event. Event forwarded to default outbox(s)", event=event)
+                    self.logger.debug("No EventFilters matched for event. Event forwarded to default outbox(s)",
+                                      event=event)
                 else:
-                    self.logger.info("No EventFilters matched for event and no default queues are connected. Event has been discarded", event=event)
+                    self.logger.info(
+                        "No EventFilters matched for event and no default queues are connected. Event has been discarded",
+                        event=event)
             else:
                 self.logger.debug("No EventFilters matched for event. Event has been discarded", event=event)
 
@@ -122,8 +131,8 @@ class EventRouter(Actor):
         else:
             raise TypeError("The provided filter is not a valid EventFilter type")
 
-class HTTPMethodEventRouter(EventRouter):
 
+class HTTPMethodEventRouter(EventRouter):
     HTTP_METHODS = ["GET", "POST", "DELETE", "PATCH", "HEAD", "PUT", "OPTIONS"]
 
     def __init__(self, name, *args, **kwargs):
@@ -138,6 +147,7 @@ class HTTPMethodEventRouter(EventRouter):
                 self.logger.warn("Queue {queue} is not a valid HTTP method and was not added as a routing option")
 
         super(HTTPMethodEventRouter, self).pre_hook()
+
 
 class EventFilter(object):
     '''
@@ -169,15 +179,14 @@ class EventFilter(object):
 
         self.value_regexes = [re.compile(value_regex) for value_regex in value_regexes]
         self.outbox_names = outbox_names
-        self.outboxes = []                                          # To be filled and defined later when the EventRouter initializes outboxes
+        self.outboxes = []  # To be filled and defined later when the EventRouter initializes outboxes
         self.next_filter = self.set_next_filter(next_filter)
-        
 
     def _validate_scope_definition(self, event_scope):
         if isinstance(event_scope, tuple):
             self.event_scope = event_scope
         elif isinstance(event_scope, str):
-            self.event_scope = (event_scope, )
+            self.event_scope = (event_scope,)
         else:
             raise TypeError("The defined event_scope must be either type str or tuple(str)")
 
@@ -205,7 +214,8 @@ class EventFilter(object):
         except StopIteration:
             pass
         except Exception as err:
-            raise Exception("Error in attempting to apply regex patterns {0} to {1}: {2}".format(self.value_regexes, values, err))
+            raise Exception(
+                "Error in attempting to apply regex patterns {0} to {1}: {2}".format(self.value_regexes, values, err))
 
         return False
 
@@ -232,7 +242,7 @@ class EventXMLFilter(EventFilter):
     '''
     **A filter class for the EventRouter module that will additionally use xpath lookup values to apply a regex comparison**
     '''
-    
+
     def __init__(self, xpath, value_regexes, outbox_names, xslt=None, *args, **kwargs):
         super(EventXMLFilter, self).__init__(value_regexes, outbox_names, *args, **kwargs)
         self.xpath = xpath
@@ -288,7 +298,6 @@ class EventJSONFilter(EventFilter):
 
     def _get_value(self, event, event_scope):
         values = next(super(EventJSONFilter, self)._get_value(event, self.event_scope))
-        print values
         try:
 
             if not isinstance(values, dict) and isinstance(values, str):
