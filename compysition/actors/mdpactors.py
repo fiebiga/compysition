@@ -131,7 +131,7 @@ class MDPClient(MDPActor):
     def send_outbound_message(self, socket, event):
         try:
             request_id = event.meta_id                  # Set for broker logging so we can trace the path of an event easily
-            service = self.service_prefix + event.service + self.service_postfix
+            service = b"{0}".format(self.service_prefix + event.service + self.service_postfix)
             self.logger.info("Sending event to service '{0}'".format(service), event=event)
             message = [request_id, b"{0}".format(event.to_string())]
             self.send(service, message, broker_socket=socket)

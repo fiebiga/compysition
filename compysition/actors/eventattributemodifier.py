@@ -27,6 +27,7 @@
 from compysition import Actor
 from lxml import etree
 from util import XPathLookup
+import json
 
 class EventAttributeModifier(Actor):
 
@@ -40,7 +41,7 @@ class EventAttributeModifier(Actor):
         - type  (static, xpath) (Default: static) Determines how the value is evaluated.
     '''
 
-    def __init__(self, name, key='data', value={}, type="static", log_change=False, *args, **kwargs):
+    def __init__(self, name, key='data', value={}, log_change=False, *args, **kwargs):
         Actor.__init__(self, name, *args, **kwargs)
         self.value = value
         if key is None:
@@ -48,17 +49,31 @@ class EventAttributeModifier(Actor):
         else:
             self.key = key
 
-        self.modify_event = getattr(self, "{0}_modify_event".format(type))
         self.log_change = log_change
 
     def consume(self, event, *args, **kwargs):
-        event = self.modify_event(event)
+        modify_value = self.get_modify_value(event)
+
+        if self.log_change:
+            self.logger.info("Changed event.{key} to {value}".format(key=self.key, value=value), event=event)
+
+        event.set(self.key, modify_value)
         self.send_event(event)
 
-    def static_modify_event(self, event):
-        return self._do_modify_event(event, self.key, self.value)
+    def get_modify_value(self, event):
+        return self.value
 
-    def xpath_modify_event(self, event):
+    def modify_event(self, event, key, value):
+        if self.log_change:
+            self.logger.info("Changed event.{key} to {value}".format(key=self.key, value=value), event=event)
+
+        event.set(key, value)
+        return event
+
+
+class XpathEventAttributeModifer(EventAttributeModifier):
+
+    def get_modify_value(self, event):
         xml = etree.XML(event.data)
         lookup = XPathLookup(xml)
         xpath_lookup = lookup.lookup(self.value)
@@ -78,11 +93,22 @@ class EventAttributeModifier(Actor):
                 else:
                     value.append = result.text
 
-        return self._do_modify_event(event, self.key, value)
+        return value
 
-    def _do_modify_event(self, event, key, value):
-        if self.log_change:
-            self.logger.info("Changed event.{key} to {value}".format(key=self.key, value=value), event=event)
 
-        event.set(key, value)
-        return event
+class JSONEventAttributeModifier(EventAttributeModifier):
+
+    def __init__(self, name, separator="/", *args, **kwargs):
+        self.separator = separator
+        super(JSONEventAttributeModifier, self).__init__(name, *args, **kwargs)
+
+    def get_modify_value(self, event):
+        data = json.loads(event.data)
+        value = reduce(lambda acc, key: acc.get(key, {}), [data] + self.value.split(self.separator))
+
+        print value
+
+        if isinstance(value, dict) and len(value) == 0:
+            value = None
+
+        return value
