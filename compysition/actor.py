@@ -22,9 +22,9 @@
 #  MA 02110-1301, USA.
 #
 
-from compysition.queue import QueuePool, Queue
+from compysition.queue import QueuePool
 from compysition.qlogger import QLogger
-from compysition.errors import QueueEmpty, QueueFull, QueueConnected, SetupError, NoConnectedQueues
+from compysition.errors import *
 from restartlet import RestartPool
 from compysition.event import CompysitionEvent
 from gevent import sleep, socket
@@ -32,13 +32,12 @@ from gevent.event import Event
 from time import time
 from copy import deepcopy
 import traceback
-from uuid import uuid4 as uuid
 import functools
 
 
 class Actor(object):
     """
-    The actor class is the abstract base class for all implementing compysition actors. 
+    The actor class is the abstract base class for all implementing compysition actors.
     In order to be a valid 'module' and connectable with the compysition event flow, a module must be an extension of this class.
 
     The Actor is responsible for putting events on outbox queues, and consuming incoming events on inbound queues.
@@ -58,7 +57,7 @@ class Actor(object):
         - generate_metrics (bool):  Whether or not to generate and broadcast metrics for this actor                                                             (Default: True)
         - blocking_consume (bool):  Define if this module should spawn a greenlet for every single 'consume' execution, or if
                                         it should execute 'consume' and block until that 'consume' is complete. This is usually
-                                        only necessary if executing work on an event in the order that it was received is critical.                             (Default: False) 
+                                        only necessary if executing work on an event in the order that it was received is critical.                             (Default: False)
 
         """
         self.blockdiag_config = {"shape": "box"}
@@ -79,6 +78,11 @@ class Actor(object):
         self.__block.clear()
         self.__blocking_consume = blocking_consume
         self.__consumers = []
+
+        # This is the map to determine input processing and type checking of incoming data
+        # TODO: "all" is here on the parent Actor temporarily until actors are all moved to utilize type checking
+        self.input_types_processing_map = {str: self._process_str_input,
+                                           "all": self._process_all_input}
 
     def block(self):
         self.__block.wait()
@@ -135,7 +139,7 @@ class Actor(object):
 
     def register_consumer(self, queue_name, queue):
         '''
-        Add the passed queue and queue name to 
+        Add the passed queue and queue name to
         '''
         self.pool.add_inbound_queue(queue_name, queue=queue)
         self.threads.spawn(self.__consumer, self.consume, queue)
@@ -159,7 +163,7 @@ class Actor(object):
         '''Stops the loop lock and waits until all registered consumers have exit.'''
 
         self.__loop = False
-        
+
         self.__block.set()
         self.threads.join()
 
@@ -174,7 +178,7 @@ class Actor(object):
 
         If 'queue' is provided, it supercedes all others and submits ONLY to that queue
         """
-        if queue is not None: 
+        if queue is not None:
             self.__submit_test(queue, event=event)
         else:
             if queues:
@@ -256,15 +260,35 @@ class Actor(object):
         This function actually calls the consume function for the actor
         """
         try:
+            event.data = self.__validate_input(event)
             function(event, origin=queue.name, origin_queue=queue)
         except QueueFull as err:
             event.data = original_data
             queue.rescue(event)
             err.wait_until_free()
-        except Exception as err:
+        except InvalidInputException as error:
+            self.logger.error("Invalid input detected: {0}".format(error))
+        except:
             print traceback.format_exc()    # This is an unhappy path to get an exception at this point, so we want to print to STDOUT
                                             # In case this is a problem with the log_actor itself. At least for now
             self.logger.error(traceback.format_exc())
+
+    def __validate_input(self, event):
+        """
+        Validate event input using input_types_processing_map to find appropriate validation/processing function
+        If the map is found and the reference is callable, transform event.data into the format returned by that function.
+        If a type mapping is defined but the reference is NOT callable, the data will remain unchanged
+        """
+        data = event.get('data', None)
+        process_input_function = self.input_types_processing_map.get(type(data),
+                                                                     self.input_types_processing_map.get("all", None))
+        if process_input_function is None:
+            raise InvalidInputException("Invalid input type detected. Event data was of type '{type}'".format(type(event.data)))
+
+        if hasattr(process_input_function, '__call__'):
+            event.data = process_input_function(data)
+
+        return event.data
 
     def __metric_emitter(self):
         '''A greenthread which collects the queue metrics at the defined interval.'''
@@ -291,3 +315,17 @@ class Actor(object):
         in 'router/default.py' to ensure that *args and **kwargs is defined"""
 
         raise SetupError("You must define a consume function as consume(self, event, *args, **kwargs)")
+
+    def _process_str_input(self, data):
+        """
+        This is the default implementation - all current actors accept string input. This may change in the future.
+        Override in implementing Actor to convert string input to desired value, or raise the appropriate exception
+        """
+        return data
+
+    def _process_all_input(self, data):
+        """
+        This is here in the super class temporarily to allow for legacy support while actors are converted to use
+        proper input type checking. The "all" keyword map should be used to allow for "all" types of event.data
+        """
+        return data
