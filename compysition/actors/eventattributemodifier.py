@@ -29,6 +29,7 @@ from lxml import etree
 from util import XPathLookup
 import json
 
+
 class EventAttributeModifier(Actor):
 
     '''**Adds or updates static information to an event**
@@ -96,6 +97,7 @@ class XpathEventAttributeModifer(EventAttributeModifier):
 
         return value
 
+
 class JSONEventAttributeModifier(EventAttributeModifier):
 
     def __init__(self, name, separator="/", *args, **kwargs):
@@ -105,8 +107,6 @@ class JSONEventAttributeModifier(EventAttributeModifier):
     def get_modify_value(self, event):
         data = json.loads(event.data)
         value = reduce(lambda acc, key: acc.get(key, {}), [data] + self.value.split(self.separator))
-
-        print value
 
         if isinstance(value, dict) and len(value) == 0:
             value = None
