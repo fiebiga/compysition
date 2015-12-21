@@ -65,3 +65,6 @@ class NoSuchModule(Exception):
 
 class NoConnectedQueues(Exception):
     pass
+
+class InvalidInputException(Exception):
+    pass
