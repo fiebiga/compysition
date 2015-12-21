@@ -55,20 +55,13 @@ class EventAttributeModifier(Actor):
         modify_value = self.get_modify_value(event)
 
         if self.log_change:
-            self.logger.info("Changed event.{key} to {value}".format(key=self.key, value=value), event=event)
+            self.logger.info("Changed event.{key} to {value}".format(key=self.key, value=modify_value), event=event)
 
         event.set(self.key, modify_value)
         self.send_event(event)
 
     def get_modify_value(self, event):
         return self.value
-
-    def modify_event(self, event, key, value):
-        if self.log_change:
-            self.logger.info("Changed event.{key} to {value}".format(key=self.key, value=value), event=event)
-
-        event.set(key, value)
-        return event
 
 
 class XpathEventAttributeModifer(EventAttributeModifier):
@@ -81,20 +74,27 @@ class XpathEventAttributeModifer(EventAttributeModifier):
         if len(xpath_lookup) <= 0:
             value = None
         elif len(xpath_lookup) == 1:
-            if isinstance(xpath_lookup[0], etree._ElementStringResult):
-                value = xpath_lookup[0]
-            else:
-                value = xpath_lookup[0].text
+            value = XpathEventAttributeModifer._parse_result_value(xpath_lookup[0])
         else:
             value = []
             for result in xpath_lookup:
-                if isinstance(result, etree._ElementStringResult):
-                    value.append = result
-                else:
-                    value.append = result.text
+                value.append(XpathEventAttributeModifer._parse_result_value(result))
 
         return value
 
+    @staticmethod
+    def _parse_result_value(result):
+        value = None
+        if isinstance(result, etree._ElementStringResult):
+            value = result
+        elif isinstance(result, (etree._Element, etree._ElementTree)):
+            if len(result.getchildren()) > 0:
+
+                value = etree.tostring(result)
+            else:
+                value = result.text
+
+        return value
 
 class JSONEventAttributeModifier(EventAttributeModifier):
 
