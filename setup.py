@@ -53,7 +53,7 @@ install_requires = ['gevent>=1.0',
                     'Pillow==2.9.0',
                     'blockdiag',
                     'bottle',
-                    'dicttoxml',
+                    'xmltodict',
                     'gsmtpd']
 
 try:
