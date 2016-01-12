@@ -21,18 +21,19 @@
 #  MA 02110-1301, USA.
 #
 
-from compysition.actors import Null
+from compysition.actors import Null, STDOUT
 from compysition.errors import ModuleInitFailure, NoSuchModule
-from gevent import signal, event, sleep
+from gevent import signal as gsignal, event, sleep
+import signal
 import os
 import traceback
 from compysition.actor import Actor
 
 class Director():
 
-    def __init__(self, size=500, frequency=1, generate_metrics=False, name="default", generate_blockdiag=True, blockdiag_dir="./blockdiag"):
-        signal(2, self.stop)
-        signal(15, self.stop)
+    def __init__(self, size=500, frequency=1, generate_metrics=False, name="default", generate_blockdiag=True, blockdiag_dir="./build/blockdiag"):
+        gsignal(signal.SIGINT, self.stop)
+        gsignal(signal.SIGTERM, self.stop)
         self.name = name
         self.actors = {}
         self.size = size
@@ -40,7 +41,8 @@ class Director():
         self.generate_metrics = generate_metrics
 
         self.metric_actor = self.__create_actor(Null, "null_metrics")
-        self.log_actor = self.__create_actor(Null, "null_logs")
+        self.log_actor = self.__create_actor(STDOUT, "null_logs")
+        self.error_actor = None
 
         self.__running = False
         self.__block = event.Event()
@@ -58,6 +60,8 @@ class Director():
                 return self.metric_actor
             elif self.log_actor.name == name:
                 return self.log_actor
+            elif self.error_actor.name == name:
+                return self.error_actor
         else:
             return actor
 
@@ -186,6 +190,12 @@ class Director():
         '''Connect all log andmetric, and failed queues to their respective actors'''
 
         for actor in self.actors.values():
+            if self.error_actor:
+                try:
+                    actor.connect_error_queue("error", self.error_actor, "{name}_inbox".format(name=actor.name))
+                except:
+                    pass
+
             actor.connect_queue("logs", self.log_actor, "inbox", check_existing=False) 
             actor.connect_queue("metrics", self.metric_actor, "inbox", check_existing=False)
 
@@ -207,6 +217,8 @@ class Director():
 
         self.log_actor.start()
         self.metric_actor.start()
+        if self.error_actor:
+            self.error_actor.start()
 
         if self.generate_blockdiag:
             self.finalize_blockdiag()
@@ -219,7 +231,7 @@ class Director():
 
     def stop(self):
         '''Stops all input actors.'''
-        self.__block.set()
+
         for actor in self.actors.values():
             actor.stop()
 
