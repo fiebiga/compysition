@@ -3,8 +3,7 @@ from __future__ import absolute_import
 from compysition.actor import Actor
 import json
 from lxml import etree
-from ast import literal_eval
-from compysition.errors import InvalidInputException
+from .util.dataformat import str_to_json
 from xml.sax.saxutils import XMLGenerator
 import xmltodict
 
@@ -51,34 +50,21 @@ class DictToXML(Actor):
 
         super(DictToXML, self).__init__(name, *args, **kwargs)
         self.input_types_processing_map.update({
-            dict: True
+            dict: self.process_dict_input
         })
 
         # TODO: Remove this once "all" is no longer universal to all Actors
         self.input_types_processing_map.pop("all", None)
         self.key = key or name
 
+    def _process_dict_input(self, data):
+        # Documents must have only 1 root
+        if len(data) > 1:
+            data = {self.key: data}
+
     def _process_str_input(self, data):
-        try:
-            data = json.loads(data)
-        except:
-            pass
-
-
-        if not isinstance(data, dict):
-            try:
-                data = literal_eval(data)
-            except Exception as err:
-                print err
-                pass
-
-        if isinstance(data, dict):
-            # Documents must have only 1 root
-            if len(data) > 1:
-                data = {self.key: data}
-            return data
-        else:
-            raise InvalidInputException("Event data was a string, but could not be parsed into a dictionary")
+        data = str_to_json(data)
+        return self._process_dict_input(data)
 
     def consume(self, event, *args, **kwargs):
         try:
