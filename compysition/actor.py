@@ -144,7 +144,6 @@ class Actor(object):
         self.pool.add_inbound_queue(queue_name, queue=queue)
         self.threads.spawn(self.__consumer, self.consume, queue)
 
-
     def start(self):
         '''Starts the module.'''
         self.logger.connect_logs_queue(self.pool.default_outbound_queues['logs'])
@@ -163,9 +162,10 @@ class Actor(object):
         '''Stops the loop lock and waits until all registered consumers have exit.'''
 
         self.__loop = False
-
         self.__block.set()
-        self.threads.join()
+
+        # This should do a self.threads.join() but currently it is blocking. This issue needs to be resolved
+        # But in the meantime post_hook will execute
 
         if hasattr(self, "post_hook"):
             self.logger.debug("post_hook() found, executing")
@@ -214,6 +214,7 @@ class Actor(object):
     def __submit(self, queue, event=None):
         '''A convenience function which submits <event> to <queue>
         and deals with QueueFull and the module lock set to False.'''
+
         if event is not None:
             while self.loop():
                 try:
@@ -229,6 +230,7 @@ class Actor(object):
         '''
 
         self.__run.wait()
+
         while self.loop():
             queue.wait_until_content()
             try:
@@ -260,7 +262,7 @@ class Actor(object):
         This function actually calls the consume function for the actor
         """
         try:
-            event.data = self.__validate_input(event)
+            event.data = self.__validate_input(event.data)
             function(event, origin=queue.name, origin_queue=queue)
         except QueueFull as err:
             event.data = original_data
@@ -273,22 +275,21 @@ class Actor(object):
                                             # In case this is a problem with the log_actor itself. At least for now
             self.logger.error(traceback.format_exc())
 
-    def __validate_input(self, event):
+    def __validate_input(self, data):
         """
         Validate event input using input_types_processing_map to find appropriate validation/processing function
         If the map is found and the reference is callable, transform event.data into the format returned by that function.
         If a type mapping is defined but the reference is NOT callable, the data will remain unchanged
         """
-        data = event.get('data', None)
         process_input_function = self.input_types_processing_map.get(type(data),
                                                                      self.input_types_processing_map.get("all", None))
         if process_input_function is None:
-            raise InvalidInputException("Invalid input type detected. Event data was of type '{type}'".format(type(event.data)))
+            raise InvalidInputException("Invalid input type detected. Event data was of type '{type}'".format(type(data)))
 
         if hasattr(process_input_function, '__call__'):
-            event.data = process_input_function(data)
+            data = process_input_function(data)
 
-        return event.data
+        return data
 
     def __metric_emitter(self):
         '''A greenthread which collects the queue metrics at the defined interval.'''
