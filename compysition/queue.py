@@ -174,7 +174,6 @@ class Queue(gqueue.Queue):
         '''Blocks until at least 1 slot is taken.'''
         self.__has_content.wait()
 
-
     def wait_until_empty(self):
         '''Blocks until the queue is completely empty.'''
 
