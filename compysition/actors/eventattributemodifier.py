@@ -106,7 +106,13 @@ class JSONEventAttributeModifier(EventAttributeModifier):
 
     def get_modify_value(self, event):
         data = json.loads(event.data)
-        value = reduce(lambda acc, key: acc.get(key, {}), [data] + self.value.split(self.separator))
+        if isinstance(data, list):
+            for datum in data:
+                value = reduce(lambda acc, key: acc.get(key, {}), [datum] + self.value.split(self.separator))
+                if value is not None:
+                    break
+        else:
+            value = reduce(lambda acc, key: acc.get(key, {}), [data] + self.value.split(self.separator))
 
         if isinstance(value, dict) and len(value) == 0:
             value = None
