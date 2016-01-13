@@ -23,40 +23,72 @@
 #
 
 from compysition import Actor
-from compysition.actors.util import RotatingFileHandler, LoggingConfigLoader
-import gevent
-from compysition import Queue
 import logging
 import logging.handlers
 import traceback
+import os
+import gevent.lock
+
+class RotatingFileHandler(logging.handlers.RotatingFileHandler):
+
+    def __init__(self, file_path, *args, **kwargs):
+        self.make_file(file_path)
+        super(RotatingFileHandler, self).__init__(file_path, *args, **kwargs)
+
+    def createLock(self):
+        """Set self.lock to a new gevent RLock.
+        """
+        self.lock = gevent.lock.RLock()
+
+    def make_file(self, file_path):
+        file_dir = os.path.dirname(file_path)
+        if not os.path.isfile(file_path):
+            if not os.path.exists(file_dir):
+                self.make_file_dir(file_dir)
+            open(file_path, 'w+')
+
+    def make_file_dir(self, file_path):
+        sub_path = os.path.dirname(os.path.abspath(file_path))
+        if not os.path.exists(sub_path):
+            self.make_file_dir(sub_path)
+        if not os.path.exists(file_path):
+            os.mkdir(file_path)
+
 
 class FileLogger(Actor):
     '''**Prints incoming events to a log file for debugging.**
     '''
 
-    def __init__(self, name, default_filename="compysition.log", *args, **kwargs):
+
+    def __init__(self, name, default_filename="compysition.log", level="INFO", directory="logs", maxBytes=20000000, backupCount=10, *args, **kwargs):
         super(FileLogger, self).__init__(name, *args, **kwargs)
         self.blockdiag_config["shape"] = "note"
         self.default_filename = default_filename
+        self.level = getattr(logging, level.upper(), logging.INFO)
+        self.directory = directory
+        self.maxBytes = int(maxBytes)
+        self.backupCount = int(backupCount)
 
-        self.config = LoggingConfigLoader(**kwargs)
         self.loggers = {}
 
     def _create_logger(self, filepath):
+        print "Creating logger for {0}".format(filepath)
+        print self.loggers
         file_logger = logging.getLogger(filepath)
-        logHandler = RotatingFileHandler(r'{0}'.format(filepath), maxBytes=int(self.config.config['maxBytes']), backupCount=int(self.config.config['backupCount']))
+        logHandler = RotatingFileHandler(r'{0}'.format(filepath), maxBytes=self.maxBytes, backupCount=self.backupCount)
         logFormatter = logging.Formatter('%(message)s') # We will do ALL formatting ourselves in qlogger, as we want to be extremely literal to make sure the timestamp
                                                         # is generated at the time that logger.log was invoked, not the time it was written to file
         logHandler.setFormatter(logFormatter)
         file_logger.addHandler(logHandler)
-        file_logger.setLevel(self.config.config['level'])
+        file_logger.setLevel(self.level)
+        print "Worked"
         return file_logger
 
     def _process_log_entry(self, event):
         event_filename = event.get("logger_filename", self.default_filename)
         logger = self.loggers.get(event_filename, None)
         if not logger:
-            logger = self._create_logger("{0}/{1}".format(self.config.config['directory'], event_filename))
+            logger = self._create_logger("{0}/{1}".format(self.directory, event_filename))
             self.loggers[event_filename] = logger
 
         self._do_log(logger, event)
