@@ -50,7 +50,7 @@ class DictToXML(Actor):
 
         super(DictToXML, self).__init__(name, *args, **kwargs)
         self.input_types_processing_map.update({
-            dict: self.process_dict_input
+            dict: self._process_dict_input
         })
 
         # TODO: Remove this once "all" is no longer universal to all Actors
@@ -61,6 +61,8 @@ class DictToXML(Actor):
         # Documents must have only 1 root
         if len(data) > 1:
             data = {self.key: data}
+
+        return data
 
     def _process_str_input(self, data):
         data = str_to_json(data)
