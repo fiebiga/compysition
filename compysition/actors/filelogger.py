@@ -72,8 +72,6 @@ class FileLogger(Actor):
         self.loggers = {}
 
     def _create_logger(self, filepath):
-        print "Creating logger for {0}".format(filepath)
-        print self.loggers
         file_logger = logging.getLogger(filepath)
         logHandler = RotatingFileHandler(r'{0}'.format(filepath), maxBytes=self.maxBytes, backupCount=self.backupCount)
         logFormatter = logging.Formatter('%(message)s') # We will do ALL formatting ourselves in qlogger, as we want to be extremely literal to make sure the timestamp
@@ -81,7 +79,6 @@ class FileLogger(Actor):
         logHandler.setFormatter(logFormatter)
         file_logger.addHandler(logHandler)
         file_logger.setLevel(self.level)
-        print "Worked"
         return file_logger
 
     def _process_log_entry(self, event):
