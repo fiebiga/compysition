@@ -47,5 +47,5 @@ from .xmlvalidator import XMLValidator
 from .udpeventgenerator import UDPEventGenerator
 from .smtp import SMTPIn, SMTPOut
 from .rest import RESTTranslator
-from .dicttoxml import DictToXML
+from .dicttoxml import DictToXML, PropertiesToXML
 from .xmltodict import XMLToDict
