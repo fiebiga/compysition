@@ -153,7 +153,7 @@ class EventFilter(object):
     '''
     **A filter class to be used as a constructor argument for the EventRouter class. This class contains information about event
     match information and the outbox result of a successful match. Uses either regex match or literal equivalents**
-    
+
     Paramters:
         - value_regexes ([str] or str):         The value(s) that will cause this filter to match. This is evaluated as a regex
         - outbox_names ([str] or str):          The desired outbox that a positive filter match should place the event on
@@ -177,10 +177,13 @@ class EventFilter(object):
         if not isinstance(outbox_names, list):
             outbox_names = [outbox_names]
 
-        self.value_regexes = [re.compile(value_regex) for value_regex in value_regexes]
+        self.value_regexes = self.parse_value_regexes(value_regexes)
         self.outbox_names = outbox_names
         self.outboxes = []  # To be filled and defined later when the EventRouter initializes outboxes
         self.next_filter = self.set_next_filter(next_filter)
+
+    def parse_value_regexes(self, value_regexes):
+        return [re.compile(value_regex) for value_regex in value_regexes]
 
     def _validate_scope_definition(self, event_scope):
         if isinstance(event_scope, tuple):
@@ -219,7 +222,7 @@ class EventFilter(object):
 
         return False
 
-    def _get_value(self, event, event_scope):
+    def _get_value(self, event, event_scope, *args, **kwargs):
         """
         This method iterates through the self.event_scope tuple in a series of getattr or get calls,
         depending on if the event in the scope step is a dict or an object. More supported types may be added in the future
@@ -252,8 +255,9 @@ class EventXMLFilter(EventFilter):
         else:
             self.xslt = None
 
-    def _get_value(self, event, event_scope):
+    def _get_value(self, event, event_scope, xpath=None, *args, **kwargs):
         value = next(super(EventXMLFilter, self)._get_value(event, event_scope))
+        xpath = xpath or self.xpath
         try:
             xml = etree.XML(value)
 
@@ -261,7 +265,7 @@ class EventXMLFilter(EventFilter):
                 xml = self.xslt(xml)
 
             lookup = XPathLookup(xml)
-            xpath_lookup = lookup.lookup(self.xpath)
+            xpath_lookup = lookup.lookup(xpath)
 
             if len(xpath_lookup) == 0:
                 yield None
@@ -285,6 +289,27 @@ class EventXMLFilter(EventFilter):
             value = None
 
         return value
+
+
+class EventXMLXpathsFilter(EventXMLFilter):
+
+    def __init__(self, xpath, value_xpath, outbox_names, *args, **kwargs):
+        super(EventXMLXpathsFilter, self).__init__(xpath, [], outbox_names, *args, **kwargs)
+        self.value_xpath = value_xpath
+
+    def matches(self, event):
+        new_regexes = []
+        regex_values = self._get_value(event, self.event_scope, xpath=self.value_xpath)
+        try:
+            while True:
+                regex = next(regex_values)
+                if regex is not None:
+                    new_regexes.append(regex)
+        except StopIteration:
+            pass
+
+        self.value_regexes = self.parse_value_regexes(new_regexes)
+        return super(EventXMLXpathsFilter, self).matches(event)
 
 
 class EventJSONFilter(EventFilter):
@@ -311,3 +336,5 @@ class EventJSONFilter(EventFilter):
                 json_value = next(super(EventJSONFilter, self)._get_value(values, self.json_scope))
         except Exception as err:
             yield None
+
+
