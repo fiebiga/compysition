@@ -334,6 +334,7 @@ class EventJSONFilter(EventFilter):
                     yield json_value
             else:
                 json_value = next(super(EventJSONFilter, self)._get_value(values, self.json_scope))
+                yield json_value
         except Exception as err:
             yield None
 
