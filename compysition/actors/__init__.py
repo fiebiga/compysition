@@ -49,3 +49,4 @@ from .smtp import SMTPIn, SMTPOut
 from .rest import RESTTranslator
 from .dicttoxml import DictToXML, PropertiesToXML
 from .xmltodict import XMLToDict
+from .jsonvalidator import JSONValidator
