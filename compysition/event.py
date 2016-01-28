@@ -22,7 +22,8 @@
 #
 from uuid import uuid4 as uuid
 from ast import literal_eval
-from copy import deepcopy
+from lxml import etree
+from .errors import InvalidEventDataException, InvalidModificationException
 
 """
 Compysition event is created and passed by reference among actors
@@ -43,11 +44,11 @@ class CompysitionEvent(object):
     """
 
     def __init__(self, meta_id=None, service=None, data=None, *args, **kwargs):
-        self.__dict__.update(kwargs)
         self.event_id = uuid().get_hex()
         self.meta_id = meta_id or self.event_id
         self.service = service or DEFAULT_EVENT_SERVICE
         self.data = data
+        self.__dict__.update(kwargs)
 
     def to_string(self):
         return str(self.__dict__)
@@ -67,10 +68,30 @@ class CompysitionEvent(object):
         string_value = string_value.strip()
         value_dict = literal_eval(string_value)
         event = CompysitionEvent(**value_dict)
+
         if value_dict.get('event_id', None):
             event.event_id = value_dict.get('event_id')
 
         return event
+
+    @property
+    def data(self):
+        return self._data
+
+    @data.setter
+    def data(self, data):
+        self._data = data
+
+    @property
+    def event_id(self):
+        return self._event_id
+
+    @event_id.setter
+    def event_id(self, event_id):
+        if self.get("_event_id", None):
+            raise InvalidModificationException("Cannot alter event_id once it has been set. A new event must be created")
+        else:
+            self._event_id = event_id
 
     def get_properties(self):
         """
@@ -79,3 +100,51 @@ class CompysitionEvent(object):
         """
         return {k: v for k, v in self.__dict__.items() if k != "data"}
 
+
+class XMLEvent(CompysitionEvent):
+
+    @CompysitionEvent.data.setter
+    def data(self, data):
+        if isinstance(data, str):
+            try:
+                data = etree.fromstring(data)
+                self._data = data
+            except Exception as err:
+                raise InvalidEventDataException("Event data was invalid for {cls}: {err}".format(cls=self.__class__, err=err))
+        elif isinstance(data, (etree._Element, etree._ElementTree)):
+            self._data = data
+        else:
+            raise InvalidEventDataException("Event data was invalid for {cls}".format(cls=self.__class__))
+
+
+class JSONEvent(CompysitionEvent):
+
+    @CompysitionEvent.data.setter
+    def data(self, data):
+        if isinstance(data, str):
+            try:
+                data = literal_eval(data)
+                self._data = data
+            except Exception as err:
+                raise InvalidEventDataException("Event data was invalid for {cls}: {err}".format(cls=self.__class__, err=err))
+        elif isinstance(data, (list, dict)):
+            self._data = data
+        else:
+            raise InvalidEventDataException("Event data was invalid for {cls}".format(cls=self.__class__))
+"""
+
+class LogEvent(CompysitionEvent):
+
+    @CompysitionEvent.data.setter
+    def data(self, data):
+        if isinstance(data, str):
+            try:
+                data = etree.fromstring(data)
+                self._data = data
+            except Exception as err:
+                raise InvalidEventDataException("Event data was invalid for {cls}: {err}".format(cls=self.__class__, err=err))
+        elif isinstance(data, [list, dict]):
+            self._data = data
+        else:
+            raise InvalidEventDataException("Event data was invalid for {cls}".format(cls=self.__class__))
+"""

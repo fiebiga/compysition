@@ -68,3 +68,9 @@ class NoConnectedQueues(Exception):
 
 class InvalidInputException(Exception):
     pass
+
+class InvalidEventDataException(Exception):
+    pass
+
+class InvalidModificationException(Exception):
+    pass
