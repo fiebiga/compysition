@@ -134,13 +134,16 @@ class Director():
             os.makedirs(img_dir)
         from blockdiag.command import BlockdiagApp
 
-        f = open("{0}{1}{2}.diag".format(self.blockdiag_dir, os.sep, self.name),'w')
-        f.write(self.blockdiag_out)
-        f.close()
-        BlockdiagApp().run(["{0}{1}{2}.diag".format(self.blockdiag_dir, os.sep, self.name),
-                            "-Tsvg",
-                            "-o",
-                            "{0}{1}img{1}{2}.svg".format(self.blockdiag_dir, os.sep, self.name)])
+        try:
+            f = open("{0}{1}{2}.diag".format(self.blockdiag_dir, os.sep, self.name),'w')
+            f.write(self.blockdiag_out)
+            f.close()
+            BlockdiagApp().run(["{0}{1}{2}.diag".format(self.blockdiag_dir, os.sep, self.name),
+                                "-Tsvg",
+                                "-o",
+                                "{0}{1}img{1}{2}.svg".format(self.blockdiag_dir, os.sep, self.name)])
+        except Exception as err:
+            print("Unable to write blockdiag: {err}".format(traceback.format_exc()))
 
     def _parse_connect_arg(self, input):
         if isinstance(input, tuple):
