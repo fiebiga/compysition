@@ -1,0 +1,40 @@
+{
+    "type": "object",
+    "properties": {
+        "ssn": {"type": "string"},
+        "applicant_type": {"enum": ["PR", "J1", "J2"]},
+        "first_name": {"type": "string"},
+        "middle_name": {"type": "string"},
+        "last_name": {"type": "string"},
+        "gender": {"type": "string"},
+        "date_of_birth": {"type": "string"},
+        "us_citizen": {"enum": ["Y", "N"]},
+        "street_address": {"type": "string"},
+        "address_line_2": {"type": "string"},
+        "city": {"type": "string"},
+        "state": {"type": "string"},
+        "zip": {"type": "string"},
+        "county": {"type": "string"},
+        "phone": {"type": "string"},
+        "work_phone": {"type": "string"},
+        "work_extension": {"type": "string"},
+        "other_phone": {"type": "string"},
+        "drivers_license": {"type": "string"},
+        "drivers_license_state": {"type": "string"},
+        "email_address": {"type": "string"},
+        "marital_status": {"type": "string"}
+    },
+    "required": [
+        "ssn",
+        "applicant_type",
+        "first_name",
+        "last_name",
+        "date_of_birth",
+        "street_address",
+        "city",
+        "state",
+        "zip",
+        "phone",
+        "email_address"
+    ]
+}
