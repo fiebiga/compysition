@@ -1,0 +1,26 @@
+{
+    "type": "object",
+    "properties": {
+        "answers": {
+            "id": "answers",
+            "type": "array",
+            "minItems": 5,
+            "maxItems": 5,
+            "items": [{
+                "type": "object",
+                "properties": {
+                    "question_id": {
+                        "id": "question_id",
+                        "type": "integer"
+                    },
+                    "answer_position": {
+                        "id": "answer_position",
+                        "type": "integer"
+                    }
+                },
+                "required": ["question_id", "answer_position"]
+            }]
+        },
+    },
+    "required": ["answers"]
+}
