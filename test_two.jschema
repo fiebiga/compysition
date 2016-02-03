@@ -1,26 +1,47 @@
 {
     "type": "object",
     "properties": {
-        "answers": {
-            "id": "answers",
-            "type": "array",
-            "minItems": 5,
-            "maxItems": 5,
-            "items": [{
-                "type": "object",
-                "properties": {
-                    "question_id": {
-                        "id": "question_id",
-                        "type": "integer"
-                    },
-                    "answer_position": {
-                        "id": "answer_position",
-                        "type": "integer"
-                    }
-                },
-                "required": ["question_id", "answer_position"]
-            }]
-        }
+        "ssn": {"type": "integer"
+                "description": "The Social Security Number of the applicant"},
+        "applicant_type": {"enum": ["PR", "J1", "J2"],
+                             "description": "Applicant type. Primary (PR) First Joint Applicant (J1), Second Joint Applicant (J2)"},
+        "first_name": {"type": "string",
+                        "description": "Applicant first name"},
+        "middle_name": {"type": "string",
+                        "description": "Applicant middle name"},
+        "last_name": {"type": "string",
+                        "description": "Applicant last name"},
+        "gender": {"type": "string",
+                    "description": "Applicant gender"},
+        "date_of_birth": {"enum": ["M", "F"],
+                    "description": "Applicant date of birth"},
+        "us_citizen": {"enum": ["Y", "N"]},
+        "street_address": {"type": "string"},
+        "address_line_2": {"type": "string"},
+        "city": {"type": "string"},
+        "state": {"type": "string"},
+        "zip": {"type": "string"},
+        "county": {"type": "string"},
+        "phone": {"type": "string"},
+        "work_phone": {"type": "string"},
+        "work_extension": {"type": "string"},
+        "other_phone": {"type": "string"},
+        "drivers_license": {"type": "string"},
+        "drivers_license_state": {"type": "string"},
+        "email_address": {"type": "string"},
+        "marital_status": {"type": "string"}
     },
-    "required": ["answers"]
+    "required": [
+        "ssn",
+        "applicant_type",
+        "first_name",
+        "last_name",
+        "date_of_birth",
+        "street_address",
+        "city",
+        "state",
+        "zip",
+        "phone",
+        "email_address"
+    ]
 }
