@@ -20,7 +20,7 @@
                 },
                 "required": ["question_id", "answer_position"]
             }]
-        },
+        }
     },
     "required": ["answers"]
 }
