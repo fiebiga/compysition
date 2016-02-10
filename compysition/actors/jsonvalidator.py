@@ -74,7 +74,7 @@ class JSONValidator(Actor):
                 error_reasons = []
                 for error in self.schema.iter_errors(json_data):
                     err_message = ""
-                    path = list(error.path)
+                    path = map(str, list(error.path))
                     if len(path) > 0:
                         err_message = ": ".join(path)
 
