@@ -29,6 +29,7 @@ import json
 from functools import wraps
 
 from bottle import *
+BaseRequest.MEMFILE_MAX = 1024 * 1024 # (or whatever you want)
 
 class WSGI(Actor, Bottle):
     '''**Receive events over HTTP.**
@@ -246,11 +247,11 @@ class BottleWSGI(WSGI, Bottle):
                 "http": [("Content-Type", "text/html")]}
 
         request_body = {}
-        if request.content_type.startswith("text/"):
-            request_body['raw'] = request.body.read()
-        else:
+        if request.content_type == "application/x-www-form-urlencoded":
             for item in request.forms.items():
                 request_body.update({item[0]: item[1]})
+        else:
+            request_body['raw'] = request.body.read()
 
         queue_name = kwargs.get('queue', self.name)
         event = self.create_event(wsgi=wsgi, service=queue_name, data=request_body, **kwargs)
