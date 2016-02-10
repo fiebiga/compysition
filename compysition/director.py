@@ -182,7 +182,7 @@ class Director():
         self.metric_actor = self.__create_actor(actor, name, *args, **kwargs)
         return self.metric_actor
 
-    def register_default_error_actor(self, actor, name, *args, **kwargs):
+    def register_error_actor(self, actor, name, *args, **kwargs):
         self.error_actor = self.__create_actor(actor, name, *args, **kwargs)
         return self.error_actor
 
