@@ -137,6 +137,9 @@ class Actor(object):
 
         return self.__loop
 
+    def is_running(self):
+        return self.__run.is_set()
+
     def register_consumer(self, queue_name, queue):
         '''
         Add the passed queue and queue name to
@@ -270,9 +273,14 @@ class Actor(object):
             err.wait_until_free()
         except InvalidInputException as error:
             self.logger.error("Invalid input detected: {0}".format(error))
-        except:
-            print traceback.format_exc()    # This is an unhappy path to get an exception at this point, so we want to print to STDOUT
-                                            # In case this is a problem with the log_actor itself. At least for now
+        except Exception as err:
+            print(traceback.format_exc())    # This is an unhappy path to get an exception at this point, so we want to print to STDOUT
+                                             # In case this is a problem with the log_actor itself. At least for now
+            if not event.get('errors', None):
+                event.errors = []
+
+            event.errors.append(err)
+            self.send_error(event)
             self.logger.error(traceback.format_exc())
 
     def __validate_input(self, data):
