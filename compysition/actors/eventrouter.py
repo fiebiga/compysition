@@ -106,11 +106,13 @@ class EventRouter(Actor):
         for filter in self.filters:
             if filter.matches(event):
                 matched = True
-                self.send_event(event, queues=filter.outboxes)
-                self.logger.debug(
-                    "EventFilter matched for outbound queues ({outbox_names}). Event successfully forwarded".format(
-                        outbox_names=filter.outbox_names),
-                    event=event)
+                if len(filter.outboxes) > 0:
+                    self.send_event(event, queues=filter.outboxes)
+                    self.logger.debug("EventFilter matched for outbound queues ({outbox_names}). Event successfully forwarded".format(
+                            outbox_names=filter.outbox_names),
+                        event=event)
+                else:
+                    self.logger.info("EventFilter matched, but no outbound queues were defined for filter. Event has been discarded.", event=event)
 
         if not matched:
             if not self.whitelist:
