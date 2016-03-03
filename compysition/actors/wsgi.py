@@ -159,9 +159,7 @@ class BottleWSGI(WSGI, Bottle):
         def _log_to_logger(*args, **kwargs):
             request_time = datetime.now()
             actual_response = fn(*args, **kwargs)
-            # modify this to log exactly what you need:
-            self.logger.info('[{address}] {status} {method} {url}'.format(address=request.remote_addr,
-                                                        status=response.status,
+            self.logger.info('[{address}] {method} {url}'.format(address=request.remote_addr,
                                                         method=request.method,
                                                         url=request.url))
             return actual_response
