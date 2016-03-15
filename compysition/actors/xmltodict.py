@@ -16,19 +16,21 @@ class XMLToDict(Actor):
         - name (REQ) (str)
             | Actor Name
 
-        - escape_xml (bool) (Default: False)
-            | If set to True, a dict key or nested dict key that contains an XML-style string element will be
-            | XML escaped. If False, that XML will be appended to the XML element node created from the dictionary key
-            | as a literal XML tree
+        - flatten (Default: False) If true, the root element of the incoming XML will be stripped out, as a root
+            node is not a requirement for a json object
     """
 
-    def __init__(self, name, *args, **kwargs):
+    def __init__(self, name, flatten=False, *args, **kwargs):
+        self.flatten = flatten
         super(XMLToDict, self).__init__(name, *args, **kwargs)
 
     def consume(self, event, *args, **kwargs):
         try:
             dict_data = xmltodict.parse(event.data)
             if dict_data is not None:
+                if self.flatten:
+                    dict_data = dict_data[dict_data.keys()[0]]
+
                 event.data = json.dumps(dict_data)
             else:
                 raise Exception("Incoming data was not valid XML")
