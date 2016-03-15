@@ -30,6 +30,7 @@ Compysition event is created and passed by reference among actors
 """
 
 DEFAULT_EVENT_SERVICE="default"
+DEFAULT = object()
 
 class CompysitionEvent(object):
 
@@ -60,8 +61,11 @@ class CompysitionEvent(object):
         except:
             return False
 
-    def get(self, key, default=None):
-        return getattr(self, key, default)
+    def get(self, key, default=DEFAULT):
+        val = getattr(self, key, default)
+        if val is DEFAULT:
+            raise AttributeError("Event property '{property}' does not exist".format(property=key))
+        return val
 
     @staticmethod
     def from_string(string_value):
