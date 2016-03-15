@@ -39,7 +39,7 @@ from .mdpbroker import MDPBroker
 from .mdpregistrar import MDPBrokerRegistrationService
 from .eventlogger import EventLogger
 from .eventrouter import EventRouter, EventXMLFilter, EventFilter, HTTPMethodEventRouter, EventJSONFilter, EventXMLXpathsFilter
-from .eventattributemodifier import EventAttributeModifier, XpathEventAttributeModifer, JSONEventAttributeModifier
+from .eventattributemodifier import *
 from .tcp import TCPIn, TCPOut
 from .zmqpushpull import ZMQPush, ZMQPull
 from .wsgi import BottleWSGI
