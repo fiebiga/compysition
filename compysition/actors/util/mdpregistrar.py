@@ -415,10 +415,3 @@ class HeartbeatManager(object):
                 socket.send_multipart(message)
 
             self.refresh_heartbeat_timer()
-
-def main():
-    service = MDPBrokerRegistrationService()
-    service.start()
-
-if __name__ == '__main__':
-    main()
