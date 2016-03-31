@@ -30,6 +30,7 @@ from uuid import uuid4 as uuid
 from ast import literal_eval
 from compysition.event import CompysitionEvent
 import util.mdpdefinition as MDPDefinition
+import traceback
 
 """
 The MDPWorker and MDPClient are implementations of the ZeroMQ MajorDomo configuration, which deals with dynamic process routing based on service configuration and registration.
@@ -136,7 +137,7 @@ class MDPClient(MDPActor):
             message = [request_id, b"{0}".format(event.to_string())]
             self.send(service, message, broker_socket=socket)
         except Exception as err:
-            self.logger.error("Unable to find necessary chains: {0}".format(err))
+            self.logger.error("Unable to find necessary chains: {0}".format(traceback.format_exc()))
 
     def verify_brokers(self):
         while self.loop():
