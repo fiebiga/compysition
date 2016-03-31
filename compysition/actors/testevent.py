@@ -77,6 +77,7 @@ class TestEvent(Actor):
             self.producer_pool.spawn(self.produce)
 
     def produce(self):
+        gevent.sleep(self.delay)
         while self.loop():
             if self.max_events > 0:
                 if self.generated_events == self.max_events:
