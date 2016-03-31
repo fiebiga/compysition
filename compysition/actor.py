@@ -33,6 +33,7 @@ from time import time
 from copy import deepcopy
 import traceback
 import functools
+import cPickle as pickle
 
 
 class Actor(object):
@@ -45,7 +46,7 @@ class Actor(object):
 
     DEFAULT_EVENT_SERVICE = "default"
 
-    def __init__(self, name, size=0, frequency=1, generate_metrics=True, blocking_consume=False, *args, **kwargs):
+    def __init__(self, name, size=0, frequency=1, generate_metrics=True, blocking_consume=False, rescue=False, *args, **kwargs):
         """
         **Base class for all compysition actors**
 
@@ -78,6 +79,7 @@ class Actor(object):
         self.__block.clear()
         self.__blocking_consume = blocking_consume
         self.__consumers = []
+        self.rescue = rescue
 
         # This is the map to determine input processing and type checking of incoming data
         # TODO: "all" is here on the parent Actor temporarily until actors are all moved to utilize type checking
@@ -182,7 +184,7 @@ class Actor(object):
         If 'queue' is provided, it supercedes all others and submits ONLY to that queue
         """
         if queue is not None:
-            self.__submit_test(queue, event=event)
+            self.__submit(queue, event=event)
         else:
             if queues:
                 send_queues = queues
@@ -207,26 +209,12 @@ class Actor(object):
         :return:
         """
         if queues:
-            map(functools.partial(self.__submit_test, event=event), queues)
+            map(functools.partial(self.__submit, event=event), queues)
 
-    def __submit_test(self, queue, event=None):
+    def __submit(self, queue, event=None):
         if event is not None:
             queue.put(deepcopy(event))
             sleep(0)
-
-    def __submit(self, queue, event=None):
-        '''A convenience function which submits <event> to <queue>
-        and deals with QueueFull and the module lock set to False.'''
-
-        if event is not None:
-            while self.loop():
-                try:
-                    queue.put(deepcopy(event))
-                    sleep(0)
-                except QueueFull as err:
-                    err.wait_until_empty()
-                except Exception as err:
-                    raise Exception("Tried to put to {queue}. Exception was {err}".format(queue=queue, err=err))
 
     def __consumer(self, function, queue):
         '''Greenthread which applies <function> to each element from <queue>
@@ -276,12 +264,15 @@ class Actor(object):
         except Exception as err:
             print(traceback.format_exc())    # This is an unhappy path to get an exception at this point, so we want to print to STDOUT
                                              # In case this is a problem with the log_actor itself. At least for now
-            if not event.get('errors', None):
-                event.errors = []
+            if self.rescue:
+                sleep(1)                    # To prevent spam loop for an unresolvable issue
+                queue.put(event)
+            else:
+                if not event.get('errors', None):
+                    event.errors = []
 
-            event.errors.append(err)
-            self.send_error(event)
-            self.logger.error(traceback.format_exc())
+                event.errors.append(pickle.dumps(err))
+                self.send_error(event)
 
     def __validate_input(self, data):
         """
@@ -292,7 +283,7 @@ class Actor(object):
         process_input_function = self.input_types_processing_map.get(type(data),
                                                                      self.input_types_processing_map.get("all", None))
         if process_input_function is None:
-            raise InvalidInputException("Invalid input type detected. Event data was of type '{type}'".format(type(data)))
+            raise InvalidInputException("Invalid input type detected. Event data was of type '{type}'".format(type=type(data)))
 
         if hasattr(process_input_function, '__call__'):
             data = process_input_function(data)
