@@ -32,6 +32,7 @@ class XMLToDict(Actor):
                     dict_data = dict_data[dict_data.keys()[0]]
 
                 event.data = json.dumps(dict_data)
+                self.logger.info("Successfully converted XML to Dict", event=event)
             else:
                 raise Exception("Incoming data was not valid XML")
         except Exception as err:

@@ -77,6 +77,7 @@ class DictToXML(Actor):
         try:
             xml = self.convert(event)
             event.data = str(xml)
+            self.logger.info("Successfully converted Dict to XML", event=event)
             self.send_event(event)
         except Exception as err:
             self.logger.error("Unable to convert XML: {0}".format(err), event=event)
