@@ -101,29 +101,47 @@ class Director():
         if not isinstance(destinations, list):
             destinations = [destinations]
 
-        (source_name, source_queue_name) = self._parse_connect_arg(source)
+        (source_name, source_queue_names) = self._parse_connect_arg(source)
         source = self.get_actor(source_name)
 
-        for destination in destinations:
-            (destination_name, destination_queue_name) = self._parse_connect_arg(destination)
-            destination = self.get_actor(destination_name)
-            if self.generate_blockdiag:
-                self.blockdiag_out += "{0} -> {1};\n".format(source.name, destination.name)
+        if not isinstance(source_queue_names, list):
+            source_queue_names = [source_queue_names]
 
-            if destination_queue_name is None:
-                destination_queue_name = source.name
+        for source_queue_name in source_queue_names:
+            for destination in destinations:
+                (destination_name, destination_queue_name) = self._parse_connect_arg(destination)
+                destination = self.get_actor(destination_name)
+                if self.generate_blockdiag:
+                    self.blockdiag_out += "{0} -> {1};\n".format(source.name, destination.name)
 
-            if source_queue_name is None:
-                destination_source_queue_name = destination.name
-            else:
-                destination_source_queue_name = source_queue_name
+                if destination_queue_name is None:
+                    if source_queue_name is None:
+                        destination_queue_name = source.name
+                    else:
+                        destination_queue_name = source_queue_name
 
-            if not error_queue:
-                source.connect_queue(destination_source_queue_name, destination, destination_queue_name, *args, **kwargs)
-            else:
-                destination_source_queue_name = "error_{0}".format(destination_source_queue_name)
-                destination_queue_name = "error_{0}".format(destination_queue_name)
-                source.connect_error_queue(destination_source_queue_name, destination, destination_queue_name, *args, **kwargs)
+                if source_queue_name is None:
+                    destination_source_queue_name = destination.name
+                else:
+                    destination_source_queue_name = source_queue_name
+
+                if not error_queue:
+                    source.connect_queue(destination_source_queue_name, destination, destination_queue_name, *args, **kwargs)
+                else:
+                    destination_source_queue_name = "error_{0}".format(destination_source_queue_name)
+                    destination_queue_name = "error_{0}".format(destination_queue_name)
+                    source.connect_error_queue(destination_source_queue_name, destination, destination_queue_name, *args, **kwargs)
+
+    def _parse_connect_arg(self, input):
+        if isinstance(input, tuple):
+            (actor, queue_name) = input
+            if isinstance(actor, Actor):
+                actor_name = actor.name
+        elif isinstance(input, Actor):
+            actor_name = input.name
+            queue_name = None                # Will have to be generated deterministically
+
+        return (actor_name, queue_name)
 
     def finalize_blockdiag(self):
         #TODO: Make this into an object pattern
@@ -143,18 +161,7 @@ class Director():
                                 "-o",
                                 "{0}{1}img{1}{2}.svg".format(self.blockdiag_dir, os.sep, self.name)])
         except Exception as err:
-            print("Unable to write blockdiag: {err}".format(traceback.format_exc()))
-
-    def _parse_connect_arg(self, input):
-        if isinstance(input, tuple):
-            (actor, queue_name) = input
-            if isinstance(actor, Actor):
-                actor_name = actor.name
-        elif isinstance(input, Actor):
-            actor_name = input.name
-            queue_name = None                # Will have to be generated deterministically
-
-        return (actor_name, queue_name)
+            print("Unable to write blockdiag: {err}".format(err=traceback.format_exc()))
 
     def register_actor(self, actor, name, *args, **kwargs):
         '''Initializes the mdoule using the provided <args> and <kwargs>

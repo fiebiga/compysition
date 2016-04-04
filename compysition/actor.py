@@ -29,6 +29,7 @@ from restartlet import RestartPool
 from compysition.event import CompysitionEvent
 from gevent import sleep, socket
 from gevent.event import Event
+from gevent.local import local
 from time import time
 from copy import deepcopy
 import traceback
@@ -107,10 +108,12 @@ class Actor(object):
 
         if check_existing:
             if source_queue:
-                raise QueueConnected("Queue {queue_name} is already connected".format(queue_name=source_queue_name))
+                raise QueueConnected("Outbound queue {queue_name} on {source_name} is already connected".format(queue_name=source_queue_name,
+                                                                                                                source_name=self.name))
 
             if destination_queue:
-                raise QueueConnected("Queue {queue_name} is already connected".format(queue_name=destination_queue_name))
+                raise QueueConnected("Inbound queue {queue_name} on {destination_name} is already connected".format(queue_name=destination_queue_name,
+                                                                                                                    destination_name=destination.name))
 
         if not source_queue:
             if not destination_queue:
@@ -132,7 +135,7 @@ class Actor(object):
             else:
                 self.pool.move_queue(source_queue, destination_queue, queue_scope=source_queue_scope)
 
-        self.logger.info("Connected queue '{0}'' to '{1}.{2}'".format(source_queue_name, destination.name, destination_queue_name))
+        self.logger.info("Connected queue '{0}' to '{1}.{2}'".format(source_queue_name, destination.name, destination_queue_name))
 
     def loop(self):
         '''The global lock for this module'''
@@ -254,6 +257,8 @@ class Actor(object):
         """
         try:
             event.data = self.__validate_input(event.data)
+            consume_local = local()
+            consume_local.event = event
             function(event, origin=queue.name, origin_queue=queue)
         except QueueFull as err:
             event.data = original_data

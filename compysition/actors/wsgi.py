@@ -270,3 +270,11 @@ class BottleWSGI(WSGI, Bottle):
             local_response = response
 
         return local_response
+
+
+class HTTPGateway(object):
+    """
+    This class will be mixed in with all actors that act as HTTP Gateways
+    TODO: Implement
+    """
+    pass
