@@ -67,7 +67,7 @@ class RESTTranslator(Actor):
 
         return event
 
-    def translate_UPDATE(self, event):
+    def translate_PATCH(self, event):
         headers = event.get(self.web_interface, {})
         status_code = int(headers.get("status", self.default_status).split(' ')[0])
         if status_code == 200:
@@ -79,10 +79,10 @@ class RESTTranslator(Actor):
         return event
 
     def translate_GET(self, event):
-        return self.translate_UPDATE(event)
+        return self.translate_PATCH(event)
 
     def translate_PUT(self, event):
-        return self.translate_UPDATE(event)
+        return self.translate_PATCH(event)
 
     def translate_DELETE(self, event):
-        return self.translate_UPDATE(event)
+        return self.translate_PATCH(event)
