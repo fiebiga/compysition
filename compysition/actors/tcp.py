@@ -25,12 +25,14 @@ from compysition import Actor
 import gevent.socket as socket
 from gevent.server import StreamServer
 import gevent
-from compysition.event import CompysitionEvent
+import cPickle as pickle
 
 """
 Implementation of a TCP in and out connection using gevent sockets
-TODO: Add options like "Wait for response" and "Send response" for TCPIn and TCPOut, respectively
 """
+
+#TODO: Add options like "Wait for response" and "Send response" for TCPIn and TCPOut, respectively
+#TODO: Add non-event TCPIn (Origination from a non-compysition source)
 
 DEFAULT_PORT = 9000
 BUFFER_SIZE  = 1024
@@ -43,7 +45,7 @@ class TCPOut(Actor):
 
 
     def __init__(self, name, port=None, host=None, listen=True, *args, **kwargs):
-        Actor.__init__(self, name, *args, **kwargs)
+        super(TCPOut, self).__init__(name, *args, **kwargs)
 
         self.blockdiag_config["shape"] = "cloud"
         self.port = port or DEFAULT_PORT
@@ -57,7 +59,7 @@ class TCPOut(Actor):
             try:
                 sock = socket.socket()
                 sock.connect((self.host, self.port))
-                sock.send(event.to_string())
+                sock.send((pickle.dumps(event)))
                 sock.close()
                 break
             except Exception as err:
@@ -71,7 +73,7 @@ class TCPIn(Actor):
     """
 
     def __init__(self, name, port=None, host=None, *args, **kwargs):
-        Actor.__init__(self, name, *args, **kwargs)
+        super(TCPIn, self)._init__(name, *args, **kwargs)
         self.blockdiag_config["shape"] = "cloud"
         self.port = port or DEFAULT_PORT
         self.host = host or "0.0.0.0"
@@ -93,7 +95,7 @@ class TCPIn(Actor):
             event_string += l
 
         try:
-            event = CompysitionEvent.from_string(event_string)
+            event = pickle.loads(event_string)
             self.send_event(event)
         except:
             self.logger.error("Received invalid event format: {0}".format(event_string))

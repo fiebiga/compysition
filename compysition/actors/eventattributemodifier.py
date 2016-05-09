@@ -27,8 +27,8 @@
 from compysition import Actor
 from lxml import etree
 from util import XPathLookup
-import json
-
+from compysition.event import XMLEvent, JSONEvent
+from compysition.errors import MalformedEventData
 
 class EventAttributeModifier(Actor):
 
@@ -44,7 +44,7 @@ class EventAttributeModifier(Actor):
     '''
 
     def __init__(self, name, key='data', value={}, log_change=False, separator="/", *args, **kwargs):
-        Actor.__init__(self, name, *args, **kwargs)
+        super(EventAttributeModifier, self).__init__(name, *args, **kwargs)
         self.value = value
         self.separator = separator
         if key is None:
@@ -64,7 +64,7 @@ class EventAttributeModifier(Actor):
             event = self.get_key_chain_value(event, modify_value)
             self.send_event(event)
         except Exception as err:
-            self.send_error(event)
+            raise MalformedEventData(err)
 
     def get_key_chain_value(self, event, value):
         #TODO: Redo this to not modify arrays
@@ -102,16 +102,20 @@ class EventAttributeModifier(Actor):
     def get_modify_value(self, event):
         return self.value
 
+
 class HTTPStatusModifier(EventAttributeModifier):
 
-    def __init__(self, name, value="200 OK", *args, **kwargs):
-        super(HTTPStatusModifier, self).__init__(name, key="wsgi/status", value=value, *args, **kwargs)
+    def __init__(self, name, value=(200, "OK"), *args, **kwargs):
+        super(HTTPStatusModifier, self).__init__(name, key="status", value=value, *args, **kwargs)
+
 
 class XpathEventAttributeModifer(EventAttributeModifier):
 
+    input = XMLEvent
+    output = XMLEvent
+
     def get_modify_value(self, event):
-        xml = etree.XML(event.data)
-        lookup = XPathLookup(xml)
+        lookup = XPathLookup(event.data)
         xpath_lookup = lookup.lookup(self.value)
 
         if len(xpath_lookup) <= 0:
@@ -144,12 +148,15 @@ class HTTPXpathEventAttributeModifier(XpathEventAttributeModifer, HTTPStatusModi
 
 class JSONEventAttributeModifier(EventAttributeModifier):
 
+    input = JSONEvent
+    output = JSONEvent
+
     def __init__(self, name, separator="/", *args, **kwargs):
         self.separator = separator
         super(JSONEventAttributeModifier, self).__init__(name, *args, **kwargs)
 
     def get_modify_value(self, event):
-        data = json.loads(event.data)
+        data = event.data
         if isinstance(data, list):
             for datum in data:
                 value = reduce(lambda acc, key: acc.get(key, {}), [datum] + self.value.split(self.separator))
@@ -163,5 +170,5 @@ class JSONEventAttributeModifier(EventAttributeModifier):
 
         return value
 
-class HTTPJSONEventAttributeModifier(JSONEventAttributeModifier, HTTPStatusModifier):
+class HTTPJSONAttributeModifier(JSONEventAttributeModifier, HTTPStatusModifier):
     pass

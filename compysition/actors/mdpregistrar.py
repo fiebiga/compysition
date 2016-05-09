@@ -101,12 +101,11 @@ class MDPBrokerRegistrationService(Actor, RegistrationService):
         Check if a broker has not sent a heartbeat within the HEARTBEAT_INTERVAL timeframe. Reduce 'liveness' on the broker object by 1 for each occurrence, until liveness reaches 0.
         Liveness reaching 0 results in an immediate disconnect notification being sent to all clients
         """
-        disconnected_brokers = []
         for broker_identity in self.brokers.keys():
             broker = self.brokers[broker_identity]
-            if (time.time() > broker.expiration_time):
+            if time.time() > broker.expiration_time:
                 broker.liveness -= 1
-                if (broker.liveness == 0):
+                if broker.liveness == 0:
                     self.disconnect_broker(broker_identity)
 
     def disconnect_broker(self, broker_identity):
@@ -151,3 +150,6 @@ class MDPBrokerRegistrationService(Actor, RegistrationService):
 
     def pre_hook(self):
         gevent.spawn(self.start_service)
+
+    def consume(self, event, *arsg, **kwargs):
+        pass

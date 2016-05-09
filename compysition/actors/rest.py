@@ -21,38 +21,40 @@
 #  MA 02110-1301, USA.
 
 from compysition import Actor
+from compysition.event import HttpEvent
+
 
 class RESTTranslator(Actor):
+
+    input = HttpEvent
+    output = HttpEvent
+
     """
     The purpose of this actor is to translate a returning event into a proper RESTful
     response.
 
     e.g. method = POST and status = "200 OK" "method = 201 Created"
+    e.g. method = PATCH and status = "200 OK" but no return data exists -> "204 No Content"
     """
 
-    def __init__(self, name, web_interface="wsgi", url_post_location=None, *args, **kwargs):
+    def __init__(self, name, url_post_location=None, *args, **kwargs):
         super(RESTTranslator, self).__init__(name, *args, **kwargs)
-        self.web_interface = web_interface
-        self.default_status = "200 OK"
         self.url_post_location = url_post_location
 
     def consume(self, event, *args, **kwargs):
-        headers = event.get(self.web_interface, {})
-        if len(headers) == 0:
-            self.logger.warn("No HTTP headers were defined for incoming event", event=event)
 
-        method = headers.get("environment", {}).get("REQUEST_METHOD", None)
+        method = event.environment.get("REQUEST_METHOD", None)
+        self.logger.info("Translating REST for {method}".format(method=method))
 
-        event = getattr(self, "translate_{method}".format(method=method))(event)
+        event = getattr(self, "translate_{method}".format(method=method.lower()))(event)
         self.send_event(event)
 
-    def translate_POST(self, event):
-        headers = event.get(self.web_interface, {})
-        status_code = int(headers.get("status", self.default_status).split(' ')[0])
+    def translate_post(self, event):
+        status_code = event.status[0]
 
         if status_code == 200:
-            headers['status'] = "201 Created"
-            local_url = self.url_post_location or headers.get("environment", {}).get("PATH_INFO", None)
+            event.status = (201, "Created")
+            local_url = self.url_post_location or event.environment.get("PATH_INFO", None)
             entity_id = event.get("entity_id", event.meta_id)
 
             if local_url is not None:
@@ -61,28 +63,27 @@ class RESTTranslator(Actor):
                 else:
                     location = local_url + "/" + entity_id
 
-                headers['http'].append(('Location', location))
+                event.headers.update({'Location': location})
         else:
             pass
 
         return event
 
-    def translate_PATCH(self, event):
-        headers = event.get(self.web_interface, {})
-        status_code = int(headers.get("status", self.default_status).split(' ')[0])
+    def translate_patch(self, event):
+        status_code = event.status[0]
         if status_code == 200:
             if event.data is None or event.data == "" or len(event.data) == 0:
-                headers['status'] = "204 No Content"
+                event.status = (204, "No Content")
         else:
             pass
 
         return event
 
-    def translate_GET(self, event):
-        return self.translate_PATCH(event)
+    def translate_get(self, event):
+        return self.translate_patch(event)
 
-    def translate_PUT(self, event):
-        return self.translate_PATCH(event)
+    def translate_put(self, event):
+        return self.translate_patch(event)
 
-    def translate_DELETE(self, event):
-        return self.translate_PATCH(event)
+    def translate_delete(self, event):
+        return self.translate_patch(event)

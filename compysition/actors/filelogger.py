@@ -28,6 +28,7 @@ import logging.handlers
 import traceback
 import os
 import gevent.lock
+from compysition.event import LogEvent
 
 class RotatingFileHandler(logging.handlers.RotatingFileHandler):
 
@@ -59,6 +60,7 @@ class FileLogger(Actor):
     '''**Prints incoming events to a log file for debugging.**
     '''
 
+    input = LogEvent
 
     def __init__(self, name, default_filename="compysition.log", level="INFO", directory="logs", maxBytes=20000000, backupCount=10, *args, **kwargs):
         super(FileLogger, self).__init__(name, *args, **kwargs)
@@ -91,18 +93,18 @@ class FileLogger(Actor):
         self._do_log(logger, event)
 
     def _do_log(self, logger, event):
-        module_name = event.data.get("name", None)
-        id = event.data.get("id", None)
-        message = event.data.get("message", None)
-        level = event.data.get("level", None)
-        time = event.data.get("time", None)
+        actor_name = event.origin_actor
+        id = event.id
+        message = event.message
+        level = event.level
+        time = event.time
 
         entry_prefix = "{0} {1} ".format(time, logging._levelNames.get(level)) # Use the time from the logging invocation as the timestamp
 
         if id:
-            entry = "module={0}, id={1} :: {2}".format(module_name, id, message)
+            entry = "actor={0}, id={1} :: {2}".format(actor_name, id, message)
         else:
-            entry = "module={0} :: {1}".format(module_name, message)
+            entry = "actor={0} :: {1}".format(actor_name, message)
 
         try:
             logger.log(level, "{0}{1}".format(entry_prefix, entry))

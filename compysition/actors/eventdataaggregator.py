@@ -24,13 +24,20 @@
 from compysition import Actor
 from lxml import etree
 
+"""
+DEPRECATED
+
+With the changes in 1.1.43-dev, WSGI no longer reflects x-www-form-urlencoding tags in generated events... which was the primary
+use case for this module. There is hardly any reason for it to exist at this point
+"""
+
 class EventDataAggregator(Actor):
     '''**Simple module which aggregates all existing tags under event.data together as event.data. Default module does simple string concatenation
     e.g. event.data['tagone'] and event.data['tagtwo'] become event.data, where data equals event.data['tagone'] + event.data['tagone']**
     '''
 
     def __init__(self, name, *args, **kwargs):
-        Actor.__init__(self, name, *args, **kwargs)
+        super(EventDataAggregator, self).__init__(name, *args, **kwargs)
         self.key = kwargs.get("key", name)
 
     def consume(self, event, *args, **kwargs):

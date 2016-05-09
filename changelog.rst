@@ -2,8 +2,35 @@ Compysition changelog
 =====================
 
 Version
-1.1.01-dev
-~~~~~~~~~~~~~
+1.2.00
+
+- Changed CompysitionEvent to Event and subclassed types using XML, JSON, and Http mixins or subclasses.
+    - Changed paradigm to no longer pass string values, but to rather pass complete data object references with each event subclass. This will prevent a lot of conversions between actors
+- Added input/output validation on actor queue connection for actor compatibility checks. Also added a runtime check to verify that an event is indeed the expected event class that the actor needs
+    | NOTE: At this time, automatic conversion attempt occurs, with a logged warning. *This may change to a full exception in the future*
+- Enhanced wsgi.py to handle content-types in routes definition, returning a 415 if content type on an incoming request does not match configuration for that route
+- Mapped wsgi.py content types to their corresponding event subclass (JSONHttpEvent for 'application/json', etc)
+- Created many exceptions in compysition.errors for various programming states. This was based originally off http codes and
+    | statuses that were relevant to programmatic states, but I wanted to decouple code from assuming an event was HTTP-based. Hence, thrown exceptions
+- Added an additional check for uncaught exceptions on Actor.consume execution that will automatically route an event to error queues
+    | if an uncaught exception occurs
+- Added 'register_error_actor' that will connect itself to all actors that DO NOT HAVE explicit error queues connected already
+- Renamed several actors to more appropriate names.
+    | wsgi.Wsgi -> httpserver.HTTPServer
+    | xmlmatcher.XMLMatcher -> eventjoin.EventJoin
+    | transformer.Transformer -> xslt.XSLT
+    | xmlvalidator.XMLValidator -> xsd.XSD
+    | zmqpushpull -> zeromq
+    | testevent.TestEvent -> eventgenerator.EventGenerator
+    | udpeventgenerator -> eventgenerator
+    | cookietest -> cookie
+- Multiple docstring updates
+- Several test cases for actor input/output written. Not yet entirely complete, but a good start
+
+
+Version
+1.1.01-dev:
+
 - Changed project structure to be more in line with what this framework is. It is an actor based event loop. Calling actors modules causes terminology collision with pythonic modules, and is inaccurate. Changed all instances of 'module' terminology to 'actor'
 - Added explicitness to some calls, most importantly 'connect' and 'connect_error', which are now 'connect_queue' and 'connect_error_queue' on Director, respectively
 - Changed all uses of event to use the new CompysitionEvent object. event['header'] was converted to be now simply a reference to a set attribute on the CompysitionEvent object. e.g. event['data'] is now event.data and event['header']['meta_id'] is now event.meta_id, etc
@@ -11,8 +38,8 @@ Version
 - Fixed some typos and bugs in the last dev version
  
 Version
-1.1.00-dev
-~~~~~~~~~~~~~
+1.1.00-dev:
+
 - Removed all list\_* methods from QueuePool. Use python dict iter tool to iterate over the queue pool values
 - Removed all camel case method calls. More pythonic
 - Added director and removed router, as the router does not actually have anything to do with routing beyond configuration. Director was more fitting with the project, and more aptly named
@@ -22,15 +49,13 @@ Version
 - Changed naming of Major Domo pieces to be more consistent
 - Added MDP Example in README.rst
 
-Version 1.0.65
-~~~~~~~~~~~~~
+Version 1.0.65:
 
 - Changed EventRouter to use the newly created 'queues' functionality of Actor.send_event. This fixed a bug where event references were passed uncopied to multiple queues, causing collision on event editing by multiple actors.
 - Started using 'restartlet' for Actor.threads pool. All long-running greenlets spawned on actors from self.threads will auto restart on an exceptional exit.
 - Removed legacy support for director.connect_queue() - strings in the format "modulename.outboxname" or "modulename.inboxname" will no longer be accepted
 
-Version 1.0.62
-~~~~~~~~~~~~~
+Version 1.0.62:
 
 - Added the concept of the 'meta_id' to an event. This is designed to allow a newly generated event to be associated to the data flow of an event that was previously persisted outside of the immediate event data-flow. To summarize the proper uses of 'event_id' vs 'meta_id':
 		- event_id:		Used for internal compysition operations. Should be unique and immutable for every event generated in compysition. Changing this value breaks certain control actors - it should not be altered once generated for a new event.
@@ -38,13 +63,11 @@ Version 1.0.62
 
 - Added "create_event" method on the Actor class. This allows a uniform and standardized event creation syntax, rather than re-creating events and event dict syntaxes in multiple locations. This will be a precursor to implementing an Event() object - The reason it was not done at this time is because testing is required to ensure that serialization works flawlessly across ZeroMQ sockets
 
-Version 1.0.55
-~~~~~~~~~~~~~
+Version 1.0.55:
 
 - Modified behavior of a MajorDomo Broker so that it issues a disconnect command to a worker that heartbeats after it has been deleted from the broker. This then triggers a re-registration between the worker and broker.
 
-Version 1.0.5
-~~~~~~~~~~~~~
+Version 1.0.5:
 
 - Added MajorDomo implementation using ZeroMQ to public branch
 	- Documentation on the structure of this design pattern is available here: http://rfc.zeromq.org/spec:7
@@ -53,8 +76,7 @@ Version 1.0.5
 			- MDPClient, MDPBroker, MDPWorker, MDPRegistrationService
 
 
-Version 1.0.1
-~~~~~~~~~~~~~
+Version 1.0.1:
 
 - Completely refactored compysition to reflect rework done on wishbone
 	- Refactoring was done while maintaining differences of compysition Actor model pattern, which include:

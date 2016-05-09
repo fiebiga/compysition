@@ -27,20 +27,22 @@ import gevent
 from gevent.queue import Queue
 from compysition import Actor
 from uuid import uuid4 as uuid
-from ast import literal_eval
-from compysition.event import CompysitionEvent
 import util.mdpdefinition as MDPDefinition
 import traceback
+import cPickle as pickle
+import abc
 
 """
 The MDPWorker and MDPClient are implementations of the ZeroMQ MajorDomo configuration, which deals with dynamic process routing based on service configuration and registration.
 
 Also required for this implementation to function is a process or actor running a RegistrationService and one or more MDPBrokers
 
-TODO: Frame documentation
+TODO: Frame documentation. Create helper class to parse frames!!!!!!!!!!!!!!!!!!!!!!!!!
 """
 
 class MDPActor(Actor):
+
+    __metaclass__ = abc.ABCMeta
 
     """
     Receive or send events over ZMQ
@@ -52,7 +54,7 @@ class MDPActor(Actor):
     outbound_queue = None
 
     def __init__(self, name, service_prefix="", service_postfix="", *args, **kwargs):
-        Actor.__init__(self, name, *args, **kwargs)
+        super(MDPActor, self).__init__(name, *args, **kwargs)
         self.blockdiag_config["shape"] = "cloud"
         self.socket_identity = uuid().get_hex()
         self.context = zmq.Context()
@@ -106,21 +108,51 @@ class MDPActor(Actor):
 
                 self.process_inbound_message(message, origin_broker=inbound_socket.broker)
 
-    def send_outbound_message(self, socket, event): # Default instantiation
-        raise NotImplementedError("Please Implement method 'send_outbound_message'")
+    @abc.abstractmethod
+    def send_outbound_message(self, socket, event):
+        """
+        Args:
+            socket: (zmq.Socket) Socket with which to send the message
+            event:  (compysition.event.Event) The event to send
 
-    def process_inbound_message(self, message, *args, **kwargs): # Default instantiation, just a raw echo
-        raise NotImplementedError("Please Implement method 'process_inbound_message'")
-        
-    def verify_brokers(self): # Used to process verification messages
-        raise NotImplementedError("Please Implement method 'verify_brokers'")
-
-    def send_heartbeats(self):
-        raise NotImplementedError("Please Implement method 'send_heartbeats'")
-
-    #TODO: Implement
-    def _format_message(self):
+        Returns:
+            None
+        """
         pass
+
+    @abc.abstractmethod
+    def process_inbound_message(self, message, *args, **kwargs):
+        """
+        Args:
+            message:    The inbound message to process
+            *args:
+            **kwargs:
+
+        Returns:
+            None
+        """
+        pass
+
+    @abc.abstractmethod
+    def verify_brokers(self):
+        """
+        Sends verification requests to connected brokers
+
+        Returns:
+            None
+        """
+        pass
+
+    @abc.abstractmethod
+    def send_heartbeats(self):
+        """
+        Sends heartbeats to connected brokers
+
+        Returns:
+            None
+        """
+        pass
+
 
 class MDPClient(MDPActor):
 
@@ -134,7 +166,7 @@ class MDPClient(MDPActor):
             request_id = event.meta_id                  # Set for broker logging so we can trace the path of an event easily
             service = b"{0}".format(self.service_prefix + event.service + self.service_postfix)
             self.logger.info("Sending event to service '{0}'".format(service), event=event)
-            message = [request_id, b"{0}".format(event.to_string())]
+            message = [request_id, b"{0}".format(pickle.dumps(event))]
             self.send(service, message, broker_socket=socket)
         except Exception as err:
             self.logger.error("Unable to find necessary chains: {0}".format(traceback.format_exc()))
@@ -163,7 +195,7 @@ class MDPClient(MDPActor):
                 empty = message.pop(0)
                 request_identity = message.pop(0)
 
-                event = CompysitionEvent.from_string(message[0])
+                event = pickle.loads(message[0])
                 self.logger.info("Received reply from broker", event=event)
                 self.send_event(event)
 
@@ -223,7 +255,7 @@ class MDPWorker(MDPActor):
                 return_address = message.pop(0)
                 empty = message.pop(0)
                 broker_event_logging_id = message.pop(0)
-                event = CompysitionEvent.from_string(message.pop(0))
+                event = pickle.loads(message.pop(0))
 
                 request_id = event.event_id
                 self.requests[request_id] = Request(return_address, origin_broker)
@@ -249,7 +281,7 @@ class MDPWorker(MDPActor):
             broker = request.origin_broker
             return_address = request.return_address
             broker_event_logging_id = event.meta_id
-            message = ['', MDPDefinition.W_WORKER, MDPDefinition.W_REPLY, return_address, '', broker_event_logging_id, b"{0}".format(event.to_string())]
+            message = ['', MDPDefinition.W_WORKER, MDPDefinition.W_REPLY, return_address, '', broker_event_logging_id, b"{0}".format(pickle.dumps(event))]
 
             if broker is not None:                  # Prioritize the originating broker first
                 try:

@@ -23,7 +23,7 @@
 #
 
 from compysition import Actor
-from gevent import sleep
+import sys
 import datetime
 
 class STDOUT(Actor):
@@ -37,7 +37,7 @@ class STDOUT(Actor):
     '''
 
     def __init__(self, name, complete=False, prefix="", timestamp=False, *args, **kwargs):
-        Actor.__init__(self, name, *args, **kwargs)
+        super(STDOUT, self).__init__(name, *args, **kwargs)
         self.complete = complete
         self.prefix = prefix
         self.timestamp = timestamp
@@ -46,10 +46,11 @@ class STDOUT(Actor):
         if self.complete:
             data = "{0}{1}".format(self.prefix, event)
         else:
-            data = "{0}{1}".format(self.prefix, event.data)
+            data = "{0}{1}".format(self.prefix, event.data_string())
 
         if self.timestamp:
             data = "[{0}] {1}".format(datetime.datetime.now(), data)
 
-        print data
+        print(data)
+        sys.stdout.flush()
         self.send_event(event)

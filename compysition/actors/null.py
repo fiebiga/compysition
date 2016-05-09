@@ -28,9 +28,5 @@ class Null(Actor):
 
     '''**Purges incoming events.** '''
 
-
-    def __init__(self, name, *args, **kwargs):
-        Actor.__init__(self, name, *args, **kwargs)
-
     def consume(self, event, *args, **kwargs):
         del event

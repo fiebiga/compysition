@@ -20,18 +20,17 @@
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #  MA 02110-1301, USA.
-#
-#
+
 
 from .null import Null
 from .stdout import STDOUT
-from .testevent import TestEvent
+from .eventgenerator import EventGenerator, UDPEventGenerator
 from .filelogger import FileLogger
-from .wsgi import WSGI
+from .httpserver import HTTPServer
 from .basicauth import BasicAuth
-from .transformer import Transformer
+from .xslt import XSLT
 from .eventdataaggregator import EventDataXMLAggregator, EventDataAggregator
-from .xmlmatcher import XMLMatcher
+from .eventjoin import EventJoin, XMLEventJoin, JSONEventJoin
 from .flowcontroller import FlowController
 from .mdpactors import MDPClient
 from .mdpactors import MDPWorker
@@ -41,10 +40,8 @@ from .eventlogger import EventLogger
 from .eventrouter import EventRouter, EventXMLFilter, EventFilter, HTTPMethodEventRouter, EventJSONFilter, EventXMLXpathsFilter
 from .eventattributemodifier import *
 from .tcp import TCPIn, TCPOut
-from .zmqpushpull import ZMQPush, ZMQPull
-from .wsgi import BottleWSGI
-from .xmlvalidator import XMLValidator
-from .udpeventgenerator import UDPEventGenerator
+from .zeromq import ZMQPush, ZMQPull
+from .xsd import XSD
 from .smtp import SMTPIn, SMTPOut
 from .rest import RESTTranslator
 from .dicttoxml import DictToXML, PropertiesToXML

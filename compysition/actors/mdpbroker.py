@@ -28,6 +28,7 @@ from compysition import Actor
 import zmq.green as zmq
 import util.mdpdefinition as MDPDefinition
 from uuid import uuid4 as uuid
+import cPickle as pickle
 
 class Service(object):
     """a single Service"""
@@ -191,7 +192,7 @@ class MDPBroker(Actor):
         worker_exists = self.workers.get(sender) is not None
         
 
-        if (command == MDPDefinition.B_VERIFICATION_REQUEST):
+        if command == MDPDefinition.B_VERIFICATION_REQUEST:
             """
             This verification request serves two purposes from a worker. 
                 A) To respond and verify to the worker that the broker can be connected to, so to add it to potential brokers the worker may communicate with
@@ -214,16 +215,15 @@ class MDPBroker(Actor):
                 else:
                     self.logger.info("Received verification and registration request from existing downstream worker {0} for service {1}".format(sender, service))
 
-
-        elif (MDPDefinition.W_REPLY == command):
+        elif MDPDefinition.W_REPLY == command:
             client = b"{0}_receiver".format(msg.pop(0))
             request_id = msg[1]
             msg = [client, '', MDPDefinition.C_CLIENT, MDPDefinition.W_REPLY] + msg
             self.logger.info("Received worker response, routing to waiting client...", log_entry_id=request_id)
             self.broker_socket.send_multipart(msg)
 
-        elif (MDPDefinition.W_HEARTBEAT == command):
-            if (worker_exists):
+        elif MDPDefinition.W_HEARTBEAT == command:
+            if worker_exists:
                 worker = self.get_or_create_worker(sender)
                 worker.register_heartbeat()
             else:

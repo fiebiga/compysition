@@ -38,7 +38,7 @@ class EventLogger(Actor):
     '''
 
     def __init__(self, name, level=logging.INFO, logged_tags=['data'], log_full_event=True, prefix="", *args, **kwargs):
-        Actor.__init__(self, name, *args, **kwargs)
+        super(EventLogger, self).__init__(name, *args, **kwargs)
         self.level = level
         self.prefix = prefix
         self.logged_tags = logged_tags
@@ -47,10 +47,13 @@ class EventLogger(Actor):
     def consume(self, event, *args, **kwargs):
         message = self.prefix + ""
         if self.log_full_event:
-            message += event.to_string()
+            message += str(event)
         else:
             for tag in self.logged_tags:
-                message += str(getattr(event, tag, None))
+                if tag == "data":
+                    message += event.data_string()
+                else:
+                    message += str(getattr(event, tag, None))
 
         self.logger.log(self.level, message, event=event)
         self.send_event(event)
