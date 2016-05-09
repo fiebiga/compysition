@@ -24,38 +24,25 @@
 #
 
 from setuptools import setup, find_packages
-from setuptools.command.test import test as TestCommand
-import sys
 import re
 
 PROJECT = 'compysition'
-__version__ = re.search("__version__\s*=\s*'(.*)'", open('compysition/__init__.py').read(), re.M).group(1)
-assert __version__
-
-install_requires = ['gevent>=1.0',
-                    'greenlet>=0.3.2',
-                    'argparse==1.2.1',
-                    'jsonschema==2.3.0',
-                    'prettytable==0.7.2',
-                    'python-daemon==1.6',
-                    'pyyaml==3.11',
-                    'msgpack-python==0.4.2',
-                    'pyzmq==14.3.1',
-                    'amqp==1.4.5',
-                    'grequests==0.2.0',
-                    'jinja2==2.7.3',
-                    'jsonschema==2.3.0',
-                    'gearman==2.0.2',
-                    'pycrypto==2.6.1',
-                    'configobj',
-                    'restartlet',
-                    'lxml',
-                    'Pillow==2.9.0',
-                    'blockdiag',
-                    'bottle',
-                    'xmltodict',
-                    'gsmtpd',
-                    'jsonschema']
+VERSION = re.search("__version__\s*=\s*'(.*)'", open('compysition/__init__.py').read(), re.M).group(1)
+REQUIRES = ["gevent"
+            "greenlet",
+            "pyzmq",
+            "amqp",
+            "gearman",
+            "pycrypto",
+            "configobj",
+            "restartlet",
+            "lxml",
+            "Pillow",
+            "blockdiag",
+            "bottle",
+            "xmltodict",
+            "gsmtpd",
+            "jsonschema"]
 
 try:
     long_description = open('README.rst', 'rt').read()
@@ -64,17 +51,13 @@ except IOError:
 
 setup(
     name=PROJECT,
-    version=__version__,
-
+    version=VERSION,
     description='Build event pipeline servers with minimal effort.',
     long_description=long_description,
-
     author='Adam Fiebig',
     author_email='fiebig.adam@gmail.com',
-
     url='https://github.com/fiebiga/compysition',
     download_url='https://github.com/fiebiga/compysition/tarball/master',
-
     classifiers=['Development Status :: 5 - Production/Stable',
                  'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
                  'Programming Language :: Python',
@@ -83,18 +66,10 @@ setup(
                  'Programming Language :: Python :: 3.3',
                  'Programming Language :: Python :: Implementation :: PyPy',
                  'Intended Audience :: Developers',
-                 'Intended Audience :: System Administrators',
-                 ],
+                 'Intended Audience :: System Administrators'],
     platforms=['Linux'],
-    scripts=[],
-    provides=[],
-    install_requires=install_requires,
+    install_requires=REQUIRES,
     namespace_packages=[],
     packages=find_packages(),
-    package_data = {
-        # If any package contains *.txt or *.rst files, include them:
-        '': ['*.txt', '*.rst', '*.xml', '*.xsl', '*.conf'],
-    },
-    zip_safe=False,
-    dependency_links=['https://github.com/surfly/gevent/tarball/master#egg=gevent-1.1'],
-)
+    package_data={'': ['*.txt', '*.rst', '*.xml', '*.xsl', '*.conf']},
+    zip_safe=False)
