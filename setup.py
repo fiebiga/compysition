@@ -28,7 +28,7 @@ import re
 
 PROJECT = 'compysition'
 VERSION = re.search("__version__\s*=\s*'(.*)'", open('compysition/__init__.py').read(), re.M).group(1)
-REQUIRES = ["gevent"
+REQUIRES = ["gevent",
             "greenlet",
             "pyzmq",
             "amqp",
