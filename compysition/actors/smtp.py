@@ -3,20 +3,23 @@
 # -*- coding: utf-8 -*-
 #
 # Created by Adam Fiebig
-# Last modified: 5-5-2015 by Adam Fiebig
-import gevent.monkey
-gevent.monkey.patch_all(thread=False)
+# Last modified: 4-15-2015 by Adam Fiebig
+
 from compysition import Actor
-from lxml import etree
 from email.mime.text import MIMEText
 import smtplib
 import gsmtpd.server
 import email
-import dicttoxml
 import traceback
-import ssl
+from bs4 import BeautifulSoup
+import re
+from compysition.event import XMLEvent, JSONEvent
 
 class SMTPOut(Actor):
+
+    input = XMLEvent
+    output = XMLEvent
+
     '''**Module which sends mime emails with propertied specified in XML event data.**
 
     Parameters:
@@ -24,26 +27,48 @@ class SMTPOut(Actor):
         - name (str):       The instance name.
     '''
 
-    def __init__(self, name, address=None, key=None, host=("localhost", 25), *args, **kwargs):
+    address_regex = re.compile("^.*@.*$")
+
+    def __init__(self, name, from_address=None, domain=None, key=None, host=("localhost", 25), *args, **kwargs):
         Actor.__init__(self, name, *args, **kwargs)
         self.blockdiag_config["shape"] = "mail"
-        self.logger.info("Initialized Notify Module")
+        self.logger.info("Initialized SMTPOut Actor")
         self.key = key or self.name
         self.host = host
+        self.domain = domain
+        self.address = self.normalize_address(from_address, self.domain)
         self.body_tag = 'Body'
 
+    def normalize_address(self, address, domain):
+        """
+        If an address does not match some_address@some_domain.com, concatenate the address and domain.
+        If the address is none, it will return none.
+        If the address is not a full address the domain is none, it will return none
+        """
+        if address is not None and not self.address_regex.match(address):
+            if domain is not None:
+                address = "{address}@{domain}".format(address=address, domain=domain)
+            else:
+                address = None
+
+        return address
+
     def consume(self, event, *args, **kwargs):
-        msg_xml = etree.XML(event.data)
+        msg_xml = event.data
         to = msg_xml.find("To").text
-        from_address = msg_xml.find("From").text
+        from_element = msg_xml.find("From")
+        from_address = self.normalize_address(from_element.text, self.domain)
+        from_element.text = from_address
         if to != "None" and to is not None:
             msg = MIMEText(msg_xml.find(self.body_tag).text)    # Create a mime obj with our body text
-            msg_xml.remove(msg_xml.find(self.body_tag))         # Remove the body tag so it's not set as a prop
             for element in msg_xml:                             # Set each tag's text as a property on the MIMEText obj
-                msg[element.tag] = element.text
+                if element.tag != self.body_tag:
+                    msg[element.tag] = element.text
 
             self.send(msg, to, from_address)
-            self.logger.info("Email notification sent to {0} from {1}".format(to, from_address), event=event)
+            self.logger.info("Email sent to {to} from {from_address} via smtp server {host}".format(to=to,
+                                                                                                    from_address=from_address,
+                                                                                                    host=self.host), event=event)
         else:
             self.logger.info("No email recipient specified, notification was not sent", event=event)
 
@@ -51,12 +76,12 @@ class SMTPOut(Actor):
 
     def send(self, msg, to, from_address):
         try:
-            print "Sending to {0}".format(self.host)
             sender = smtplib.SMTP(self.host)
-            sender.sendmail(from_address, to.split(","), msg.as_string(), )
+            sender.sendmail(from_address, to.split(","), msg.as_string())
             sender.quit()
         except Exception as err:
-            print traceback.format_exc()
+            self.logger.error("Error sending message: {err}".format(err=traceback.format_exc()))
+
 
 class SMTPIn(Actor):
     '''**Module which sends mime emails with propertied specified in XML event data.**
@@ -66,30 +91,53 @@ class SMTPIn(Actor):
         - name (str):       The instance name.
     '''
 
-    def __init__(self, name, host="localhost", output='xml', keyfile=None, certfile=None,
-                 ssl_version=ssl.PROTOCOL_TLSv1, *args, **kwargs):
+    output = [XMLEvent, JSONEvent]
+
+    def __init__(self, name, host="localhost", ports=[25], output_format='xml', keyfile=None, certfile=None, ssl_version=None, *args, **kwargs):
         Actor.__init__(self, name, *args, **kwargs)
         self.blockdiag_config["shape"] = "mail"
-        self.output = output
-        self.server = gsmtpd.server.SMTPServer(host, keyfile=keyfile, certfile=certfile, ssl_version=ssl_version)
-        self.server.process_message = self.process_message
-        self.server.logger = self.logger
+        self.output_format = output_format
+        if not isinstance(ports, list):
+            ports = [ports]
+
+        self.servers = []
+        for port in ports:
+            server = gsmtpd.server.SMTPServer("{host}:{port}".format(host=host, port=port),
+                                               keyfile=keyfile,
+                                               certfile=certfile,
+                                               ssl_version=ssl_version)
+            server.process_message = self.process_message
+            self.servers.append(server)
 
     def pre_hook(self):
-        self.server.start()
+        [server.start() for server in self.servers]
 
     def process_message(self, peer, mailfrom, rcpttos, data):
-        event = self.create_event(data=None)
-        self.logger.info("Received email message", event=event)
         headers = email.message_from_string(data)
+        payload = headers.get_payload()
         new_data = dict(zip(headers.keys(), headers.values()))
-        new_data['payload'] = headers.get_payload()
-        if self.output == 'xml':
-            new_data = dicttoxml.dicttoxml(new_data, custom_root="email")
 
-        event.data = new_data
+        payload_data = headers.get_payload()
+        if isinstance(payload_data, list):
+            payload = filter(lambda x: x.get_content_type() == "text/plain", payload)[0]
+
+            if payload is None:
+                html = filter(lambda x: x.get_content_type() == "text/html", payload)[0]
+                payload = BeautifulSoup(html.get_payload(), "lxml").get_text()
+            else:
+                payload = payload.get_payload()
+
+            payload_data = payload
+
+        new_data['payload'] = payload_data
+
+        if self.output_format == 'xml':
+            new_data['email'] = new_data
+            event = XML(data=new_data)
+        else:
+            event = JSON(data=new_data)
+
         self.send_event(event)
-
 
     def consume(self, event, *args, **kwargs):
         pass
