@@ -22,26 +22,32 @@
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #  MA 02110-1301, USA.
 #
-#
 
+from compysition.event import LogEvent
 from compysition.errors import QueueFull
-from time import time
-from os import getpid
 import logging
-from datetime import datetime
-from compysition.event import CompysitionEvent
+from compysition.queue import _InternalQueuePool
 
-class QLogger(object):
+class Logger(object):
 
-    '''
-    Generates Compysition formatted log messages following the python priority
-    definition.
-    '''
+    """**Generates Compysition formatted log messages following the python priority definition to a pool of queues**
 
-    def __init__(self, name, queue=None):
+    We use a pool in order to support multiple logging types per process. For example, sending to a third party log
+    aggregator as WELL as using a filelogger
+
+    Args:
+        - name(str):
+            | The name to use when sending log events
+        - queue_pool(_InternalQueuePool):
+            | The pool to use when sending log events
+    """
+
+    def __init__(self, name, queue_pool):
         self.name = name
-        self.logs = queue
-        self.buffer = []
+        if not isinstance(queue_pool, _InternalQueuePool):
+            raise TypeError("Logger queue_pool must be of type '_InternalQueuePool'")
+
+        self.__pool = queue_pool
 
     def log(self, level, message, event=None, log_entry_id=None):
         """
@@ -51,22 +57,13 @@ class QLogger(object):
             if event:
                 log_entry_id = event.meta_id
 
-        while True:
+        for key in self.__pool.keys():
             try:
-                log_data = {"id":       log_entry_id,
-                            "level":    level,
-                            "time":     datetime.now().strftime('%Y-%m-%d %H:%M:%S,%f')[:-3],
-                            "name":     self.name,
-                            "message":  message}
-
-                log_event = CompysitionEvent(data=log_data)
-                if self.logs is None:
-                    self.buffer.append(log_event)
-                else:
-                    self.logs.put(log_event)
-                break
+                log_event = LogEvent(level, self.name, message, id=log_entry_id)
+                self.__pool[key].put(log_event)
             except QueueFull:
-                self.logs.wait_until_free()
+                self.__pool.wait_until_free()
+                self.__pool[key].put(log_event)
 
     def critical(self, message, event=None, log_entry_id=None):
         """Generates a log message with priority logging.CRITICAL
@@ -93,15 +90,3 @@ class QLogger(object):
         """Generates a log message with priority logging.DEBUG
         """
         self.log(logging.DEBUG, message, event=event, log_entry_id=log_entry_id)
-
-    def connect_logs_queue(self, queue):
-        self.logs = queue
-        self.dump_buffer()
-
-    def dump_buffer(self):
-        while True:
-            try:
-                event = self.buffer.pop()
-                self.logs.put(event)
-            except Exception as err:
-                break
