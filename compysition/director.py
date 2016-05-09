@@ -21,28 +21,25 @@
 #  MA 02110-1301, USA.
 #
 
-from compysition.actors import Null, STDOUT
-from compysition.errors import ModuleInitFailure, NoSuchModule
-from gevent import signal as gsignal, event, sleep
+from compysition.actors import Null, STDOUT, EventLogger
+from compysition.errors import ActorInitFailure
+from gevent import signal as gsignal, event
 import signal
 import os
 import traceback
 from compysition.actor import Actor
 
-class Director():
+class Director(object):
 
-    def __init__(self, size=500, frequency=1, generate_metrics=False, name="default", generate_blockdiag=True, blockdiag_dir="./build/blockdiag"):
+    def __init__(self, size=500, name="default", generate_blockdiag=True, blockdiag_dir="./build/blockdiag"):
         gsignal(signal.SIGINT, self.stop)
         gsignal(signal.SIGTERM, self.stop)
         self.name = name
         self.actors = {}
         self.size = size
-        self.frequency = frequency
-        self.generate_metrics = generate_metrics
 
-        self.metric_actor = self.__create_actor(Null, "null_metrics")
-        self.log_actor = self.__create_actor(STDOUT, "null_logs")
-        self.error_actor = None
+        self.log_actor = self.__create_actor(STDOUT, "default_stdout")
+        self.error_actor = self.__create_actor(EventLogger, "default_error_logger")
 
         self.__running = False
         self.__block = event.Event()
@@ -56,19 +53,20 @@ class Director():
     def get_actor(self, name):
         actor = self.actors.get(name, None)
         if not actor:
-            if self.metric_actor.name == name:
-                return self.metric_actor
-            elif self.log_actor.name == name:
+            if self.log_actor.name == name:
                 return self.log_actor
             elif self.error_actor.name == name:
                 return self.error_actor
         else:
             return actor
 
-    def connect_error_queue(self, source, destination, *args, **kwargs):
-        self.connect_queue(source, destination, error_queue=True, *args, **kwargs)
+    def connect_log_queue(self, source, destination, *args, **kwargs):
+        self.connect_queue(source, destination, connect_function="connect_log_queue", *args, **kwargs)
 
-    def connect_queue(self, source, destinations, error_queue=False, *args, **kwargs):
+    def connect_error_queue(self, source, destination, *args, **kwargs):
+        self.connect_queue(source, destination, connect_function="connect_error_queue", *args, **kwargs)
+
+    def connect_queue(self, source, destinations, connect_function="connect_queue", *args, **kwargs):
         '''**Connects one queue to the other.**
 
         There are 2 accepted syntaxes. Consider the following scenario:
@@ -125,12 +123,7 @@ class Director():
                 else:
                     destination_source_queue_name = source_queue_name
 
-                if not error_queue:
-                    source.connect_queue(destination_source_queue_name, destination, destination_queue_name, *args, **kwargs)
-                else:
-                    destination_source_queue_name = "error_{0}".format(destination_source_queue_name)
-                    destination_queue_name = "error_{0}".format(destination_queue_name)
-                    source.connect_error_queue(destination_source_queue_name, destination, destination_queue_name, *args, **kwargs)
+                getattr(source, connect_function)(source_queue_name=destination_source_queue_name, destination=destination, destination_queue_name=destination_queue_name, *args, **kwargs)
 
     def _parse_connect_arg(self, input):
         if isinstance(input, tuple):
@@ -164,8 +157,6 @@ class Director():
             print("Unable to write blockdiag: {err}".format(err=traceback.format_exc()))
 
     def register_actor(self, actor, name, *args, **kwargs):
-        '''Initializes the mdoule using the provided <args> and <kwargs>
-        arguments.'''
 
         try:
             new_actor = self.__create_actor(actor, name, *args, **kwargs)
@@ -177,40 +168,35 @@ class Director():
                 self.blockdiag_out += "]\n"
             return new_actor
         except Exception:
-            raise ModuleInitFailure(traceback.format_exc())
+            raise ActorInitFailure(traceback.format_exc())
 
     def register_log_actor(self, actor, name, *args, **kwargs):
         """Initialize a log actor for the director instance"""
         self.log_actor = self.__create_actor(actor, name, *args, **kwargs)
         return self.log_actor
 
-    def register_metric_actor(self, actor, name, *args, **kwargs):
-        """Initialize a metric actor for the director instance"""
-        self.metric_actor = self.__create_actor(actor, name, *args, **kwargs)
-        return self.metric_actor
-
     def register_error_actor(self, actor, name, *args, **kwargs):
         self.error_actor = self.__create_actor(actor, name, *args, **kwargs)
         return self.error_actor
 
     def __create_actor(self, actor, name, *args, **kwargs):
-        return actor(name, size=self.size, frequency=self.frequency, generate_metrics=self.generate_metrics, *args, **kwargs)
+        return actor(name, size=self.size, *args, **kwargs)
 
     def _setup_default_connections(self):
-        '''Connect all log andmetric, and failed queues to their respective actors'''
+        '''Connect all log, metric, and error queues to their respective actors'''
 
         for actor in self.actors.values():
             if self.error_actor:
                 try:
-                    actor.connect_error_queue("error", self.error_actor, "{name}_inbox".format(name=actor.name))
-                except:
-                    pass
+                    if len(actor.pool.error) == 0:
+                        self.connect_error_queue(actor, self.error_actor)
+                except Exception as err:
+                    print err
 
-            actor.connect_queue("logs", self.log_actor, "inbox", check_existing=False) 
-            actor.connect_queue("metrics", self.metric_actor, "inbox", check_existing=False)
+            actor.connect_log_queue(source_queue_name="logs", destination=self.log_actor, check_existing=False)
 
-        self.log_actor.connect_queue("logs", self.log_actor, "inbox", check_existing=False)
-        self.metric_actor.connect_queue("logs", self.log_actor, "inbox", check_existing=False)
+        self.log_actor.connect_log_queue(source_queue_name="logs", destination=self.log_actor, check_existing=False)
+        self.error_actor.connect_log_queue(source_queue_name="logs", destination=self.log_actor, check_existing=False)
 
     def is_running(self):
         return self.__running
@@ -221,14 +207,10 @@ class Director():
         self._setup_default_connections()
 
         for actor in self.actors.values():
-            if isinstance(self.metric_actor, Null):
-                actor.generate_metrics = False
             actor.start()
 
         self.log_actor.start()
-        self.metric_actor.start()
-        if self.error_actor:
-            self.error_actor.start()
+        self.error_actor.start()
 
         if self.generate_blockdiag:
             self.finalize_blockdiag()
@@ -245,7 +227,6 @@ class Director():
         for actor in self.actors.values():
             actor.stop()
 
-        self.metric_actor.stop()
         self.log_actor.stop()
         self.__running = False
         self.__block.set()
