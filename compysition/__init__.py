@@ -24,9 +24,9 @@
 from actor import Actor
 from queue import Queue
 from queue import QueuePool
-from qlogger import QLogger
+from logger import Logger
 from director import Director
-from event import CompysitionEvent
+from event import Event
 
-__version__ = '1.1.42'
+__version__ = '1.2.00'
 version = __version__
