@@ -34,7 +34,7 @@ class FlowController(Actor):
     '''
 
     def __init__(self, name, *args, **kwargs):
-        Actor.__init__(self, name, *args, **kwargs)
+        super(FlowController, self).__init__(name, *args, **kwargs)
 
     def consume(self, event, *args, **kwargs):
         self.send_event(event)

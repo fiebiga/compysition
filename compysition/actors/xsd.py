@@ -23,45 +23,50 @@
 
 from compysition import Actor
 from lxml import etree
-import re
+from compysition.event import XMLEvent
+from compysition.errors import MalformedEventData
 
-class XMLValidator(Actor):
-    '''**A sample module which applies a provided XSD to an incoming event XML data**
+class XSD(Actor):
+    '''**A simple actor which applies a provided XSD to an incoming event XML data. If no XSD is defined, it will validate XML format correctness**
 
     Parameters:
 
-        - name (str):               The instance name.
-        - xsd (str):                The XSD to validate the schema against
+        name (str):
+            | The instance name.
+        xsd (str):
+            | The XSD to validate the schema against
+
+    Input:
+        XMLEvent
+
+    Output:
+        XMLEvent
 
     '''
 
+    input = XMLEvent
+    output = XMLEvent
+
     def __init__(self, name, xsd=None, *args, **kwargs):
-        Actor.__init__(self, name, *args, **kwargs)
+        super(XSD, self).__init__(name, *args, **kwargs)
         if xsd:
             self.schema = etree.XMLSchema(etree.XML(xsd))
         else:
             self.schema = None
 
-        self.caller = "wsgi"
-
     def consume(self, event, *args, **kwargs):
         try:
-            xml = etree.fromstring(event.data)
 
             if self.schema:
-                self.schema.assertValid(xml)
-
+                self.schema.assertValid(event.data)
             self.logger.info("Incoming XML successfully validated", event=event)
             self.send_event(event)
         except etree.DocumentInvalid as xml_errors:
-            messages = xml_errors.error_log.filter_levels([1, 2])
-            message = ''.join(["{0}\n".format(message.message) for message in messages ])
-            self.process_error(event, message)
+            messages = [message.message for message in xml_errors.error_log.filter_levels([1, 2])]
+            self.process_error(messages, event)
         except Exception as error:
-            self.process_error(event, error)
+            self.process_error(error, event)
 
-    def process_error(self, event, message):
-        event.get(self.caller, {}).update({'status': '400 Bad Request'})
-        event.data = "Malformed Request (Invalid XML): {0}".format(message)
+    def process_error(self, message, event):
         self.logger.error("Error validating incoming XML: {0}".format(message), event=event)
-        self.send_error(event)
+        raise MalformedEventData(message)
