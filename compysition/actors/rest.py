@@ -44,7 +44,7 @@ class RESTTranslator(Actor):
     def consume(self, event, *args, **kwargs):
 
         method = event.environment.get("REQUEST_METHOD", None)
-        self.logger.info("Translating REST for {method}".format(method=method))
+        self.logger.info("Translating REST for {method}".format(method=method), event=event)
 
         event = getattr(self, "translate_{method}".format(method=method.lower()))(event)
         self.send_event(event)
@@ -52,7 +52,7 @@ class RESTTranslator(Actor):
     def translate_post(self, event):
         status_code = event.status[0]
 
-        if status_code == 200:
+        if status_code == 200 or status_code == 201:
             event.status = (201, "Created")
             local_url = self.url_post_location or event.environment.get("PATH_INFO", None)
             entity_id = event.get("entity_id", event.meta_id)
