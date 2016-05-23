@@ -42,7 +42,8 @@ REQUIRES = ["gevent",
             "bottle",
             "xmltodict",
             "gsmtpd",
-            "jsonschema"]
+            "jsonschema",
+            "bs4"]
 
 try:
     long_description = open('README.rst', 'rt').read()
