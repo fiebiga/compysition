@@ -62,13 +62,13 @@ class XSLT(Actor):
             event.data = self.transform(event.data)
             self.logger.info("Successfully transformed XML", event=event)
             self.send_event(event)
-        except Exception as err:
-            self._process_error(traceback.format_exc(), event)
         except XSLTApplyError as err:
             # This is a legacy functionality that was implemented due to the specifics of a single implementation.
             # I'm looking for a way around this, internally
             event.data.append(etree.fromstring("<transform_error>{0}</transform_error>".format(err.message)))
             self._process_error(err.message, event)
+        except Exception as err:
+            self._process_error(traceback.format_exc(), event)
 
     def _process_error(self, message, event):
         self.logger.error("Error applying transform. Error was: {0}".format(message), event=event)
