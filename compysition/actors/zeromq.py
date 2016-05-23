@@ -123,9 +123,6 @@ class _ZMQ(Actor):
 
         return _socket
 
-    def post_hook(self):
-        self.socket.close()
-
 
 class _ZMQOut(_ZMQ):
 
@@ -151,7 +148,10 @@ class _ZMQOut(_ZMQ):
                 event = None
 
             if event is not None:
-                self.socket.send(pickle.dumps(event))
+                try:
+                    self.socket.send(pickle.dumps(event))
+                except Exception as err:
+                    self.logger.error("Unable to send event over ZMQ: {err}".format(err=err), event=event)
 
 
 class _ZMQIn(_ZMQ):
