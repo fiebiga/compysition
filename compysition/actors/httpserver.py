@@ -157,18 +157,22 @@ class HTTPServer(Actor, Bottle):
         return Bottle.__call__(self, e, h)
 
     def consume(self, event, *args, **kwargs):
-        self.logger.info(event.data_string(), event=event)
-        self.logger.info(event.error, event=event)
         # There is an error that results in responding with an empty list that will cause an internal server error
 
-        if event.error:
-            response_data = event.error_string()
-        else:
-            response_data = event.data_string()
-
-        response_queue = self.responders.pop(event.event_id, None)
+        original_event_class, response_queue = self.responders.pop(event.event_id, None)
 
         if response_queue:
+
+            if not isinstance(event, original_event_class):
+                self.logger.warning("Incoming event did did not match the clients content type format. Converting '{current}' to '{new}'".format(
+                    current=type(event), new=original_event_class))
+                event = event.convert(original_event_class)
+
+            if event.error:
+                response_data = event.error_string()
+            else:
+                response_data = event.data_string()
+
             status, status_message = event.status
             local_response = HTTPResponse()
             local_response.status = "{code} {message}".format(code=status, message=status_message)
@@ -225,7 +229,7 @@ class HTTPServer(Actor, Bottle):
             self.send_event(event, queue=queue)
             self.logger.info("Received {0} request for service {1}".format(request.method, queue_name), event=event)
             response_queue = Queue()
-            self.responders.update({event.event_id: response_queue})
+            self.responders.update({event.event_id: (event_class, response_queue)})
             local_response = response_queue
         else:
             response.body = "Service '{0}' not found".format(queue_name)
