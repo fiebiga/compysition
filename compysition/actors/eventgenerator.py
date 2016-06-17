@@ -28,6 +28,8 @@ import gevent
 from gevent.pool import Pool
 from compysition.event import *
 from compysition.actors.util.udplib import UDPInterface
+from apscheduler.schedulers.gevent import GeventScheduler
+
 
 class EventGenerator(Actor):
 
@@ -45,15 +47,13 @@ class EventGenerator(Actor):
         producers (Optional[int]):
             | The number of greenthreads to spawn that each spawn events at the provided interval
             | Default: 1
-        interval (Optional[float]):
+        interval (Optional[float] OR dict):
             | The interval (in seconds) between each generated event.
             | Should have a value > 0.
-            | default: 120
+            | Can also be a dict, supporting values of weeks, days, hours, minutes, and seconds
+            | default: 5
         delay (Optional[float]):
             | The time (in seconds) to wait before initial event generation.
-            | Default: 0
-        max_events (Optional[int]):
-            | The max number of events to produce. A value of 0 will indicate infinite events
             | Default: 0
         generate_error (Optional[bool]):
             | Whether or not to also send the event via Actor.send_error
@@ -61,44 +61,50 @@ class EventGenerator(Actor):
 
     '''
 
-    def __init__(self, name, event_class=Event, event_kwargs=None, producers=1, interval=120, delay=0, max_events=0, generate_error=False, *args, **kwargs):
+    DEFAULT_INTERVAL = {'weeks': 0,
+                         'days': 0,
+                         'hours': 0,
+                         'minutes': 0,
+                         'seconds': 5}
+
+    def __init__(self, name, event_class=Event, event_kwargs=None, producers=1, interval=5, delay=0, generate_error=False, *args, **kwargs):
         super(EventGenerator, self).__init__(name, *args, **kwargs)
         self.blockdiag_config["shape"] = "flowchart.input"
         self.generate_error = generate_error
-        self.name = name
-        self.interval = interval
+        self.interval = self._parse_interval(interval)
         self.delay = delay
         self.event_kwargs = event_kwargs or {}
-        self.event_class = event_class
         self.output = event_class
-        self.interval = interval
         self.producers = producers
-        self.max_events = max_events
-        self.generated_events = 0
-        self.producer_pool = Pool(self.producers)
+        self.scheduler = GeventScheduler()
+
+    def _parse_interval(self, interval):
+        _interval = self.DEFAULT_INTERVAL
+
+        if isinstance(interval, int):
+            _interval['seconds'] = interval
+        elif isinstance(interval, dict):
+            _interval.update(interval)
+
+        return _interval
+
+    def _initialize_jobs(self):
+        for i in xrange(self.producers):
+            self.scheduler.add_job(self._do_produce, 'interval', **self.interval)
 
     def pre_hook(self):
-        for i in xrange(self.producers):
-            self.producer_pool.spawn(self.produce)
-
-    def produce(self):
+        self._initialize_jobs()
         gevent.sleep(self.delay)
-        while self.loop():
-            if self.max_events > 0:
-                if self.generated_events == self.max_events:
-                    break
-            self._do_produce()
-            gevent.sleep(self.interval)
+        self.scheduler.start()
 
-        self.logger.info("Stopped producing events.")
+    def post_hook(self):
+        self.scheduler.shutdown()
 
     def _do_produce(self):
-        self.generated_events += 1
-        event = self.event_class(**self.event_kwargs)
+        event = self.output[0](**self.event_kwargs)
         self.send_event(event)
         if self.generate_error:
-            self.generated_events += 1
-            event = self.event_class(**self.event_kwargs)
+            event = self.output(**self.event_kwargs)
             self.send_error(event)
 
     def consume(self, event, *args, **kwargs):
@@ -107,10 +113,10 @@ class EventGenerator(Actor):
 
 class UDPEventGenerator(EventGenerator):
     """
-    An actor that utilized a UDP interface to coordinate between other UDPEventGenerator actors
+    **An actor that utilized a UDP interface to coordinate between other UDPEventGenerator actors
     running on its same subnet to coordinate a master/slave relationship of generating an event
     with the specified arguments and attributes. Only the master in the 'pool' of registered actors
-    will generate an event at the specified interval
+    will generate an event at the specified interval**
     """
 
     def __init__(self, name, service="default", environment_scope='default', *args, **kwargs):
@@ -122,11 +128,40 @@ class UDPEventGenerator(EventGenerator):
         super(UDPEventGenerator, self).pre_hook()
 
     def _do_produce(self):
-        self.peers_interface.wait_until_master()
-        super(UDPEventGenerator, self)._do_produce()
-
-    def consume(self, event, *args, **kwargs):
         if self.peers_interface.is_master():
-            self._do_produce()
-        else:
-            self.logger.warn("Received prompt to generate event, but actor is not the master in the pool", event=event)
+            super(UDPEventGenerator, self)._do_produce()
+
+
+class CronEventGenerator(EventGenerator):
+
+    """
+    **An EventGenerator that supports cron-style scheduling, using the following keywords: year, month, day, week, day_of_week,
+    hour, minute, second. See 'apscheduler' documentation for specifics of configuring those keywords**
+    """
+
+    DEFAULT_INTERVAL = {'year': '*',
+                        'month': '*',
+                        'day': '*',
+                        'week': '*',
+                        'day_of_week': '*',
+                        'hour': '*',
+                        'minute': '*',
+                        'second': '*/12'}
+
+    def _parse_interval(self, interval):
+        _interval = self.DEFAULT_INTERVAL
+
+        if isinstance(interval, dict):
+            _interval.update(interval)
+
+        return _interval
+
+    def _initialize_jobs(self):
+        for producer in xrange(self.producers):
+            self.scheduler.add_job(self._do_produce, 'cron', **self.interval)
+
+
+class UDPCronEventGenerator(CronEventGenerator, UDPEventGenerator):
+    pass
+
+

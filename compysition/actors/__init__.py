@@ -24,7 +24,7 @@
 
 from .null import Null
 from .stdout import STDOUT
-from .eventgenerator import EventGenerator, UDPEventGenerator
+from .eventgenerator import *
 from .filelogger import FileLogger
 from .httpserver import HTTPServer
 from .basicauth import BasicAuth

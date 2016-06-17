@@ -156,19 +156,20 @@ class Director(object):
         except Exception as err:
             print("Unable to write blockdiag: {err}".format(err=traceback.format_exc()))
 
-    def register_actor(self, actor, name, *args, **kwargs):
+    def register_actor(self, actor, name=None, *args, **kwargs):
+        if not isinstance(actor, Actor):
+            try:
+                actor = self.__create_actor(actor, name, *args, **kwargs)
+            except Exception:
+                raise ActorInitFailure(traceback.format_exc())
 
-        try:
-            new_actor = self.__create_actor(actor, name, *args, **kwargs)
-            self.actors[name] = new_actor
-            if self.generate_blockdiag:
-                self.blockdiag_out += "{0} [".format(new_actor.name)
-                for config_item in new_actor.blockdiag_config.items():
-                    self.blockdiag_out += "{0} = \"{1}\"".format(config_item[0], config_item[1])
-                self.blockdiag_out += "]\n"
-            return new_actor
-        except Exception:
-            raise ActorInitFailure(traceback.format_exc())
+        self.actors[actor.name] = actor
+        if self.generate_blockdiag:
+            self.blockdiag_out += "{0} [".format(actor.name)
+            for config_item in actor.blockdiag_config.items():
+                self.blockdiag_out += "{0} = \"{1}\"".format(config_item[0], config_item[1])
+            self.blockdiag_out += "]\n"
+        return actor
 
     def register_log_actor(self, actor, name, *args, **kwargs):
         """Initialize a log actor for the director instance"""
