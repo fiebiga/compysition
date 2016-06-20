@@ -43,7 +43,8 @@ REQUIRES = ["gevent",
             "xmltodict",
             "gsmtpd",
             "jsonschema",
-            "bs4"]
+            "bs4",
+            "apscheduler"]
 
 try:
     long_description = open('README.rst', 'rt').read()
