@@ -141,11 +141,10 @@ class Director(object):
         img_dir = "{0}{1}img".format(self.blockdiag_dir, os.sep)
         self.blockdiag_out += "\n}"
 
-        if not os.path.exists(img_dir):
-            os.makedirs(img_dir)
-        from blockdiag.command import BlockdiagApp
-
         try:
+            if not os.path.exists(img_dir):
+                os.makedirs(img_dir)
+            from blockdiag.command import BlockdiagApp
             f = open("{0}{1}{2}.diag".format(self.blockdiag_dir, os.sep, self.name),'w')
             f.write(self.blockdiag_out)
             f.close()
