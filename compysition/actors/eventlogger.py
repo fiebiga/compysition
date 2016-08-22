@@ -52,6 +52,8 @@ class EventLogger(Actor):
             for tag in self.logged_tags:
                 if tag == "data":
                     message += event.data_string()
+                elif tag == "error":
+                    message += event.error_string()
                 else:
                     message += str(getattr(event, tag, None))
 
