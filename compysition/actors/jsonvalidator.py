@@ -77,7 +77,7 @@ class JSONValidator(Actor):
                 if len(path) > 0:
                     err_message = ": ".join(path)
 
-                err_message += error.message
+                err_message += " " + error.message
                 error_reasons.append(err_message)
             message = error_reasons
             self.process_error(message, event)
