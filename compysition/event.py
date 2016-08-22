@@ -181,7 +181,7 @@ class Event(object):
             messages = self.error.message
             if not isinstance(messages, list):
                 messages = [messages]
-            print map(lambda _error: _error.message if isinstance(_error, Exception) else _error, messages)
+
             return map(lambda _error: _error.message if isinstance(_error, Exception) else _error, messages)
 
         else:
