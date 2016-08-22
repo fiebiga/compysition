@@ -29,6 +29,7 @@ from functools import wraps
 from collections import defaultdict
 from gevent.queue import Queue
 from bottle import *
+import re
 
 BaseRequest.MEMFILE_MAX = 1024 * 1024 # (or whatever you want)
 
@@ -81,6 +82,10 @@ class HTTPServer(Actor, Bottle):
         routes_config(Optional[dict]):
             | This is a JSON object that contains a list of Bottle route config kwargs
             | Default: {"routes": [{"path: "/<queue>", "method": ["POST"]}]}
+            | Field values correspond to values used in bottle.Route class
+            | Special values:
+            |    id(Optional[str]): Used to identify this route in the json object
+            |    base_path(Optional[str]): Used to identify a route that this route extends, using the referenced id
 
     Examples:
         Default:
@@ -89,12 +94,15 @@ class HTTPServer(Actor, Bottle):
         routes_config:
             routes_config {"routes": [{"path: "/my/url/<queue>", "method": ["POST"]}]}
                 http://localhost:8080/my/url/goodtimes is mapped to 'goodtimes' queue
+
+
     """
 
     DEFAULT_ROUTE = {
         "routes":
             [
                 {
+                    "id": "base",
                     "path": "/<queue>",
                     "method": [
                         "POST"
@@ -113,6 +121,39 @@ class HTTPServer(Actor, Bottle):
     X_WWW_FORM_URLENCODED_KEY_MAP = defaultdict(lambda: HttpEvent, {"XML": XMLHttpEvent, "JSON": JSONHttpEvent})
     X_WWW_FORM_URLENCODED = "application/x-www-form-urlencoded"
 
+    def combine_base_paths(self, route, named_routes):
+        base_path_id = route.get('base_path', None)
+        if base_path_id:
+            base_path = named_routes.get(base_path_id, None)
+            if base_path:
+                return HTTPServer._normalize_queue_definition(self.combine_base_paths(base_path, named_routes) + route['path'])
+            else:
+                raise KeyError("Base path '{base_path}' doesn't reference a defined path ID".format(base_path=base_path_id))
+        else:
+            return route.get('path')
+
+    @staticmethod
+    def _normalize_queue_definition(path):
+        """
+        This method is used to filter the queue variable in a path, to support the idea of base paths with multiple queue
+        definitions. In effect, the <queue> variable in a path is provided at the HIGHEST level of definition. AKA: A higher
+        level route containing a <queue:re:foo> will override the definition of <queue:re:bar> in a base_path.
+
+        e.g. /<queue:re:foo>/<queue:re:bar> -> /foo/<queue:re:bar>
+
+        This ONLY works for SIMPLE regex cases, which should be the case anyway for the queue name.
+        """
+
+        variable_name_regex = re.compile("<queue:re:[a-zA-Z_0-9]+?>")
+
+        path_variables = variable_name_regex.findall(path)
+        path_names = [s.replace("<queue:re:", '')[:-1] for s in path_variables]
+
+        for path_variable in path_variables[:-1]:
+            path = path.replace(path_variable, path_names.pop(0))
+
+        return path
+
     def __init__(self, name, address="0.0.0.0", port=8080, keyfile=None, certfile=None, routes_config=None, *args, **kwargs):
         Actor.__init__(self, name, *args, **kwargs)
         Bottle.__init__(self)
@@ -128,8 +169,16 @@ class HTTPServer(Actor, Bottle):
             routes_config = json.loads(routes_config)
 
         if isinstance(routes_config, dict):
+            named_routes = {route['id']:{'path': route['path'], 'base_path': route.get('base_path', None)} for route in routes_config.get('routes') if route.get('id', None)}
             for route in routes_config.get('routes'):
                 callback = getattr(self, route.get('callback', 'callback'))
+                if route.get('base_path', None):
+                    route['path'] = self.combine_base_paths(route, named_routes)
+
+                if not route.get('method', None):
+                    route['method'] = []
+
+                self.logger.debug("Configured route '{path}' with methods '{methods}'".format(path=route['path'], methods=route['method']))
                 self.route(callback=callback, **route)
 
         self.wsgi_app = self
@@ -156,6 +205,22 @@ class HTTPServer(Actor, Bottle):
         e['PATH_INFO'] = e['PATH_INFO'].rstrip('/')
         return Bottle.__call__(self, e, h)
 
+    def format_response_data(self, event):
+        """
+        Meant to return a json response nested under a data tag if it isn't already done so, or return formatted
+        errors under the "errors" tag.
+        """
+        if event.error:
+            response_data = json.dumps({"errors": event.format_error()})
+        else:
+            if not isinstance(event.data, (list, dict, str)) or \
+                    (isinstance(event.data, dict) and len(event.data) == 1 and event.data.get("data", None)):
+                response_data = event.data_string()
+            else:
+                response_data = json.dumps({"data": event.data})
+
+        return response_data
+
     def consume(self, event, *args, **kwargs):
         # There is an error that results in responding with an empty list that will cause an internal server error
 
@@ -168,13 +233,8 @@ class HTTPServer(Actor, Bottle):
                     current=type(event), new=original_event_class))
                 event = event.convert(original_event_class)
 
-            if event.error:
-                response_data = event.error_string()
-            else:
-                response_data = event.data_string()
-
-            status, status_message = event.status
             local_response = HTTPResponse()
+            status, status_message = event.status
             local_response.status = "{code} {message}".format(code=status, message=status_message)
 
             for header in event.headers.keys():
@@ -182,8 +242,11 @@ class HTTPServer(Actor, Bottle):
 
             if int(status) == 204:
                 response_data = ""
+            else:
+                response_data = self.format_response_data(event)
 
             local_response.body = response_data
+
             response_queue.put(local_response)
             response_queue.put(StopIteration)
         else:
