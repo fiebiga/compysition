@@ -136,3 +136,8 @@ class EventRateExceeded(CompysitionException):
 class ServiceUnavailable(CompysitionException):
     """**A defined Event.service was requested but that particular service was not found**"""
     pass
+
+
+class EventAttributeError(CompysitionException):
+    """**An event attribute necessary to the proper processing of the event was missing**"""
+    pass
