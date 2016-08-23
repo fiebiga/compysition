@@ -290,7 +290,9 @@ class _XMLFormatInterface(DataFormatInterface):
             _root = etree.Element("errors")
             for error in errors:
                 error_element = etree.Element("error")
-                error_element.text = error
+                message_element = etree.Element("message")
+                error_element.append(message_element)
+                message_element.text = error
                 _root.append(error_element)
 
             errors = _root
@@ -324,7 +326,7 @@ class _JSONFormatInterface(DataFormatInterface):
     def format_error(self):
         errors = super(_JSONFormatInterface, self).format_error()
         if errors:
-            errors = [{"error": error} for error in errors]
+            errors = [{"message": error} for error in errors]
 
         return errors
 
