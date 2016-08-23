@@ -211,7 +211,10 @@ class HTTPServer(Actor, Bottle):
         errors under the "errors" tag.
         """
         if event.error:
-            response_data = json.dumps({"errors": event.format_error()})
+            if isinstance(event, JSONHttpEvent):
+                response_data = json.dumps({"errors": event.format_error()})
+            else:
+                response_data = event.error_string()
         else:
             if not isinstance(event.data, (list, dict, str)) or \
                     (isinstance(event.data, dict) and len(event.data) == 1 and event.data.get("data", None)):
