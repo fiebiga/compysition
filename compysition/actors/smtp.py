@@ -65,23 +65,23 @@ class SMTPOut(Actor):
                 if element.tag != self.body_tag:
                     msg[element.tag] = element.text
 
-            self.send(msg, to, from_address)
+            try:
+                self.send(msg, to, from_address)
+            except Exception as err:
+                self.logger.error("Error sending message: {err}".format(err=traceback.format_exc()))
+            else:
+                self.logger.info("Email sent to {to} from {from_address} via smtp server {host}".format(to=to,
+                                                                                                        from_address=from_address,
+                                                                                                        host=self.host))
         else:
             self.logger.info("No email recipient specified, notification was not sent", event=event)
 
         self.send_event(event)
 
     def send(self, msg, to, from_address):
-        try:
-            sender = smtplib.SMTP(self.host)
-            sender.sendmail(from_address, to.split(","), msg.as_string())
-            sender.quit()
-        except Exception as err:
-            self.logger.error("Error sending message: {err}".format(err=traceback.format_exc()))
-        else:
-            self.logger.info("Email sent to {to} from {from_address} via smtp server {host}".format(to=to,
-                                                                                                    from_address=from_address,
-                                                                                                    host=self.host))
+        sender = smtplib.SMTP(self.host)
+        sender.sendmail(from_address, to.split(","), msg.as_string())
+        sender.quit()
 
 
 class SMTPIn(Actor):
