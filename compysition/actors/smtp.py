@@ -68,7 +68,7 @@ class SMTPOut(Actor):
             try:
                 self.send(msg, to, from_address)
             except Exception as err:
-                self.logger.error("Error sending message: {err}".format(err=traceback.format_exc()))
+                self.logger.error("Error sending message: {err}".format(err=traceback.format_exc()), event=event)
             else:
                 self.logger.info("Email sent to {to} from {from_address} via smtp server {host}".format(to=to,
                                                                                                         from_address=from_address,
