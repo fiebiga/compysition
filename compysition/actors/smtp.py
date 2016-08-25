@@ -72,7 +72,7 @@ class SMTPOut(Actor):
             else:
                 self.logger.info("Email sent to {to} from {from_address} via smtp server {host}".format(to=to,
                                                                                                         from_address=from_address,
-                                                                                                        host=self.host))
+                                                                                                        host=self.host), event=event)
         else:
             self.logger.info("No email recipient specified, notification was not sent", event=event)
 
