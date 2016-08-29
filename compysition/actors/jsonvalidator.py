@@ -24,7 +24,7 @@
 from compysition import Actor
 from jsonschema import Draft4Validator
 from jsonschema.exceptions import SchemaError, ValidationError
-from ast import literal_eval
+import json
 from compysition.event import JSONEvent
 from compysition.errors import MalformedEventData
 
@@ -51,7 +51,7 @@ class JSONValidator(Actor):
         if self.schema:
             try:
                 if isinstance(self.schema, str):
-                    self.schema = literal_eval(self.schema)
+                    self.schema = json.loads(self.schema)
 
                 if isinstance(self.schema, dict):
                     self.schema = Draft4Validator(self.schema)
