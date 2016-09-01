@@ -1,9 +1,10 @@
-from compysition.actors import *
-import unittest
-from compysition.event import *
-from compysition.errors import *
-from utils.test_actor import TestActorWrapper
 import json
+import unittest
+
+from compysition.actors import *
+from compysition.errors import *
+
+from compysition.testutils.test_actor import TestActorWrapper
 
 
 class TestEventJoin(unittest.TestCase):

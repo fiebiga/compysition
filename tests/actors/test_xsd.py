@@ -1,7 +1,8 @@
-from compysition.actors import *
 import unittest
+
+from compysition.actors import *
 from compysition.event import *
-from utils.test_actor import TestActorWrapper
+from compysition.testutils.test_actor import TestActorWrapper
 
 xsd = """
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">

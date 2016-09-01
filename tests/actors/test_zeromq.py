@@ -1,9 +1,11 @@
-from compysition.actors import *
-import unittest
-from compysition.event import *
-from utils.test_actor import TestActorWrapper
-from uuid import uuid4 as uuid
 import random
+import unittest
+from uuid import uuid4 as uuid
+
+from compysition.actors import *
+from compysition.event import *
+
+from compysition.testutils.test_actor import TestActorWrapper
 
 
 class TestPushPullIPC(unittest.TestCase):

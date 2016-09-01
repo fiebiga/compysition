@@ -72,6 +72,7 @@ setup(
     platforms=['Linux'],
     install_requires=REQUIRES,
     namespace_packages=[],
+    test_suite="tests",
     packages=find_packages(),
     package_data={'': ['*.txt', '*.rst', '*.xml', '*.xsl', '*.conf']},
     zip_safe=False)

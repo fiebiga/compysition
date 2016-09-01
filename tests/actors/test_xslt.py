@@ -1,7 +1,9 @@
-from compysition.actors import *
 import unittest
+
+from compysition.actors import *
 from compysition.event import *
-from utils.test_actor import TestActorWrapper
+
+from compysition.testutils.test_actor import TestActorWrapper
 
 simple_xslt_case = {
                     "input":    "<root><foo>foo_value</foo><bar>bar_value></bar></root>",

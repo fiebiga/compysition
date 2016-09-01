@@ -1,8 +1,11 @@
-from compysition.actors import *
-import unittest
-from compysition.event import *
-from utils.test_actor import TestActorWrapper
 import json
+import unittest
+
+from compysition.actors import *
+from compysition.event import *
+
+from compysition.testutils.test_actor import TestActorWrapper
+
 
 class TestDictToXML(unittest.TestCase):
     """

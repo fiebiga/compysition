@@ -276,12 +276,17 @@ class MDPWorker(MDPActor):
     def send_outbound_message(self, socket, event):
         request_id = event.event_id
         request = self.requests.get(request_id)
-
         if request is not None:
             broker = request.origin_broker
             return_address = request.return_address
             broker_event_logging_id = event.meta_id
-            message = ['', MDPDefinition.W_WORKER, MDPDefinition.W_REPLY, return_address, '', broker_event_logging_id, b"{0}".format(pickle.dumps(event))]
+            try:
+                message = ['', MDPDefinition.W_WORKER, MDPDefinition.W_REPLY, return_address, '', str(broker_event_logging_id), b"{0}".format(pickle.dumps(event))]
+                self.logger.info("Pickle was successful")
+            except Exception as err:
+                self.logger.error(err)
+
+            print broker_event_logging_id
 
             if broker is not None:                  # Prioritize the originating broker first
                 try:
