@@ -1,7 +1,7 @@
 import unittest
 from compysition.actors import *
 from compysition.event import *
-from utils.test_actor import TestActorWrapper
+from compysition.testutils.test_actor import TestActorWrapper
 
 
 class TestRESTTranslator(unittest.TestCase):
