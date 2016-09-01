@@ -282,11 +282,8 @@ class MDPWorker(MDPActor):
             broker_event_logging_id = event.meta_id
             try:
                 message = ['', MDPDefinition.W_WORKER, MDPDefinition.W_REPLY, return_address, '', str(broker_event_logging_id), b"{0}".format(pickle.dumps(event))]
-                self.logger.info("Pickle was successful")
             except Exception as err:
-                self.logger.error(err)
-
-            print broker_event_logging_id
+                self.logger.error(err, event=event)
 
             if broker is not None:                  # Prioritize the originating broker first
                 try:
