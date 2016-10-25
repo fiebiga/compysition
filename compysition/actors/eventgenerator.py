@@ -25,8 +25,7 @@
 
 from compysition import Actor
 import gevent
-from gevent.pool import Pool
-from compysition.event import *
+from compysition.event import Event
 from compysition.actors.util.udplib import UDPInterface
 from apscheduler.schedulers.gevent import GeventScheduler
 

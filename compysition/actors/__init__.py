@@ -24,7 +24,7 @@
 
 from .null import Null
 from .stdout import STDOUT
-from .eventgenerator import *
+from .eventgenerator import EventGenerator, CronEventGenerator, UDPEventGenerator, UDPCronEventGenerator
 from .filelogger import FileLogger
 from .httpserver import HTTPServer
 from .basicauth import BasicAuth
@@ -38,7 +38,8 @@ from .mdpbroker import MDPBroker
 from .mdpregistrar import MDPBrokerRegistrationService
 from .eventlogger import EventLogger
 from .eventrouter import EventRouter, EventXMLFilter, EventFilter, HTTPMethodEventRouter, EventJSONFilter, EventXMLXpathsFilter
-from .eventattributemodifier import *
+from .eventattributemodifier import (EventAttributeModifier, HTTPStatusModifier, XpathEventAttributeModifer,
+                                     HTTPXpathEventAttributeModifier, JSONEventAttributeModifier, HTTPJSONAttributeModifier)
 from .tcp import TCPIn, TCPOut
 from .zeromq import ZMQPush, ZMQPull
 from .xsd import XSD
