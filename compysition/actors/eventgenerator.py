@@ -102,6 +102,7 @@ class EventGenerator(Actor):
 
     def _do_produce(self):
         event = self.output[0](**self.event_kwargs)
+        self.logger.debug("Generated new event {event_id}".format(event_id=event.event_id))
         self.send_event(event)
         if self.generate_error:
             event = self.output(**self.event_kwargs)
