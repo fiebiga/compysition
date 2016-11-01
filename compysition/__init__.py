@@ -28,5 +28,5 @@ from logger import Logger
 from director import Director
 from event import Event
 
-__version__ = '1.2.42'
+__version__ = '1.2.43'
 version = __version__
