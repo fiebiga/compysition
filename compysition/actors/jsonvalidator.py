@@ -25,6 +25,7 @@ from compysition import Actor
 from jsonschema import Draft4Validator, FormatChecker
 from jsonschema.exceptions import SchemaError, ValidationError
 import json
+from datetime import datetime
 from compysition.event import JSONEvent
 from compysition.errors import MalformedEventData
 
@@ -49,12 +50,18 @@ class JSONValidator(Actor):
         super(JSONValidator, self).__init__(name, *args, **kwargs)
         self.schema = schema
         if self.schema:
+            formatter = FormatChecker()
+
+            @formatter.checks('mysql_timestamp', raises=ValidationError)
+            def mysql_timestamp(instance):
+                return datetime.strptime(instance, '%Y-%m-%d %H:%M:%S')
+
             try:
                 if isinstance(self.schema, str):
                     self.schema = json.loads(self.schema)
 
                 if isinstance(self.schema, dict):
-                    self.schema = Draft4Validator(self.schema, format_checker=FormatChecker())
+                    self.schema = Draft4Validator(self.schema, format_checker=formatter)
                 else:
                     raise ValueError("Schema must be of type str or dict. Instead received type '{type}'".format(type=type(self.schema)))
             except Exception as err:
