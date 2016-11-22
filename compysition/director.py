@@ -157,10 +157,8 @@ class Director(object):
 
     def register_actor(self, actor, name=None, *args, **kwargs):
         if not isinstance(actor, Actor):
-            try:
-                actor = self.__create_actor(actor, name, *args, **kwargs)
-            except Exception:
-                raise ActorInitFailure(traceback.format_exc())
+            actor = self.__create_actor(actor, name, *args, **kwargs)
+
 
         self.actors[actor.name] = actor
         if self.generate_blockdiag:
