@@ -22,7 +22,7 @@
 #  MA 02110-1301, USA.
 
 from compysition import Actor
-from jsonschema import Draft4Validator
+from jsonschema import Draft4Validator, FormatChecker
 from jsonschema.exceptions import SchemaError, ValidationError
 import json
 from compysition.event import JSONEvent
@@ -54,7 +54,7 @@ class JSONValidator(Actor):
                     self.schema = json.loads(self.schema)
 
                 if isinstance(self.schema, dict):
-                    self.schema = Draft4Validator(self.schema)
+                    self.schema = Draft4Validator(self.schema, format_checker=FormatChecker())
                 else:
                     raise ValueError("Schema must be of type str or dict. Instead received type '{type}'".format(type=type(self.schema)))
             except Exception as err:
