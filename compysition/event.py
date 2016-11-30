@@ -359,9 +359,9 @@ class LogEvent(Event):
     """
 
     def __init__(self, level, origin_actor, message, id=None):
-        self.id = id or uuid().get_hex()
-        self.event_id = id
-        self.meta_id = id
+        self.id = id
+        self.event_id = uuid().get_hex()
+        self.meta_id = id or self.event_id
         self.level = level
         self.time = datetime.now().strftime('%Y-%m-%d %H:%M:%S,%f')[:-3]
         self.origin_actor = origin_actor
