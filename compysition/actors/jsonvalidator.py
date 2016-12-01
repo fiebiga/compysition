@@ -49,12 +49,14 @@ class JSONValidator(Actor):
         super(JSONValidator, self).__init__(name, *args, **kwargs)
         self.schema = schema
         if self.schema:
+            formatter = self._build_formatter()
+
             try:
                 if isinstance(self.schema, str):
                     self.schema = json.loads(self.schema)
 
                 if isinstance(self.schema, dict):
-                    self.schema = Draft4Validator(self.schema, format_checker=FormatChecker())
+                    self.schema = Draft4Validator(self.schema, format_checker=formatter)
                 else:
                     raise ValueError("Schema must be of type str or dict. Instead received type '{type}'".format(type=type(self.schema)))
             except Exception as err:
@@ -81,6 +83,22 @@ class JSONValidator(Actor):
                 error_reasons.append(err_message)
             message = error_reasons
             self.process_error(message, event)
+
+    @staticmethod
+    def _build_formatter():
+        """Create a formatter to be passed to the validator. This method can be subclassed to add custom formatters ie:
+
+        formatter = FormatChecker()
+        @formatter.checks('my-custom-format', raises=ValidationError)
+         def my_custom_format(instance):
+            if matches_my_custom_format(instance):
+                return True
+            else:
+                return False
+
+        more info: https://python-jsonschema.readthedocs.io/en/latest/validate/#validating-formats
+         """
+        return FormatChecker()
 
     def process_error(self, message, event):
         self.logger.error("Error validating incoming JSON: {0}".format(message), event=event)
