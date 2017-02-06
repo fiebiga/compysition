@@ -22,6 +22,7 @@
 #  MA 02110-1301, USA.
 
 from compysition import Actor
+from compysition.errors import InvalidEventDataModification
 from compysition.event import HttpEvent, JSONHttpEvent, XMLHttpEvent
 from gevent import pywsgi
 import json
@@ -30,6 +31,8 @@ from collections import defaultdict
 from gevent.queue import Queue
 from bottle import *
 import re
+import time
+import mimeparse
 
 BaseRequest.MEMFILE_MAX = 1024 * 1024 # (or whatever you want)
 
@@ -111,12 +114,23 @@ class HTTPServer(Actor, Bottle):
             ]
     }
 
+    input = HttpEvent
+    output = HttpEvent
+
+    QUEUE_REGEX = re.compile("<queue:re:[a-zA-Z_0-9]+?>")
+
+    # Order matters, as this is used to resolve the returned content type preserved in the accept header, in order of increasing preference.
+    _TYPES_MAP = [('application/xml+schema', XMLHttpEvent),
+                  ('application/json+schema', JSONHttpEvent),
+                  ('*/*', HttpEvent),
+                  ('text/plain', HttpEvent),
+                  ('text/html', XMLHttpEvent),
+                  ('text/xml', XMLHttpEvent),
+                  ('application/xml', XMLHttpEvent),
+                  ('application/json', JSONHttpEvent)]
+    CONTENT_TYPES = [_type[0] for _type in _TYPES_MAP]
     CONTENT_TYPE_MAP = defaultdict(lambda: HttpEvent,
-                                   {"application/json": JSONHttpEvent,
-                                    "text/xml": XMLHttpEvent,
-                                    "application/xml": XMLHttpEvent,
-                                    "text/html": XMLHttpEvent,
-                                    "text/plain": HttpEvent})
+                                   _TYPES_MAP)
 
     X_WWW_FORM_URLENCODED_KEY_MAP = defaultdict(lambda: HttpEvent, {"XML": XMLHttpEvent, "JSON": JSONHttpEvent})
     X_WWW_FORM_URLENCODED = "application/x-www-form-urlencoded"
@@ -132,6 +146,18 @@ class HTTPServer(Actor, Bottle):
         else:
             return route.get('path')
 
+
+    @staticmethod
+    def _parse_queue_variables(path):
+        return HTTPServer.QUEUE_REGEX.findall(path)
+
+    @staticmethod
+    def _parse_queue_names(path):
+        path_variables = HTTPServer._parse_queue_variables(path)
+        path_names = [s.replace("<queue:re:", '')[:-1] for s in path_variables]
+
+        return path_names
+
     @staticmethod
     def _normalize_queue_definition(path):
         """
@@ -144,10 +170,8 @@ class HTTPServer(Actor, Bottle):
         This ONLY works for SIMPLE regex cases, which should be the case anyway for the queue name.
         """
 
-        variable_name_regex = re.compile("<queue:re:[a-zA-Z_0-9]+?>")
-
-        path_variables = variable_name_regex.findall(path)
-        path_names = [s.replace("<queue:re:", '')[:-1] for s in path_variables]
+        path_variables = HTTPServer._parse_queue_variables(path)
+        path_names = HTTPServer._parse_queue_names(path)
 
         for path_variable in path_variables[:-1]:
             path = path.replace(path_variable, path_names.pop(0))
@@ -188,7 +212,6 @@ class HTTPServer(Actor, Bottle):
     def log_to_logger(self, fn):
         '''
         Wrap a Bottle request so that a log line is emitted after it's handled.
-        (This decorator can be extended to take the desired logger as a param.)
         '''
         @wraps(fn)
         def _log_to_logger(*args, **kwargs):
@@ -231,10 +254,13 @@ class HTTPServer(Actor, Bottle):
 
         if response_queue:
 
-            if not isinstance(event, original_event_class):
-                self.logger.warning("Incoming event did did not match the clients content type format. Converting '{current}' to '{new}'".format(
-                    current=type(event), new=original_event_class))
-                event = event.convert(original_event_class)
+            accept = event.get('accept', original_event_class.content_type)
+
+            if not isinstance(event, self.CONTENT_TYPE_MAP[accept]):
+                self.logger.warning(
+                    "Incoming event did did not match the clients Accept format. Converting '{current}' to '{new}'".format(
+                        current=type(event), new=original_event_class.__name__))
+                event = event.convert(self.CONTENT_TYPE_MAP[accept])
 
             local_response = HTTPResponse()
             status, status_message = event.status
@@ -242,6 +268,8 @@ class HTTPServer(Actor, Bottle):
 
             for header in event.headers.keys():
                 local_response.set_header(header, event.headers[header])
+
+            local_response.set_header("Content-Type", event.content_type)
 
             if int(status) == 204:
                 response_data = ""
@@ -252,6 +280,7 @@ class HTTPServer(Actor, Bottle):
 
             response_queue.put(local_response)
             response_queue.put(StopIteration)
+            self.logger.info("[{status}] Returned in {time} ms".format(status=local_response.status, time=(time.time()-event.created)*1000), event=event)
         else:
             self.logger.warning("Received event response for an unknown event ID. The request might have already received a response", event=event)
 
@@ -272,6 +301,18 @@ class HTTPServer(Actor, Bottle):
         queue = self.pool.outbound.get(queue_name, None)
         ctype = request.content_type.split(';')[0]
 
+        accept_header = request.headers.get("Accept", "*/*")
+        try:
+            accept = mimeparse.best_match(self.CONTENT_TYPES, accept_header)
+        except ValueError:
+            accept = "*/*"
+            self.logger.warning("Invalid mimetype defined in client Accepts header. '{accept}' is not a valid mime type".format(accept=accept_header))
+
+        if request.method in ["GET", "OPTIONS", "HEAD", "DELETE"]:
+            for accept_type in accept_header:
+                if accept_type in self.CONTENT_TYPE_MAP.keys():
+                    pass
+
         if ctype == '':
             ctype = None
 
@@ -289,14 +330,21 @@ class HTTPServer(Actor, Bottle):
             if data == '':
                 data = None
 
-            event = event_class(environment=self._format_bottle_env(request.environ),
-                                service=queue_name, data=data, **kwargs)
+            environment = self._format_bottle_env(request.environ)
 
-            self.send_event(event, queue=queue)
-            self.logger.info("Received {0} request for service {1}".format(request.method, queue_name), event=event)
+            try:
+                event = event_class(environment=environment,
+                                    service=queue_name, data=data, accept=accept, **kwargs)
+            except InvalidEventDataModification as err:
+                event = event_class(environment=environment, service=queue_name, accept=accept, **kwargs)
+                event.error = err
+                queue = self.pool.inbound[self.pool.inbound.keys()[0]]
+
             response_queue = Queue()
             self.responders.update({event.event_id: (event_class, response_queue)})
             local_response = response_queue
+            self.logger.info("Received {0} request for service {1}".format(request.method, queue_name), event=event)
+            self.send_event(event, queues=[queue])
         else:
             response.body = "Service '{0}' not found".format(queue_name)
             response.status = "404 Not Found"
