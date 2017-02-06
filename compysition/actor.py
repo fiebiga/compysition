@@ -48,6 +48,8 @@ class Actor(object):
     DEFAULT_EVENT_SERVICE = "default"
     input = Event
     output = Event
+    REQUIRED_EVENT_ATTRIBUTES = None
+    __NOT_DEFINED = object()
 
     def __init__(self, name, size=0, blocking_consume=False, rescue=False, max_rescue=5, *args, **kwargs):
         """
@@ -178,51 +180,40 @@ class Actor(object):
             self.logger.debug("post_hook() found, executing")
             self.post_hook()
 
-    def send_event(self, event, queue=None, queues=None, check_output=True):
+    def send_event(self, event, queues=__NOT_DEFINED, check_output=True):
         """
         Sends event to all registered outbox queues. If multiple queues are consuming the event,
         a deepcopy of the event is sent instead of raw event.
-
-        If 'queue' is provided, it supercedes all others and submits ONLY to that queue
         """
-        if check_output and not isinstance(event, self.output):
-            raise InvalidActorOutput("Event was of type '{_type}', expected '{output}'".format(_type=type(event), output=self.output))
 
-        if queue is not None:
-            self._submit(queue, event=event)
-        else:
-            if queues:
-                send_queues = queues
-            else:
-                send_queues = self.pool.outbound.values()
-            self._loop_submit(event, send_queues)
+        if queues is self.__NOT_DEFINED:
+            queues = self.pool.outbound.values()
 
-    def send_error(self, event, queue=None, queues=None):
+        self._loop_send(event, queues)
+
+    def send_error(self, event):
         """
         Calls 'send_event' with all error queues as the 'queues' parameter
         """
-        if not queues:
-            queues = self.pool.error.values()
+        queues = self.pool.error.values()
+        self._loop_send(event, queues=queues, check_output=False)
 
-        if queues or queue:
-            self.send_event(event, queue=queue, queues=queues, check_output=False)
-
-    def _loop_submit(self, event, queues):
+    def _loop_send(self, event, queues, check_output=True):
         """
         :param event:
         :param queues:
         :return:
         """
+        if check_output and not isinstance(event, self.output):
+            raise InvalidActorOutput("Event was of type '{_type}', expected '{output}'".format(_type=type(event), output=self.output))
+
         if len(queues) > 0:
-            event_queue_pairs = [(queues[0], event)] + [(queue, deepcopy(event)) for queue in queues[1:]]
+            self._send(queues[0], deepcopy(event))
+            map(lambda _queue: self._send(_queue, deepcopy(event)), queues[1:])
 
-            if queues:
-                map(lambda event_queue_pair: self._submit(event_queue_pair[0], event=event_queue_pair[1]), event_queue_pairs)
-
-    def _submit(self, queue, event=None):
-        if event is not None:
-            queue.put(event)
-            sleep(0)
+    def _send(self, queue, event):
+        queue.put(event)
+        sleep(0)
 
     def __consumer(self, function, queue):
         '''Greenthread which applies <function> to each element from <queue>
@@ -267,6 +258,11 @@ class Actor(object):
                 self.logger.warning("Incoming event was of type '{_type}' when type {input} was expected. Converted to {converted}".format(
                     _type=type(event), input=self.input, converted=type(new_event)), event=event)
                 event = new_event
+
+            if self.REQUIRED_EVENT_ATTRIBUTES:
+                missing = [event.get(attribute) for attribute in self.REQUIRED_EVENT_ATTRIBUTES if not event.get(attribute, None)]
+                if len(missing) > 0:
+                    raise InvalidActorInput("Required incoming event attributes were missing: {missing}".format(missing=missing))
 
             function(event, origin=queue.name, origin_queue=queue)
         except QueueFull as err:
