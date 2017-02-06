@@ -32,6 +32,7 @@ from datetime import datetime
 from xml.sax.saxutils import XMLGenerator
 import re
 from copy import deepcopy
+import time
 
 """
 Compysition event is created and passed by reference among actors
@@ -58,6 +59,12 @@ def remove_internal_xmlify(_json):
             _json = _json[first_key]
 
     return _json
+
+
+class NullLookupValue(object):
+
+    def get(self, key, value=None):
+        return self
 
 
 class UnescapedDictXMLGenerator(XMLGenerator):
@@ -109,6 +116,7 @@ class Event(object):
         self.service = service or DEFAULT_EVENT_SERVICE
         self.data = data
         self.error = None
+        self.created = time.time()
         self.__dict__.update(kwargs)
 
     def set(self, key, value):
@@ -132,8 +140,13 @@ class Event(object):
     def data(self, data):
         try:
             self._data = self.conversion_methods[data.__class__](data)
+        except KeyError:
+            raise InvalidEventDataModification("Data of type '{_type}' was not valid for event type {cls}: {err}".format(_type=type(data),
+                                                                                          cls=self.__class__, err=traceback.format_exc()))
+        except ValueError as err:
+            raise InvalidEventDataModification("Malformed data: {err}".format(err=err))
         except Exception as err:
-            raise InvalidEventDataModification("Data of type '{_type}' was not valid for event type {cls}: {err}".format(_type=type(data), cls=self.__class__, err=traceback.format_exc()))
+            raise InvalidEventDataModification("Unknown error occurred on modification: {err}".format(err=err))
 
     @property
     def event_id(self):
@@ -145,6 +158,15 @@ class Event(object):
             raise InvalidEventDataModification("Cannot alter event_id once it has been set. A new event must be created")
         else:
             self._event_id = event_id
+
+    def lookup(self, path, value=None):
+        """
+        TODO: Account for list objects in the lookup path and generate multiple results if found
+        """
+        value = reduce(lambda obj, key: obj.get(key, NullLookupValue()) if isinstance(obj, dict) else getattr(obj, key, NullLookupValue()), [self] + path)
+        if isinstance(value, NullLookupValue()):
+            value = None
+        return value
 
     def get_properties(self):
         """
@@ -224,26 +246,14 @@ class Event(object):
 
 class HttpEvent(Event):
 
+    content_type = "text/plain"
+
     def __init__(self, headers=None, status=(200, "OK"), environment={}, *args, **kwargs):
-        headers = headers or {}
-        content_type = headers.get("Content-Type", None)
-
-        if not content_type:
-            headers['Content-Type'] = self._content_type
-
-        self.headers = headers
+        self.headers = headers or {}
+        self.method = environment.get('REQUEST_METHOD', None)
         self.status = status
         self.environment = environment
         super(HttpEvent, self).__init__(*args, **kwargs)
-
-    @property
-    def headers(self):
-        self._headers["Content-Type"] = self._content_type
-        return self._headers
-
-    @headers.setter
-    def headers(self, headers):
-        self._headers = headers
 
     @property
     def status(self):
@@ -269,7 +279,7 @@ class HttpEvent(Event):
 
 class _XMLFormatInterface(DataFormatInterface):
 
-    _content_type = "application/xml"
+    content_type = "application/xml"
 
     conversion_methods = {str: lambda data: etree.fromstring(data)}
     conversion_methods.update(dict.fromkeys(_XML_TYPES, lambda data: data))
@@ -308,7 +318,7 @@ class _XMLFormatInterface(DataFormatInterface):
 
 class _JSONFormatInterface(DataFormatInterface):
 
-    _content_type = "application/json"
+    content_type = "application/json"
 
     conversion_methods = {str: lambda data: json.loads(data)}
     conversion_methods.update(dict.fromkeys(_JSON_TYPES, lambda data: json.loads(json.dumps(data))))
@@ -335,6 +345,13 @@ class _JSONFormatInterface(DataFormatInterface):
         if error:
             error = json.dumps(error)
         return error
+
+    def lookup(self, path, base=None, value=None):
+        base = [self] if base is None else base
+        value = reduce(lambda obj, key: obj.get(key, NullLookupValue()) if isinstance(obj, dict) else getattr(obj, key, NullLookupValue()), base + path)
+        if isinstance(value, NullLookupValue()):
+            value = None
+        return value
 
 
 class XMLEvent(_XMLFormatInterface, Event):
@@ -379,6 +396,7 @@ http_code_map = defaultdict(lambda: {"status": ((500, "Internal Server Error"))}
                             {
                                 ResourceNotModified:    {"status": (304, "Not Modified")},
                                 MalformedEventData:     {"status": (400, "Bad Request")},
+                                InvalidEventDataModification: {"status": (400, "Bad Request")},
                                 UnauthorizedEvent:      {"status": (401, "Unauthorized"),
                                                          "headers": {'WWW-Authenticate': 'Basic realm="Compysition Server"'}},
                                 ForbiddenEvent:         {"status": (403, "Forbidden")},
