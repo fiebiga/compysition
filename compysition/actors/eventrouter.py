@@ -72,7 +72,7 @@ class EventRouter(Actor):
 
     def pre_hook(self):
         if len(self.filters) == 0:
-            raise SetupError("No filters were  to this router")
+            raise SetupError("No filters were connected to this router")
         self._initialize_outboxes()
 
     def _initialize_outboxes(self):
@@ -147,6 +147,19 @@ class EventRouter(Actor):
             raise TypeError("The provided filter is not a valid EventFilter type")
 
 
+class SimpleRouter(EventRouter):
+
+    def __init__(self, name, scope="data", type="whitelist", *args, **kwargs):
+        super(SimpleRouter, self).__init__(name, type=type, *args, **kwargs)
+        self.scope = scope
+
+    def pre_hook(self):
+        for queue in self.pool.outbound:
+            self.set_filter(EventFilter(value_regexes=queue, outbox_names=[queue], event_scope=(self.scope, )))
+
+        super(SimpleRouter, self).pre_hook()
+
+
 class HTTPMethodEventRouter(EventRouter):
 
     HTTP_METHODS = ["GET", "POST", "DELETE", "PATCH", "HEAD", "PUT", "OPTIONS"]
@@ -159,13 +172,13 @@ class HTTPMethodEventRouter(EventRouter):
     def process_no_match(self, event, *args, **kwargs):
         event.headers['Allow'] = ", ".join(self.pool.outbound)
         self.logger.warning("HttpEvent with method '{method}' received but not implemented. Recommend catching this at the front end web interface".format(
-                method=event.environment['REQUEST_METHOD']), event=event)
-        raise EventCommandNotAllowed("Method '{method}' not allowed for this endpoint".format(method=event.environment['REQUEST_METHOD']))
+                method=event.method), event=event)
+        raise EventCommandNotAllowed("Method '{method}' not allowed for this endpoint".format(method=event.method))
 
     def pre_hook(self):
         for queue in self.pool.outbound:
             if queue in self.HTTP_METHODS:
-                self.set_filter(EventFilter(value_regexes=queue, outbox_names=[queue], event_scope=("environment", "REQUEST_METHOD")))
+                self.set_filter(EventFilter(value_regexes=queue, outbox_names=[queue], event_scope=("method", )))
             else:
                 self.logger.warn("Queue {queue} is not a valid HTTP method and was not added as a routing option")
 
@@ -385,5 +398,6 @@ class EventJSONFilter(EventFilter):
                 yield json_value
         except Exception as err:
             yield None
+
 
 
