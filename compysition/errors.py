@@ -30,6 +30,7 @@ class CompysitionException(Exception):
         if not isinstance(message, list):
             message = [message]
 
+        self.code = None
         super(CompysitionException, self).__init__(message)
 
 

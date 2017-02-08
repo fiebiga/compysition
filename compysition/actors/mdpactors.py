@@ -196,6 +196,7 @@ class MDPClient(MDPActor):
                 request_identity = message.pop(0)
 
                 event = pickle.loads(message[0])
+
                 self.logger.info("Received reply from broker", event=event)
                 self.send_event(event)
 
@@ -294,7 +295,6 @@ class MDPWorker(MDPActor):
                     self.logger.info("Sent reply through non-originating broker", event=event)
         else:
             self.logger.error("Received event response but was unable to find client return address for id {0}".format(request_id), event=event)
-
 
     def send_heartbeats(self):
         self.broker_manager.send_heartbeats(message=['', MDPDefinition.W_WORKER, MDPDefinition.W_HEARTBEAT, self.socket_identity])

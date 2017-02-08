@@ -26,7 +26,7 @@ from compysition.queue import QueuePool
 from compysition.logger import Logger
 from compysition.errors import *
 from restartlet import RestartPool
-from compysition.event import Event
+from compysition.event import Event, LogEvent
 from gevent import sleep
 from gevent.event import Event as GEvent
 from gevent.local import local
@@ -208,7 +208,7 @@ class Actor(object):
             raise InvalidActorOutput("Event was of type '{_type}', expected '{output}'".format(_type=type(event), output=self.output))
 
         if len(queues) > 0:
-            self._send(queues[0], deepcopy(event))
+            self._send(queues[0], event)
             map(lambda _queue: self._send(_queue, deepcopy(event)), queues[1:])
 
     def _send(self, queue, event):

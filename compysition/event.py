@@ -181,6 +181,7 @@ class Event(object):
     def __setstate__(self, state):
         self.__dict__ = state
         self.data = state['_data']
+        self.error = state.get('_error', None)
 
     def __str__(self):
         return str(self.__getstate__())
@@ -204,7 +205,8 @@ class Event(object):
             if not isinstance(messages, list):
                 messages = [messages]
 
-            return map(lambda _error: _error.message if isinstance(_error, Exception) else _error, messages)
+            errors = map(lambda _error: {"message": str(getattr(_error, "message", _error)), "code": getattr(_error, "code", None)}, messages)
+            return errors
 
         else:
             return None
@@ -301,8 +303,10 @@ class _XMLFormatInterface(DataFormatInterface):
             for error in errors:
                 error_element = etree.Element("error")
                 message_element = etree.Element("message")
+                code_element = etree.Element("code")
                 error_element.append(message_element)
-                message_element.text = error
+                message_element.text = error['message']
+                code_element.text = error['code']
                 _root.append(error_element)
 
             errors = _root
@@ -332,13 +336,6 @@ class _JSONFormatInterface(DataFormatInterface):
 
     def data_string(self):
         return json.dumps(self.data)
-
-    def format_error(self):
-        errors = super(_JSONFormatInterface, self).format_error()
-        if errors:
-            errors = [{"message": error} for error in errors]
-
-        return errors
 
     def error_string(self):
         error = self.format_error()

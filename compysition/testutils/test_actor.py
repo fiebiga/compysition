@@ -59,7 +59,7 @@ class TestActorWrapper(object):
     @input.setter
     def input(self, _input):
         self._input = _input
-        self.actor._loop_submit(_input, queues=self.input_queues.values())
+        self.actor.send_event(_input, queues=self.input_queues.values())
 
     @property
     def output(self):
