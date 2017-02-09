@@ -208,7 +208,7 @@ class Actor(object):
             raise InvalidActorOutput("Event was of type '{_type}', expected '{output}'".format(_type=type(event), output=self.output))
 
         if len(queues) > 0:
-            self._send(queues[0], event)
+            self._send(queues[0], deepcopy(event))
             map(lambda _queue: self._send(_queue, deepcopy(event)), queues[1:])
 
     def _send(self, queue, event):
