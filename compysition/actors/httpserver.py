@@ -22,7 +22,7 @@
 #  MA 02110-1301, USA.
 
 from compysition import Actor
-from compysition.errors import InvalidEventDataModification
+from compysition.errors import InvalidEventDataModification, MalformedEventData, ResourceNotFound
 from compysition.event import HttpEvent, JSONHttpEvent, XMLHttpEvent
 from gevent import pywsgi
 import json
@@ -129,7 +129,7 @@ class HTTPServer(Actor, Bottle):
                   ('application/xml', XMLHttpEvent),
                   ('application/json', JSONHttpEvent)]
     CONTENT_TYPES = [_type[0] for _type in _TYPES_MAP]
-    CONTENT_TYPE_MAP = defaultdict(lambda: HttpEvent,
+    CONTENT_TYPE_MAP = defaultdict(lambda: JSONHttpEvent,
                                    _TYPES_MAP)
 
     X_WWW_FORM_URLENCODED_KEY_MAP = defaultdict(lambda: HttpEvent, {"XML": XMLHttpEvent, "JSON": JSONHttpEvent})
@@ -316,42 +316,48 @@ class HTTPServer(Actor, Bottle):
         if ctype == '':
             ctype = None
 
-        if queue:
-            event_class, data = None, None
+        try:
+            event_class = None
+            data = None
+            environment = self._format_bottle_env(request.environ)
+
+            if not queue:
+                self.logger.error("Received {method} request with URL '{url}'. Queue name '{queue_name}' was not found".format(method=request.method,
+                                                                                                                           url=request.path,
+                                                                                                                           queue_name=queue_name))
+                raise ResourceNotFound("Service '{0}' not found".format(queue_name))
 
             if ctype == self.X_WWW_FORM_URLENCODED:
-                for item in request.forms.items():
-                    event_class, data = self.X_WWW_FORM_URLENCODED_KEY_MAP[item[0]], item[1]
-                    # Compysition HTTPServer only supports one request urlencoded tag at this point
-                    break
+                if len(request.forms.items()) < 1:
+                    raise MalformedEventData("Mismatched content type")
+                else:
+                    for item in request.forms.items():
+                        event_class, data = self.X_WWW_FORM_URLENCODED_KEY_MAP[item[0]], item[1]
+                        break
             else:
-                event_class, data = self.CONTENT_TYPE_MAP[ctype], request.body.read()
+                event_class = self.CONTENT_TYPE_MAP[ctype]
+                try:
+                    data = request.body.read()
+                except:
+                    # A body is not required
+                    data = None
 
             if data == '':
                 data = None
 
-            environment = self._format_bottle_env(request.environ)
+            event = event_class(environment=environment, service=queue_name, data=data, accept=accept, **kwargs)
 
-            try:
-                event = event_class(environment=environment,
-                                    service=queue_name, data=data, accept=accept, **kwargs)
-            except InvalidEventDataModification as err:
-                event = event_class(environment=environment, service=queue_name, accept=accept, **kwargs)
-                event.error = err
-                queue = self.pool.inbound[self.pool.inbound.keys()[0]]
+        except (ResourceNotFound, InvalidEventDataModification, MalformedEventData) as err:
+            event_class = event_class or JSONHttpEvent
+            event = event_class(environment=environment, service=queue_name, accept=accept, **kwargs)
+            event.error = err
+            queue = self.pool.inbound[self.pool.inbound.keys()[0]]
 
-            response_queue = Queue()
-            self.responders.update({event.event_id: (event_class, response_queue)})
-            local_response = response_queue
-            self.logger.info("Received {0} request for service {1}".format(request.method, queue_name), event=event)
-            self.send_event(event, queues=[queue])
-        else:
-            response.body = "Service '{0}' not found".format(queue_name)
-            response.status = "404 Not Found"
-            self.logger.error("Received {method} request with URL '{url}'. Queue name '{queue_name}' was not found".format(method=request.method,
-                                                                                                                       url=request.path,
-                                                                                                                       queue_name=queue_name))
-            local_response = response
+        response_queue = Queue()
+        self.responders.update({event.event_id: (event_class, response_queue)})
+        local_response = response_queue
+        self.logger.info("Received {0} request for service {1}".format(request.method, queue_name), event=event)
+        self.send_event(event, queues=[queue])
 
         return local_response
 
