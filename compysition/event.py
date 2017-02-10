@@ -28,11 +28,10 @@ import xmltodict
 from collections import OrderedDict, defaultdict
 from xml.parsers import expat
 import traceback
-from datetime import datetime
 from xml.sax.saxutils import XMLGenerator
 import re
 from copy import deepcopy
-import time
+from datetime import datetime
 
 """
 Compysition event is created and passed by reference among actors
@@ -116,7 +115,7 @@ class Event(object):
         self.service = service or DEFAULT_EVENT_SERVICE
         self.data = data
         self.error = None
-        self.created = time.time()
+        self.created = datetime.now()
         self.__dict__.update(kwargs)
 
     def set(self, key, value):
@@ -159,12 +158,15 @@ class Event(object):
         else:
             self._event_id = event_id
 
-    def lookup(self, path, value=None):
+    def lookup(self, path):
         """
         TODO: Account for list objects in the lookup path and generate multiple results if found
         """
+        if isinstance(path, str):
+            path = [path]
+
         value = reduce(lambda obj, key: obj.get(key, NullLookupValue()) if isinstance(obj, dict) else getattr(obj, key, NullLookupValue()), [self] + path)
-        if isinstance(value, NullLookupValue()):
+        if isinstance(value, NullLookupValue):
             value = None
         return value
 
@@ -342,13 +344,6 @@ class _JSONFormatInterface(DataFormatInterface):
         if error:
             error = json.dumps(error)
         return error
-
-    def lookup(self, path, base=None, value=None):
-        base = [self] if base is None else base
-        value = reduce(lambda obj, key: obj.get(key, NullLookupValue()) if isinstance(obj, dict) else getattr(obj, key, NullLookupValue()), base + path)
-        if isinstance(value, NullLookupValue()):
-            value = None
-        return value
 
 
 class XMLEvent(_XMLFormatInterface, Event):

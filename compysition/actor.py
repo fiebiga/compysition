@@ -251,9 +251,7 @@ class Actor(object):
         """
         try:
 
-            #TODO: Determine if this is what you want
             if not isinstance(event, self.input):
-                #raise InvalidActorInput("Event was of type '{_type}', expected '{input}'".format(_type=type(event), input=self.input))
                 new_event = event.convert(self.input[0])
                 self.logger.warning("Incoming event was of type '{_type}' when type {input} was expected. Converted to {converted}".format(
                     _type=type(event), input=self.input, converted=type(new_event)), event=event)
