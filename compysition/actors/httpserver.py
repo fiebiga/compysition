@@ -33,6 +33,7 @@ from bottle import *
 import re
 import time
 import mimeparse
+from datetime import datetime
 
 BaseRequest.MEMFILE_MAX = 1024 * 1024 # (or whatever you want)
 
@@ -280,7 +281,7 @@ class HTTPServer(Actor, Bottle):
 
             response_queue.put(local_response)
             response_queue.put(StopIteration)
-            self.logger.info("[{status}] Returned in {time} ms".format(status=local_response.status, time=(time.time()-event.created)*1000), event=event)
+            self.logger.info("[{status}] Returned in {time} ms".format(status=local_response.status, time=(datetime.now()-event.created).microseconds / 1000), event=event)
         else:
             self.logger.warning("Received event response for an unknown event ID. The request might have already received a response", event=event)
 

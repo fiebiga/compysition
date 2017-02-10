@@ -103,6 +103,12 @@ class EventAttributeModifier(Actor):
         return self.value
 
 
+class EventAttributeLookupModifier(EventAttributeModifier):
+
+    def get_modify_value(self, event):
+        return event.lookup(self.value)
+
+
 class HTTPStatusModifier(EventAttributeModifier):
 
     def __init__(self, name, value=(200, "OK"), *args, **kwargs):
