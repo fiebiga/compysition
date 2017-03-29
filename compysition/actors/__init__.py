@@ -26,6 +26,7 @@ from .null import Null
 from .stdout import STDOUT
 from .eventgenerator import EventGenerator, CronEventGenerator, UDPEventGenerator, UDPCronEventGenerator
 from .filelogger import FileLogger
+from .redactedfilelogger import RedactedFileLogger
 from .httpserver import HTTPServer
 from .basicauth import BasicAuth
 from .xslt import XSLT
