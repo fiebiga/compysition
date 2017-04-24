@@ -26,11 +26,11 @@
 
 class CompysitionException(Exception):
 
-    def __init__(self, message=""):
+    def __init__(self, message="", code=None):
         if not isinstance(message, list):
             message = [message]
 
-        self.code = None
+        self.code = code
         super(CompysitionException, self).__init__(message)
 
 
