@@ -26,14 +26,13 @@ from compysition.queue import QueuePool
 from compysition.logger import Logger
 from compysition.errors import *
 from restartlet import RestartPool
-from compysition.event import Event, LogEvent
+from compysition.event import Event
 from gevent import sleep
 from gevent.event import Event as GEvent
-from gevent.local import local
 from copy import deepcopy
 import traceback
-import functools
 import abc
+
 
 class Actor(object):
     """
