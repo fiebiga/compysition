@@ -20,6 +20,7 @@
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #  MA 02110-1301, USA.
 #
+from types import NoneType
 from uuid import uuid4 as uuid
 from .errors import *
 import json
@@ -206,8 +207,7 @@ class Event(object):
             messages = self.error.message
             if not isinstance(messages, list):
                 messages = [messages]
-
-            errors = map(lambda _error: {"message": str(getattr(_error, "message", _error)), "code": getattr(_error, "code", None)}, messages)
+            errors = map(lambda _error: {"message": str(getattr(_error, "message", _error)), "code": getattr(self.error, "code", None)}, messages)
             return errors
 
         else:
@@ -273,7 +273,7 @@ class HttpEvent(Event):
                 self._status = (int(status[0]), status[1])
 
     def _set_error(self, exception):
-        if exception is not None:
+        if isinstance(exception, Exception):
             error_state = http_code_map[exception.__class__]
             self.status = error_state.get("status")
             self.headers.update(error_state.get("headers", {}))
@@ -400,5 +400,6 @@ http_code_map = defaultdict(lambda: {"status": ((500, "Internal Server Error"))}
                                 UnprocessableEventData: {"status": (422, "Unprocessable Entity")},
                                 EventRateExceeded:      {"status": (429, "Too Many Requests")},
                                 CompysitionException:   {"status": (500, "Internal Server Error")},
-                                ServiceUnavailable:     {"status": (503, "Service Unavailable")}
+                                ServiceUnavailable:     {"status": (503, "Service Unavailable")},
+                                NoneType:               {"status": (200, "OK")}         # Clear an error
                             })
