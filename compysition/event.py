@@ -207,7 +207,10 @@ class Event(object):
             messages = self.error.message
             if not isinstance(messages, list):
                 messages = [messages]
-            errors = map(lambda _error: {"message": str(getattr(_error, "message", _error)), "code": getattr(self.error, "code", None)}, messages)
+
+            errors = map(lambda _error:
+                         dict(message=str(getattr(_error, "message", _error)), **self.error.__dict__),
+                         messages)
             return errors
 
         else:

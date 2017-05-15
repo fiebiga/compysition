@@ -26,11 +26,12 @@
 
 class CompysitionException(Exception):
 
-    def __init__(self, message="", code=None):
+    def __init__(self, message="", code=None, **kwargs):
         if not isinstance(message, list):
             message = [message]
 
         self.code = code
+        self.__dict__.update(kwargs)
         super(CompysitionException, self).__init__(message)
 
 

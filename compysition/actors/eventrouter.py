@@ -71,7 +71,7 @@ class EventRouter(Actor):
             self.whitelist = False
 
     def pre_hook(self):
-        if len(self.filters) == 0:
+        if len(self.filters) == 0 and (len(self.default_outboxes) == 0 and self.whitelist):
             raise SetupError("No filters were connected to this router")
         self._initialize_outboxes()
 
@@ -149,13 +149,17 @@ class EventRouter(Actor):
 
 class SimpleRouter(EventRouter):
 
-    def __init__(self, name, scope="data", type="whitelist", *args, **kwargs):
+    def __init__(self, name, default_queue="default", scope="data", type="blacklist", *args, **kwargs):
         super(SimpleRouter, self).__init__(name, type=type, *args, **kwargs)
+        self.default_queue = default_queue
         self.scope = scope
 
     def pre_hook(self):
         for queue in self.pool.outbound:
-            self.set_filter(EventFilter(value_regexes=queue, outbox_names=[queue], event_scope=(self.scope, )))
+            if queue == self.default_queue:
+                self.default_outboxes.append(self.pool.outbound[queue])
+            else:
+                self.set_filter(EventFilter(value_regexes=queue, outbox_names=[queue], event_scope=(self.scope, )))
 
         super(SimpleRouter, self).pre_hook()
 
