@@ -130,7 +130,7 @@ class HTTPServer(Actor, Bottle):
                   ('application/xml', XMLHttpEvent),
                   ('application/json', JSONHttpEvent)]
     CONTENT_TYPES = [_type[0] for _type in _TYPES_MAP]
-    CONTENT_TYPE_MAP = defaultdict(lambda: JSONHttpEvent,
+    CONTENT_TYPE_MAP = defaultdict(lambda: HttpEvent,
                                    _TYPES_MAP)
 
     X_WWW_FORM_URLENCODED_KEY_MAP = defaultdict(lambda: HttpEvent, {"XML": XMLHttpEvent, "JSON": JSONHttpEvent})
