@@ -204,15 +204,16 @@ class Event(object):
 
     def format_error(self):
         if self.error:
-            messages = self.error.message
-            if not isinstance(messages, list):
-                messages = [messages]
-
-            errors = map(lambda _error:
-                         dict(message=str(getattr(_error, "message", _error)), **self.error.__dict__),
-                         messages)
-            return errors
-
+            if self.error.override:
+                return self.error.override
+            else:
+                messages = self.error.message
+                if not isinstance(messages, list):
+                    messages = [messages]
+                errors = map(lambda _error:
+                             dict(message=str(getattr(_error, "message", _error)), **self.error.__dict__),
+                             messages)
+                return errors
         else:
             return None
 
@@ -303,25 +304,32 @@ class _XMLFormatInterface(DataFormatInterface):
 
     def format_error(self):
         errors = super(_XMLFormatInterface, self).format_error()
-        if errors:
-            _root = etree.Element("errors")
+        if self.error and self.error.override:
+            try:
+                result = etree.fromstring(errors)
+            except:
+                result = errors
+        elif errors:
+            result = etree.Element("errors")
             for error in errors:
                 error_element = etree.Element("error")
                 message_element = etree.Element("message")
                 code_element = etree.Element("code")
                 error_element.append(message_element)
                 message_element.text = error['message']
-                code_element.text = error['code']
-                _root.append(error_element)
-
-            errors = _root
-
-        return errors
+                if getattr(error, 'code', None) or ('code' in error and error['code']):
+                    code_element.text = error['code']
+                    error_element.append(code_element)
+                result.append(error_element)
+        return result
 
     def error_string(self):
         error = self.format_error()
         if error is not None:
-            error = etree.tostring(error, pretty_print=True)
+            try:
+                error = etree.tostring(error, pretty_print=True)
+            except:
+                pass
         return error
 
 
@@ -345,7 +353,10 @@ class _JSONFormatInterface(DataFormatInterface):
     def error_string(self):
         error = self.format_error()
         if error:
-            error = json.dumps(error)
+            try:
+                error = json.dumps(error)
+            except:
+                pass
         return error
 
 

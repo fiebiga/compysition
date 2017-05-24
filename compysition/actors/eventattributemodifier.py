@@ -28,7 +28,7 @@ from compysition import Actor
 from lxml import etree
 from util import XPathLookup
 from compysition.event import XMLEvent, JSONEvent
-from compysition.errors import MalformedEventData
+from compysition.errors import MalformedEventData, CompysitionException
 
 class EventAttributeModifier(Actor):
 
@@ -178,3 +178,105 @@ class JSONEventAttributeModifier(EventAttributeModifier):
 
 class HTTPJSONAttributeModifier(JSONEventAttributeModifier, HTTPStatusModifier):
     pass
+
+class ErrorEventAttributeModifier(Actor):
+    '''
+    Description:
+        Allows for custom errors.
+
+    Uses:
+        - Adjusting error (message, code) staticly
+        - Adding http error response format (override)
+        - Adjusting error class
+
+    Parameters:
+
+        - name:                                             (See Actor)
+        - override (bool):                                  Specifies whether the event.data is to be used as the http response.  (True uses event.data as http response)
+        - code (str):                                       Specifies the static error code. (EX: 6768)
+        - message (str):                                    Specifies the static error message. (EX: "Unknown Error Occured")
+        - error_class (CompysitionError class):             Specifies the error class to be used (forceful).  Otherwise uses same class as the input event.error.
+        - default_error_class (CompysitionError class):     Specifies the default error class.  Only used when incoming event does not already have an error and error_class is not set.
+    '''
+    def __init__(self, name, override=False, code=None, message=None, error_class=None, default_error_class=MalformedEventData, *args, **kwargs):
+        self.message = message
+        self.code = code
+        self.override = override
+        self.error_class = error_class
+        self.default_error_class = default_error_class
+        super(ErrorEventAttributeModifier, self).__init__(name=name, *args, **kwargs)
+
+    def consume(self, event, *args, **kwargs):
+        override = event.data_string() if self.override else None
+        message = self._get_message(event)
+        code = self._get_code(event)
+        clazz = event.error.__class__ if event.error and isinstance(event.error, CompysitionException) else self.default_error_class
+        clazz = self.error_class if self.error_class else clazz
+
+        event._set_error(clazz(message=message, code=code, override=override))
+        self.send_event(event)
+
+    def _get_message(self, event):
+        return (self.message if self.message else event.data_string())
+
+    def _get_code(self, event):
+        return (self.code if self.code else None)
+
+class XMLErrorEventAttributeModifier(ErrorEventAttributeModifier):
+    '''
+    Description:
+        Allows for custom errors as they pertain to incoming XML event.data.
+
+    Uses:
+        - Adjusting error (message, code) staticly
+        - Adding http error response format (override)
+        - Adjusting error class
+
+    Example XML input:
+        <data>
+            <response>
+                <response_message>Something went wrong.</response_message>
+                <response_code>6768<response_code>
+                <response_id>1234<response_id>
+            </response>
+        </data>
+
+    Parameters:
+
+        - name:                                             (See Actor)
+        - override (bool):                                  (See ErrorEventAttributeModifier)
+        - code (str):                                       (See ErrorEventAttributeModifier)
+        - code_attr (str)                                   Specifies the variable from an incoming event.data XML object to be used as the new error code.
+                                                                Attribute specified by a '.' seperated attribute list.  (EX: "data.response.response_code")
+                                                                If the variable is missing then a static code is used if provided.
+        - message (str):                                    (See ErrorEventAttributeModifier)
+        - message_attr (str):                               Specifies the variable from an incoming event.data XML object to be used as the new error message.
+                                                                Attribute specified by a '.' seperated attribute list.  (EX: "data.response.response_message")
+                                                                If the variable is missing then a static message is used if provided.
+        - error_class (CompysitionError class):             (See ErrorEventAttributeModifier)
+        - default_error_class (CompysitionError class):     (See ErrorEventAttributeModifier)
+    '''
+    def __init__(self, name, override=False, code=None, code_attr=None, message=None, message_attr=None, error_class=None, default_error_class=MalformedEventData, *args, **kwargs):
+        self.message_attr = message_attr
+        self.code_attr = code_attr
+        super(XMLErrorEventAttributeModifier, self).__init__(name=name, override=override, code=code, message=message, error_class=error_class, default_error_class=default_error_class, *args, **kwargs)
+
+    def _get_attr(self, event, attr):
+        try:
+            json_event = event.convert(JSONEvent)
+            cur = json_event.data
+            for cur_attr in attr.split("."):
+                cur = cur[cur_attr]
+            if not cur == json_event.data:
+                return cur
+        except:
+            pass
+        return None
+
+    def _get_message(self, event):
+        value = self._get_attr(event=event, attr=self.message_attr)
+        return (value if value else super(XMLErrorEventAttributeModifier, self)._get_message(event))
+
+    def _get_code(self, event):
+        value = self._get_attr(event=event, attr=self.code_attr)
+        return (value if value else super(XMLErrorEventAttributeModifier, self)._get_code(event))
