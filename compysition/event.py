@@ -159,14 +159,32 @@ class Event(object):
         else:
             self._event_id = event_id
 
+    def _list_get(self, obj, key, default):
+        try:
+            return obj[int(key)]
+        except:
+            return default
+
+    def _getattr(self, obj, key, default):
+        try:
+            return getattr(obj, key, default)
+        except:
+            return default
+
+    def _obj_get(self, obj, key, default):
+        try:
+            return obj.get(key, default)
+        except:
+            return default
+
     def lookup(self, path):
         """
-        TODO: Account for list objects in the lookup path and generate multiple results if found
+        Implements the retrieval of a single list index through an integer path entry
         """
         if isinstance(path, str):
             path = [path]
 
-        value = reduce(lambda obj, key: obj.get(key, NullLookupValue()) if isinstance(obj, dict) else getattr(obj, key, NullLookupValue()), [self] + path)
+        value = reduce(lambda obj, key: self._obj_get(obj, key, self._getattr(obj, key, self._list_get(obj, key, NullLookupValue()))), [self] + path)
         if isinstance(value, NullLookupValue):
             value = None
         return value

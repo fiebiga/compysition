@@ -115,7 +115,7 @@ class HTTPStatusModifier(EventAttributeModifier):
         super(HTTPStatusModifier, self).__init__(name, key="status", value=value, *args, **kwargs)
 
 
-class XpathEventAttributeModifer(EventAttributeModifier):
+class XpathEventAttributeModifier(EventAttributeModifier):
 
     input = XMLEvent
     output = XMLEvent
@@ -177,6 +177,36 @@ class JSONEventAttributeModifier(EventAttributeModifier):
         return value
 
 class HTTPJSONAttributeModifier(JSONEventAttributeModifier, HTTPStatusModifier):
+    pass
+
+class XMLEventAttributeModifier(EventAttributeModifier):
+
+    def get_key_chain_value(self, event, value):
+        keys = self.key.split(self.separator)
+        event_key = keys.pop(0)
+        if len(keys) == 0:
+            event.set(event_key, value)
+        else:
+            current_element = event.get(event_key, None)
+
+            try:
+                while True:
+                    item = keys.pop(0)
+                    if len(keys) > 0:
+                        next_step = current_element.get(item, None)
+                        if not next_step:
+                            next_step = current_element.SubElement(item)
+                        current_element = next_step
+                    else:
+                        current_element.text = str(value)
+                        break
+            except Exception as err:
+                self.logger.error("Unable to follow key chain. Ran into non-xml value of '{value}'".format(value=current_element), event=event)
+                raise
+
+        return event
+
+class XMLEventAttributeLookupModifier(XMLEventAttributeModifier, EventAttributeLookupModifier):
     pass
 
 class ErrorEventAttributeModifier(Actor):
