@@ -127,11 +127,11 @@ class XpathEventAttributeModifier(EventAttributeModifier):
         if len(xpath_lookup) <= 0:
             value = None
         elif len(xpath_lookup) == 1:
-            value = XpathEventAttributeModifer._parse_result_value(xpath_lookup[0])
+            value = XpathEventAttributeModifier._parse_result_value(xpath_lookup[0])
         else:
             value = []
             for result in xpath_lookup:
-                value.append(XpathEventAttributeModifer._parse_result_value(result))
+                value.append(XpathEventAttributeModifier._parse_result_value(result))
 
         return value
 
@@ -149,7 +149,7 @@ class XpathEventAttributeModifier(EventAttributeModifier):
 
         return value
 
-class HTTPXpathEventAttributeModifier(XpathEventAttributeModifer, HTTPStatusModifier):
+class HTTPXpathEventAttributeModifier(XpathEventAttributeModifier, HTTPStatusModifier):
     pass
 
 class JSONEventAttributeModifier(EventAttributeModifier):
@@ -187,15 +187,20 @@ class XMLEventAttributeModifier(EventAttributeModifier):
         if len(keys) == 0:
             event.set(event_key, value)
         else:
-            current_element = event.get(event_key, None)
+            root_element = event.get(event_key, None)
+            current_element = root_element
 
             try:
+                item = keys.pop(0)
+                if not item == current_element.tag:
+                    raise
                 while True:
-                    item = keys.pop(0)
                     if len(keys) > 0:
+                        item = keys.pop(0)
                         next_step = current_element.get(item, None)
                         if not next_step:
-                            next_step = current_element.SubElement(item)
+                            next_step = etree.Element(item)
+                            current_element.append(next_step)
                         current_element = next_step
                     else:
                         current_element.text = str(value)

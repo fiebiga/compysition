@@ -179,7 +179,7 @@ class HTTPServer(Actor, Bottle):
 
         return path
 
-    def __init__(self, name, address="0.0.0.0", port=8080, keyfile=None, certfile=None, routes_config=None, *args, **kwargs):
+    def __init__(self, name, address="0.0.0.0", port=8080, keyfile=None, certfile=None, routes_config=None, send_errors=False, *args, **kwargs):
         Actor.__init__(self, name, *args, **kwargs)
         Bottle.__init__(self)
         self.blockdiag_config["shape"] = "cloud"
@@ -188,6 +188,7 @@ class HTTPServer(Actor, Bottle):
         self.keyfile = keyfile
         self.certfile = certfile
         self.responders = {}
+        self.send_errors = send_errors
         routes_config = routes_config or self.DEFAULT_ROUTE
 
         if isinstance(routes_config, str):
@@ -352,7 +353,8 @@ class HTTPServer(Actor, Bottle):
             event_class = event_class or JSONHttpEvent
             event = event_class(environment=environment, service=queue_name, accept=accept, **kwargs)
             event.error = err
-            queue = self.pool.inbound[self.pool.inbound.keys()[0]]
+            if not self.send_error:
+                queue = self.pool.inbound[self.pool.inbound.keys()[0]]
 
         response_queue = Queue()
         self.responders.update({event.event_id: (event_class, response_queue)})
