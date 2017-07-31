@@ -138,8 +138,3 @@ Or the latest development branch from Github:
 	$ git clone git@github.com:fiebiga/compysition.git
 	$ cd compysition
 	$ sudo python setup.py install
-
-Support
--------
-
-You may email myself at fiebig.adam@gmail.com
