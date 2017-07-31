@@ -135,6 +135,6 @@ Through Pypi:
 
 Or the latest development branch from Github:
 
-	$ git clone git@github.com:fiebiga/compysition.git
+	$ git clone git@github.com:drpoggi/compysition.git
 	$ cd compysition
 	$ sudo python setup.py install
