@@ -179,7 +179,7 @@ class HTTPServer(Actor, Bottle):
 
         return path
 
-    def __init__(self, name, address="0.0.0.0", port=8080, keyfile=None, certfile=None, routes_config=None, *args, **kwargs):
+    def __init__(self, name, address="0.0.0.0", port=8080, keyfile=None, certfile=None, routes_config=None, send_errors=False, *args, **kwargs):
         Actor.__init__(self, name, *args, **kwargs)
         Bottle.__init__(self)
         self.blockdiag_config["shape"] = "cloud"
@@ -188,6 +188,7 @@ class HTTPServer(Actor, Bottle):
         self.keyfile = keyfile
         self.certfile = certfile
         self.responders = {}
+        self.send_errors = send_errors
         routes_config = routes_config or self.DEFAULT_ROUTE
 
         if isinstance(routes_config, str):
@@ -267,8 +268,8 @@ class HTTPServer(Actor, Bottle):
             status, status_message = event.status
             local_response.status = "{code} {message}".format(code=status, message=status_message)
 
-            for header in event.headers.keys():
-                local_response.set_header(header, event.headers[header])
+            for header, value in event.headers.iteritems():
+                local_response.set_header(header, value)
 
             local_response.set_header("Content-Type", event.content_type)
 
@@ -292,7 +293,7 @@ class HTTPServer(Actor, Bottle):
         for key in environ["bottle.request"].query.iterkeys():
             query_string_data[key] = environ["bottle.request"].query.get(key)
 
-        environ = {key: environ[key] for key in environ.keys() if isinstance(environ[key], (str, tuple, bool, dict))}
+        environ = {key: environ[key] for key in environ.iterkeys() if isinstance(environ[key], (str, tuple, bool, dict))}
         environ['QUERY_STRING_DATA'] = query_string_data
 
         return environ
@@ -311,7 +312,7 @@ class HTTPServer(Actor, Bottle):
 
         if request.method in ["GET", "OPTIONS", "HEAD", "DELETE"]:
             for accept_type in accept_header:
-                if accept_type in self.CONTENT_TYPE_MAP.keys():
+                if self.CONTENT_TYPE_MAP.get(accept_type, None):
                     pass
 
         if ctype == '':
@@ -329,17 +330,17 @@ class HTTPServer(Actor, Bottle):
                 raise ResourceNotFound("Service '{0}' not found".format(queue_name))
 
             if ctype == self.X_WWW_FORM_URLENCODED:
-                if len(request.forms.items()) < 1:
+                if len(request.forms) < 1:
                     raise MalformedEventData("Mismatched content type")
                 else:
-                    for item in request.forms.items():
-                        event_class, data = self.X_WWW_FORM_URLENCODED_KEY_MAP[item[0]], item[1]
+                    for key, value in request.forms.iteritems():
+                        event_class, data = self.X_WWW_FORM_URLENCODED_KEY_MAP[key], value
                         break
             else:
                 event_class = self.CONTENT_TYPE_MAP[ctype]
                 try:
                     data = request.body.read()
-                except:
+                except Exception:
                     # A body is not required
                     data = None
 
@@ -352,7 +353,8 @@ class HTTPServer(Actor, Bottle):
             event_class = event_class or JSONHttpEvent
             event = event_class(environment=environment, service=queue_name, accept=accept, **kwargs)
             event.error = err
-            queue = self.pool.inbound[self.pool.inbound.keys()[0]]
+            if not self.send_errors:
+                queue = self.pool.inbound[next(self.pool.inbound.iterkeys())]
 
         response_queue = Queue()
         self.responders.update({event.event_id: (event_class, response_queue)})

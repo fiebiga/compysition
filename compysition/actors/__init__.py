@@ -39,8 +39,9 @@ from .mdpbroker import MDPBroker
 from .mdpregistrar import MDPBrokerRegistrationService
 from .eventlogger import EventLogger
 from .eventrouter import EventRouter, EventXMLFilter, EventFilter, HTTPMethodEventRouter, EventJSONFilter, EventXMLXpathsFilter, SimpleRouter
-from .eventattributemodifier import (EventAttributeModifier, HTTPStatusModifier, XpathEventAttributeModifer, EventAttributeLookupModifier,
-                                     HTTPXpathEventAttributeModifier, JSONEventAttributeModifier, HTTPJSONAttributeModifier)
+from .eventattributemodifier import (EventAttributeModifier, HTTPStatusModifier, XpathEventAttributeModifier, EventAttributeLookupModifier,
+                                     HTTPXpathEventAttributeModifier, JSONEventAttributeModifier, HTTPJSONAttributeModifier, ErrorEventAttributeModifier, 
+                                     XMLErrorEventAttributeModifier, XMLEventAttributeModifier, XMLEventAttributeLookupModifier)
 from .tcp import TCPIn, TCPOut
 from .zeromq import ZMQPush, ZMQPull
 from .xsd import XSD

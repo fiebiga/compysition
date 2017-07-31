@@ -22,7 +22,7 @@
 #  MA 02110-1301, USA.
 #
 
-from compysition.queue import QueuePool
+from compysition.queue import QueuePool, _InternalQueuePool
 from compysition.logger import Logger
 from compysition.errors import *
 from restartlet import RestartPool
@@ -186,7 +186,7 @@ class Actor(object):
         """
 
         if queues is self.__NOT_DEFINED:
-            queues = self.pool.outbound.values()
+            queues = self.pool.outbound
 
         self._loop_send(event, queues)
 
@@ -194,8 +194,7 @@ class Actor(object):
         """
         Calls 'send_event' with all error queues as the 'queues' parameter
         """
-        queues = self.pool.error.values()
-        self._loop_send(event, queues=queues, check_output=False)
+        self._loop_send(event, queues=self.pool.error, check_output=False)
 
     def _loop_send(self, event, queues, check_output=True):
         """
@@ -206,9 +205,12 @@ class Actor(object):
         if check_output and not isinstance(event, self.output):
             raise InvalidActorOutput("Event was of type '{_type}', expected '{output}'".format(_type=type(event), output=self.output))
 
-        if len(queues) > 0:
-            self._send(queues[0], deepcopy(event))
-            map(lambda _queue: self._send(_queue, deepcopy(event)), queues[1:])
+        if isinstance(queues, _InternalQueuePool):
+            for queue in queues.itervalues():
+                self._send(queue, deepcopy(event))
+        else:
+            for queue in queues:
+                self._send(_queue, deepcopy(event))
 
     def _send(self, queue, event):
         queue.put(event)

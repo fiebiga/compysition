@@ -96,7 +96,7 @@ class _ZMQ(Actor):
                                     self.IPC: "ipc://{0}".format(socket_file),
                                     self.INPROC: "inproc://{0}".format(socket_file)}
 
-        if transmission_protocol in self.format_connection.keys():
+        if self.format_connection.get(transmission_protocol, None):
             self.transmission_protocol = transmission_protocol
         else:
             raise ValueError("Transmission protocol must be in {0}".format(self.format_connection.keys()))
@@ -144,7 +144,7 @@ class _ZMQOut(_ZMQ):
         while self.loop():
             try:
                 event = self.outbound_queue.get(timeout=2.5)
-            except:
+            except Exception:
                 event = None
 
             if event is not None:

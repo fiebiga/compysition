@@ -73,14 +73,19 @@ class QueuePool(object):
         self.error = _InternalQueuePool(size=size)
         self.logs = _InternalQueuePool(size=size, placeholder=uuid().get_hex())
 
-    def list_all_queues(self):
-        queue_list = self.inbound.values() + self.outbound.values() + self.error.values() + self.logs.values()
-        return queue_list
+    def _list_of_queue_lists(self):
+        return [
+            self.inbound,
+            self.outbound,
+            self.error,
+            self.logs
+        ]
 
     def join(self):
         """**Blocks until all queues in the pool are empty.**"""
-        for queue in self.list_all_queues():
-            queue.wait_until_empty()
+        for lst in self._list_of_queue_lists():
+            for queue in lst.itervalues():
+                queue.wait_until_empty()
 
 
 class Queue(gqueue.Queue):
@@ -137,6 +142,6 @@ class Queue(gqueue.Queue):
         try:
             while True:
                 other_queue.put(self.next())
-        except:
+        except (gqueue.Full, Exception):
             pass
 

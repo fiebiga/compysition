@@ -36,7 +36,7 @@ class XMLToDict(Actor):
         try:
             event = event.convert(JSONEvent)
             if self.flatten:
-                event.data = event.data[event.data.keys()[0]]
+                event.data = event.data[next(event.data.iterkeys())]
         except Exception as err:
             self.logger.error("Unable to convert to XML: {0}".format(err), event=event)
             raise MalformedEventData(err.message)

@@ -116,7 +116,7 @@ class SMTPIn(Actor):
     def process_message(self, peer, mailfrom, rcpttos, data):
         headers = email.message_from_string(data)
         payload = headers.get_payload()
-        new_data = dict(zip(headers.keys(), headers.values()))
+        new_data = dict(**headers)
 
         payload_data = headers.get_payload()
         if isinstance(payload_data, list):

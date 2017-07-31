@@ -178,15 +178,15 @@ class UDPInterface(object):
     
     def reap_peers(self):
         now = time.time()
-        for peer in list(self.peers.values()):
-            if peer.expires_at < now:
-                self.peers.pop(peer.uuid)
-                self.log("Reaping expired peer ({0}) from '{1}' peer pool. (Total remaining: {2})".format(peer.uuid, self.service, len(self.peers) + 1))
+        remove = [peer for peer in self.peers.itervalues() if peer.expires_at < now]
+        for peer in remove:
+            self.peers.pop(peer.uuid)
+            self.log("Reaping expired peer ({0}) from '{1}' peer pool. (Total remaining: {2})".format(peer.uuid, self.service, len(self.peers) + 1))
 
     def determine_master(self):
         if self.__burned_in:
             keys = []
-            for key in self.peers.keys():
+            for key in self.peers.iterkeys():
                 keys.append(key)
 
             if len(keys) > 0:

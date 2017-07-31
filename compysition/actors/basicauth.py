@@ -37,7 +37,7 @@ class BasicAuth(Actor):
             try:
                 authorization = event.environment['HTTP_AUTHORIZATION']
                 user, password = base64.decodestring(authorization.split(' ')[1]).split(':')
-            except:
+            except Exception:
                 raise Exception("No auth headers present in submitted request")
 
             if self._authenticate(user, password):

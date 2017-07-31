@@ -53,7 +53,7 @@ class SetCookie(Actor):
             session_cookie[self.cookie_key] = self.cookie_value
             session_cookie[self.cookie_key]["Path"] = self.path
             session_cookie[self.cookie_key]['expires'] = str(datetime.datetime() + datetime.timedelta(0, self.expiry))
-            event.headers.update({"Set-Cookie": session_cookie.values()[0].OutputString()})
+            event.headers.update({"Set-Cookie": next(session_cookie.itervalues()).OutputString()})
 
             self.logger.debug("Assigned incoming HttpEvent cookie '{key}' value of '{value}'".format(key=self.cookie_key,
                                                                                                      value=session_cookie['session']), event=event)

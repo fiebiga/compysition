@@ -33,8 +33,12 @@ class FlowController(Actor):
 
     '''
 
-    def __init__(self, name, *args, **kwargs):
+    def __init__(self, name, trigger_errors=False, *args, **kwargs):
+        self.trigger_errors = trigger_errors
         super(FlowController, self).__init__(name, *args, **kwargs)
 
     def consume(self, event, *args, **kwargs):
-        self.send_event(event)
+        if event.error and self.trigger_errors:
+            self.send_error(event)
+        else:
+            self.send_event(event)

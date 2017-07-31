@@ -45,21 +45,18 @@ DEFAULT = object()
 def internal_xmlify(_json):
     if isinstance(_json, list) or len(_json) > 1:
         _json = {"jsonified_envelope": _json}
-
-    if isinstance(_json[_json.keys()[0]], list):
+    _, value = next(_json.iteritems())
+    if isinstance(value, list):
         _json = {"jsonified_envelope": _json}
-
     return _json
 
 
 def remove_internal_xmlify(_json):
     if len(_json) == 1 and isinstance(_json, dict):
-        first_key = _json.keys()[0]
-        if first_key == "jsonified_envelope":
-            _json = _json[first_key]
-
+        key, value = next(_json.iteritems())
+        if key == "jsonified_envelope":
+            _json = value
     return _json
-
 
 class NullLookupValue(object):
 
@@ -80,7 +77,8 @@ class UnescapedDictXMLGenerator(XMLGenerator):
                 self._write(content)
             else:
                 XMLGenerator.characters(self, content)
-        except:
+        except (AttributeError, Exception):
+            #TODO could be more specific on errors caught
             XMLGenerator.characters(self, content)
 
 setattr(xmltodict, "XMLGenerator", UnescapedDictXMLGenerator)
@@ -123,7 +121,7 @@ class Event(object):
         try:
             setattr(self, key, value)
             return True
-        except:
+        except Exception:
             return False
 
     def get(self, key, default=DEFAULT):
@@ -159,14 +157,32 @@ class Event(object):
         else:
             self._event_id = event_id
 
+    def _list_get(self, obj, key, default):
+        try:
+            return obj[int(key)]
+        except (ValueError, IndexError, TypeError, KeyError, AttributeError) as e:
+            return default
+
+    def _getattr(self, obj, key, default):
+        try:
+            return getattr(obj, key, default)
+        except TypeError as e:
+            return default
+
+    def _obj_get(self, obj, key, default):
+        try:
+            return obj.get(key, default)
+        except (TypeError, AttributeError) as e:
+            return default
+
     def lookup(self, path):
         """
-        TODO: Account for list objects in the lookup path and generate multiple results if found
+        Implements the retrieval of a single list index through an integer path entry
         """
         if isinstance(path, str):
             path = [path]
 
-        value = reduce(lambda obj, key: obj.get(key, NullLookupValue()) if isinstance(obj, dict) else getattr(obj, key, NullLookupValue()), [self] + path)
+        value = reduce(lambda obj, key: self._obj_get(obj, key, self._getattr(obj, key, self._list_get(obj, key, NullLookupValue()))), [self] + path)
         if isinstance(value, NullLookupValue):
             value = None
         return value
@@ -176,7 +192,7 @@ class Event(object):
         Gets a dictionary of all event properties except for event.data
         Useful when event data is too large to copy in a performant manner
         """
-        return {k: v for k, v in self.__dict__.items() if k != "data" and k != "_data"}
+        return {k: v for k, v in self.__dict__.iteritems() if k != "data" and k != "_data"}
 
     def __getstate__(self):
         return dict(self.__dict__)
@@ -204,15 +220,16 @@ class Event(object):
 
     def format_error(self):
         if self.error:
-            messages = self.error.message
-            if not isinstance(messages, list):
-                messages = [messages]
-
-            errors = map(lambda _error:
-                         dict(message=str(getattr(_error, "message", _error)), **self.error.__dict__),
-                         messages)
-            return errors
-
+            if self.error.override:
+                return self.error.override
+            else:
+                messages = self.error.message
+                if not isinstance(messages, list):
+                    messages = [messages]
+                errors = map(lambda _error:
+                             dict(message=str(getattr(_error, "message", _error)), **self.error.__dict__),
+                             messages)
+                return errors
         else:
             return None
 
@@ -303,25 +320,32 @@ class _XMLFormatInterface(DataFormatInterface):
 
     def format_error(self):
         errors = super(_XMLFormatInterface, self).format_error()
-        if errors:
-            _root = etree.Element("errors")
+        if self.error and self.error.override:
+            try:
+                result = etree.fromstring(errors)
+            except Exception:
+                result = errors
+        elif errors:
+            result = etree.Element("errors")
             for error in errors:
                 error_element = etree.Element("error")
                 message_element = etree.Element("message")
                 code_element = etree.Element("code")
                 error_element.append(message_element)
                 message_element.text = error['message']
-                code_element.text = error['code']
-                _root.append(error_element)
-
-            errors = _root
-
-        return errors
+                if getattr(error, 'code', None) or ('code' in error and error['code']):
+                    code_element.text = error['code']
+                    error_element.append(code_element)
+                result.append(error_element)
+        return result
 
     def error_string(self):
         error = self.format_error()
         if error is not None:
-            error = etree.tostring(error, pretty_print=True)
+            try:
+                error = etree.tostring(error, pretty_print=True)
+            except Exception:
+                pass
         return error
 
 
@@ -345,7 +369,10 @@ class _JSONFormatInterface(DataFormatInterface):
     def error_string(self):
         error = self.format_error()
         if error:
-            error = json.dumps(error)
+            try:
+                error = json.dumps(error)
+            except Exception:
+                pass
         return error
 
 
