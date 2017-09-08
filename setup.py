@@ -63,7 +63,7 @@ setup(
     description='Build event pipeline servers with minimal effort.',
     long_description=long_description,
     author='Integrations Team',
-    author_email='integrations@cuanswers',
+    author_email='integrations@cuanswers.com',
     classifiers=['Development Status :: 5 - Production/Stable',
                  'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
                  'Programming Language :: Python',

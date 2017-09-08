@@ -22,7 +22,7 @@
 #  MA 02110-1301, USA.
 #
 
-from compysition.queue import QueuePool, _InternalQueuePool
+from compysition.queue import QueuePool
 from compysition.logger import Logger
 from compysition.errors import *
 from restartlet import RestartPool
@@ -48,7 +48,6 @@ class Actor(object):
     input = Event
     output = Event
     REQUIRED_EVENT_ATTRIBUTES = None
-    __NOT_DEFINED = object()
 
     def __init__(self, name, size=0, blocking_consume=False, rescue=False, max_rescue=5, *args, **kwargs):
         """
@@ -179,13 +178,13 @@ class Actor(object):
             self.logger.debug("post_hook() found, executing")
             self.post_hook()
 
-    def send_event(self, event, queues=__NOT_DEFINED, check_output=True):
+    def send_event(self, event, queues=None, check_output=True):
         """
         Sends event to all registered outbox queues. If multiple queues are consuming the event,
         a deepcopy of the event is sent instead of raw event.
         """
 
-        if queues is self.__NOT_DEFINED:
+        if not queues:
             queues = self.pool.outbound
 
         self._loop_send(event, queues)
@@ -205,10 +204,10 @@ class Actor(object):
         if check_output and not isinstance(event, self.output):
             raise InvalidActorOutput("Event was of type '{_type}', expected '{output}'".format(_type=type(event), output=self.output))
 
-        if isinstance(queues, _InternalQueuePool):
+        try:
             for queue in queues.itervalues():
                 self._send(queue, deepcopy(event))
-        else:
+        except AttributeError:
             for queue in queues:
                 self._send(_queue, deepcopy(event))
 
