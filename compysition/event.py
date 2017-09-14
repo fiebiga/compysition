@@ -33,6 +33,7 @@ from xml.sax.saxutils import XMLGenerator
 import re
 from copy import deepcopy
 from datetime import datetime
+from decimal import Decimal
 
 """
 Compysition event is created and passed by reference among actors
@@ -349,12 +350,18 @@ class _XMLFormatInterface(DataFormatInterface):
         return error
 
 
+def decimal_default(obj):
+    """ Lets us pass around Decimal type objects and not have to worry about doing conversions in the individual actors"""
+    if isinstance(obj, Decimal):
+        return float(obj)
+    raise TypeError
+
 class _JSONFormatInterface(DataFormatInterface):
 
     content_type = "application/json"
 
     conversion_methods = {str: lambda data: json.loads(data)}
-    conversion_methods.update(dict.fromkeys(_JSON_TYPES, lambda data: json.loads(json.dumps(data))))
+    conversion_methods.update(dict.fromkeys(_JSON_TYPES, lambda data: json.loads(json.dumps(data, default=decimal_default))))
     conversion_methods.update(dict.fromkeys(_XML_TYPES, lambda data: remove_internal_xmlify(xmltodict.parse(etree.tostring(data), expat=expat))))
     conversion_methods.update({None.__class__: lambda data: {}})
 
@@ -364,7 +371,7 @@ class _JSONFormatInterface(DataFormatInterface):
         return state
 
     def data_string(self):
-        return json.dumps(self.data)
+        return json.dumps(self.data, default=decimal_default)
 
     def error_string(self):
         error = self.format_error()
