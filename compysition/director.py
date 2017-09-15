@@ -145,7 +145,7 @@ class Director(object):
             if not os.path.exists(img_dir):
                 os.makedirs(img_dir)
             from blockdiag.command import BlockdiagApp
-            with open("{0}{1}{2}.diag".format(self.blockdiag_dir, os.sep, self.name),'w') as f
+            with open("{0}{1}{2}.diag".format(self.blockdiag_dir, os.sep, self.name),'w') as f:
                 f.write(self.blockdiag_out)
             BlockdiagApp().run(["{0}{1}{2}.diag".format(self.blockdiag_dir, os.sep, self.name),
                                 "-Tsvg",
