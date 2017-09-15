@@ -209,7 +209,7 @@ class Actor(object):
                 self._send(queue, deepcopy(event))
         except AttributeError:
             for queue in queues:
-                self._send(_queue, deepcopy(event))
+                self._send(queue, deepcopy(event))
 
     def _send(self, queue, event):
         queue.put(event)
