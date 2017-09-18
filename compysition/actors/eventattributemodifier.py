@@ -122,6 +122,7 @@ class EventAttributeDelete(Actor):
     def consume(self, event, *args, **kwargs):
         try:
             delattr(event, self.event_attribute)
+            self.logger.info('Deleted event attribute: {attr}'.format(attr=self.event_attribute))
         except AttributeError:
             if self.log_failed_delete:
                 self.logger.error('Failed to delete attribute <{attr}> from Event'.format(attr=self.event_attribute),
