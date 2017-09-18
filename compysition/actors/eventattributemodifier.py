@@ -179,6 +179,7 @@ class JSONEventAttributeModifier(EventAttributeModifier):
 class HTTPJSONAttributeModifier(JSONEventAttributeModifier, HTTPStatusModifier):
     pass
 
+
 class XMLEventAttributeModifier(EventAttributeModifier):
 
     def get_key_chain_value(self, event, value):
@@ -315,3 +316,25 @@ class XMLErrorEventAttributeModifier(ErrorEventAttributeModifier):
     def _get_code(self, event):
         value = self._get_attr(event=event, attr=self.code_attr)
         return (value if value else super(XMLErrorEventAttributeModifier, self)._get_code(event))
+
+class EventDataEventAttributeModifier(EventAttributeModifier):
+
+    """This will allow you to modify the event data to contain something that exists directly on the event.
+    IF your data is a list (like after the json db write), it's going to reinitialize it
+    as a dict. This will use self.key (what you called it with) to both get it from the event
+    and name the resulting data attribute."""
+
+    def get_modify_value(self, event):
+        value = getattr(event, self.key)
+        event.data = {self.key:value}
+        return value
+
+class EventDataStaticAttributeModifier(EventAttributeModifier):
+
+    """This will allow you to modify the event data to contain any static value that you send.
+    IF your data is a list (like after the json db write), it's going to reinitialize it
+    as a dict."""
+    
+    def get_modify_value(self, event):
+        event.data = {self.key:self.value}
+        return self.value
