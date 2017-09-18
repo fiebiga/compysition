@@ -274,7 +274,7 @@ class MDPBroker(Actor):
 
     def purge_workers(self):
         """Look for & kill expired workers"""
-        for worker in self.workers.values():
+        for worker in self.workers.itervalues():
             if worker.expiry < time.time():
                 if worker.liveness == 0:
                     self.logger.info("Downstream worker {0} in service {1} has expired and reached 0 liveness. Last heartbeat was received {2} seconds ago".format(worker.identity, 

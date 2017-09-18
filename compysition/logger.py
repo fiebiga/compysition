@@ -57,7 +57,7 @@ class Logger(object):
             if event:
                 log_entry_id = event.meta_id
 
-        for key in self.__pool.keys():
+        for key in self.__pool.iterkeys():
             try:
                 log_event = LogEvent(level, self.name, message, id=log_entry_id)
                 self.__pool[key].put(log_event)

@@ -72,7 +72,7 @@ class MatchedJSONEvent(MatchedEvent):
 
     @property
     def joined(self):
-        return {k: v for d in self.inboxes_reported.itervalues() for k, v in d.items()}
+        return {k: v for d in self.inboxes_reported.itervalues() for k, v in d.iteritems()}
 
 
 class EventJoin(Actor):
@@ -105,8 +105,7 @@ class EventJoin(Actor):
 
     def event_purger(self):
         while self.loop():
-            keys = self.events.keys()
-            for key in keys:
+            for key in self.events.iterkeys():
                 event = self.events.get(key, None)
                 if event:
                     purge_time = event.created + self.purge_interval

@@ -97,7 +97,7 @@ class TCPIn(Actor):
         try:
             event = pickle.loads(event_string)
             self.send_event(event)
-        except:
+        except Exception:
             self.logger.error("Received invalid event format: {0}".format(event_string))
 
 

@@ -48,7 +48,6 @@ class Actor(object):
     input = Event
     output = Event
     REQUIRED_EVENT_ATTRIBUTES = None
-    __NOT_DEFINED = object()
 
     def __init__(self, name, size=0, blocking_consume=False, rescue=False, max_rescue=5, *args, **kwargs):
         """
@@ -179,14 +178,14 @@ class Actor(object):
             self.logger.debug("post_hook() found, executing")
             self.post_hook()
 
-    def send_event(self, event, queues=__NOT_DEFINED, check_output=True):
+    def send_event(self, event, queues=None, check_output=True):
         """
         Sends event to all registered outbox queues. If multiple queues are consuming the event,
         a deepcopy of the event is sent instead of raw event.
         """
 
-        if queues is self.__NOT_DEFINED:
-            queues = self.pool.outbound.values()
+        if not queues:
+            queues = self.pool.outbound
 
         self._loop_send(event, queues)
 
@@ -194,8 +193,7 @@ class Actor(object):
         """
         Calls 'send_event' with all error queues as the 'queues' parameter
         """
-        queues = self.pool.error.values()
-        self._loop_send(event, queues=queues, check_output=False)
+        self._loop_send(event, queues=self.pool.error, check_output=False)
 
     def _loop_send(self, event, queues, check_output=True):
         """
@@ -206,9 +204,12 @@ class Actor(object):
         if check_output and not isinstance(event, self.output):
             raise InvalidActorOutput("Event was of type '{_type}', expected '{output}'".format(_type=type(event), output=self.output))
 
-        if len(queues) > 0:
-            self._send(queues[0], deepcopy(event))
-            map(lambda _queue: self._send(_queue, deepcopy(event)), queues[1:])
+        try:
+            for queue in queues.itervalues():
+                self._send(queue, deepcopy(event))
+        except AttributeError:
+            for queue in queues:
+                self._send(queue, deepcopy(event))
 
     def _send(self, queue, event):
         queue.put(event)

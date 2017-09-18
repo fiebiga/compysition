@@ -250,7 +250,7 @@ class BrokerManager(RegistrationService):
                 if self.verified_brokers.get(broker_origin_identity) is not None:
                     return self.verified_brokers.get(broker_origin_identity)
                 elif broker_origin_port is not None:
-                    for broker in self.verified_brokers.values():
+                    for broker in self.verified_brokers.itervalues():
                         if broker.port == broker_origin_port:
                             return broker
 
@@ -284,7 +284,7 @@ class BrokerManager(RegistrationService):
 
             broker_sockets = []
 
-            for broker in self.unverified_brokers.values():
+            for broker in self.unverified_brokers.itervalues():
                 if(broker.verification_attempts >= 3):
                     if(broker.reconnect_attempts >= 3):
                         if self.logger is not None:
@@ -352,7 +352,7 @@ class BrokerManager(RegistrationService):
         """
         sockets = []
 
-        for broker in self.verified_brokers.values():
+        for broker in self.verified_brokers.itervalues():
             sockets.append(broker.outbound_socket)
 
         self.heartbeat_manager.send_heartbeats(sockets, message)
