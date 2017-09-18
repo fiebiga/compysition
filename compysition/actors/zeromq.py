@@ -96,7 +96,7 @@ class _ZMQ(Actor):
                                     self.IPC: "ipc://{0}".format(socket_file),
                                     self.INPROC: "inproc://{0}".format(socket_file)}
 
-        if self.format_connection.get(transmission_protocol, None):
+        if transmission_protocol in self.format_connection:
             self.transmission_protocol = transmission_protocol
         else:
             raise ValueError("Transmission protocol must be in {0}".format(self.format_connection.keys()))
