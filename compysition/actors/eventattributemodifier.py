@@ -109,6 +109,27 @@ class EventAttributeLookupModifier(EventAttributeModifier):
         return event.lookup(self.value)
 
 
+class EventAttributeDelete(Actor):
+
+    def __init__(self, name, event_attribute=None, log_failed_delete=False, *args, **kwargs):
+        super(EventAttributeDelete, self).__init__(name, *args, **kwargs)
+        self.event_attribute = event_attribute
+        self.log_failed_delete = log_failed_delete
+
+        if self.event_attribute is None:
+            raise ValueError('event_attribute cannot be None')
+
+    def consume(self, event, *args, **kwargs):
+        try:
+            delattr(event, self.event_attribute)
+            self.logger.info('Deleted event attribute: {attr}'.format(attr=self.event_attribute))
+        except AttributeError:
+            if self.log_failed_delete:
+                self.logger.error('Failed to delete attribute <{attr}> from Event'.format(attr=self.event_attribute),
+                                  event=event)
+
+        self.send_event(event)
+
 class HTTPStatusModifier(EventAttributeModifier):
 
     def __init__(self, name, value=(200, "OK"), *args, **kwargs):
