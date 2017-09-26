@@ -105,7 +105,8 @@ class EventJoin(Actor):
 
     def event_purger(self):
         while self.loop():
-            for key in self.events.iterkeys():
+            event_keys = self.events.keys()
+            for key in event_keys:
                 event = self.events.get(key, None)
                 if event:
                     purge_time = event.created + self.purge_interval

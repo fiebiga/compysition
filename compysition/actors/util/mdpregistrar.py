@@ -284,9 +284,10 @@ class BrokerManager(RegistrationService):
 
             broker_sockets = []
 
-            for broker in self.unverified_brokers.itervalues():
-                if(broker.verification_attempts >= 3):
-                    if(broker.reconnect_attempts >= 3):
+            unverified_brokers = self.unverified_brokers.values()
+            for broker in unverified_brokers:
+                if broker.verification_attempts >= 3:
+                    if broker.reconnect_attempts >= 3:
                         if self.logger is not None:
                             self.logger.info("Unable to verify broker {0}. Disconnecting permanently...".format(broker.identity))
                         self.disconnect_broker(broker.identity)

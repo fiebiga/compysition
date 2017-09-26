@@ -101,7 +101,8 @@ class MDPBrokerRegistrationService(Actor, RegistrationService):
         Check if a broker has not sent a heartbeat within the HEARTBEAT_INTERVAL timeframe. Reduce 'liveness' on the broker object by 1 for each occurrence, until liveness reaches 0.
         Liveness reaching 0 results in an immediate disconnect notification being sent to all clients
         """
-        for broker_identity in self.brokers.iterkeys():
+        broker_keys = self.brokers.keys()
+        for broker_identity in broker_keys:
             broker = self.brokers[broker_identity]
             if time.time() > broker.expiration_time:
                 broker.liveness -= 1
