@@ -221,7 +221,7 @@ class Event(object):
 
     def format_error(self):
         if self.error:
-            if self.error.override:
+            if hasattr(self.error, 'override') and self.error.override:
                 return self.error.override
             else:
                 messages = self.error.message
