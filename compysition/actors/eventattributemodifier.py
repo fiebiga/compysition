@@ -109,26 +109,51 @@ class EventAttributeLookupModifier(EventAttributeModifier):
         return event.lookup(self.value)
 
 
-class EventAttributeDelete(Actor):
+class JSONEventAttributeDelete(Actor):
+    """ Deletes information from an event**
 
-    def __init__(self, name, event_attribute=None, log_failed_delete=False, *args, **kwargs):
-        super(EventAttributeDelete, self).__init__(name, *args, **kwargs)
-        self.event_attribute = event_attribute
+        Parameters:
+
+            - name         (str):   The instance name.
+            - key_paths   (list):   A list of lists, with the inner list defining the path to the keys to deleted
+                                    key_paths=[['event_attr], ['data', 'fruits', 'apple']]
+
+        Example:
+
+            Given event JSONEvent(data={'fruits': {'apple': 1, 'banana': 3}, 'count': 2}) and a value for key_paths
+            of [['data', 'fruits', 'apple']], the outputed event.data will be {'count': 2, 'fruits': {'banana': 3}
+        """
+    input = JSONEvent
+    output = JSONEvent
+
+    def __init__(self, name, key_paths=None, log_failed_delete=True, *args, **kwargs):
+        super(JSONEventAttributeDelete, self).__init__(name, *args, **kwargs)
+        self.key_paths = key_paths
         self.log_failed_delete = log_failed_delete
 
-        if self.event_attribute is None:
-            raise ValueError('event_attribute cannot be None')
+        if self.key_paths is None:
+            raise ValueError('key_paths cannot be None')
 
     def consume(self, event, *args, **kwargs):
         try:
-            delattr(event, self.event_attribute)
-            self.logger.info('Deleted event attribute: {attr}'.format(attr=self.event_attribute))
-        except AttributeError:
+            for path in self.key_paths:
+                self.delete(event, path)
+                self.logger.info('Deleted event attribute: {attr}'.format(attr=path))
+        except Exception as error:
             if self.log_failed_delete:
-                self.logger.error('Failed to delete attribute <{attr}> from Event'.format(attr=self.event_attribute),
-                                  event=event)
+                self.logger.error('Failed to delete attribute <{attr}> from event: {error}'.format(
+                    attr=self.key_paths, error=error), event=event)
 
         self.send_event(event)
+
+    def delete(self, event, path):
+        if len(path) == 1:
+            try:
+                delattr(event, path[0])
+            except AttributeError:
+                event.pop(path[0])
+        else:
+            self.delete(event.get(path.pop(0)), path)
 
 class HTTPStatusModifier(EventAttributeModifier):
 
