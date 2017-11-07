@@ -57,7 +57,7 @@ class EventRouter(Actor):
         super(EventRouter, self).__init__(name, *args, **kwargs)
         self.blockdiag_config["shape"] = "flowchart.condition"
         self.filters = []
-        self.default_outbox_regexes = default_outbox_regexes
+        self.default_outbox_regexes = default_outbox_regexes if isinstance(default_outbox_regexes, list) else [default_outbox_regexes]
         self.default_outboxes = []
         if not isinstance(routing_filters, list):
             routing_filters = [routing_filters]
