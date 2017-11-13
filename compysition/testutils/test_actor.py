@@ -1,6 +1,4 @@
 from compysition.queue import Queue
-import time
-from compysition.queue import Queue
 
 
 class FunneledQueue(Queue):
