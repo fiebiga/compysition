@@ -42,7 +42,8 @@ from .eventrouter import EventRouter, EventXMLFilter, EventFilter, HTTPMethodEve
 from .eventattributemodifier import (EventAttributeModifier, HTTPStatusModifier, XpathEventAttributeModifier, EventAttributeLookupModifier,
                                      HTTPXpathEventAttributeModifier, JSONEventAttributeModifier, HTTPJSONAttributeModifier, ErrorEventAttributeModifier,
                                      XMLErrorEventAttributeModifier, XMLEventAttributeModifier, XMLEventAttributeLookupModifier,
-                                     JSONEventAttributeDelete, EventDataEventAttributeModifier, EventDataStaticAttributeModifier)
+                                     JSONEventAttributeDelete, EventDataEventAttributeModifier, EventDataStaticAttributeModifier,
+                                     EventAttributeDelete)
 from .tcp import TCPIn, TCPOut
 from .zeromq import ZMQPush, ZMQPull
 from .xsd import XSD
