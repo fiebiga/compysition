@@ -1,12 +1,12 @@
 import unittest
 
-from compysition.actors import JSONEventAttributeDelete
-from compysition.event import JSONEvent
+from compysition.actors import JSONEventAttributeDelete, EventAttributeDelete
+from compysition.event import JSONEvent, Event
 
 from compysition.testutils.test_actor import TestActorWrapper
 
 
-class TestEventAttributeDelete(unittest.TestCase):
+class TestJSONEventAttributeDelete(unittest.TestCase):
 
     def test_single_event_attribute(self):
         actor = TestActorWrapper(JSONEventAttributeDelete('actor', key_paths=[['foo']]))
@@ -37,3 +37,28 @@ class TestEventAttributeDelete(unittest.TestCase):
         actor.input = _input
         output = actor.output
         self.assertEqual(output.data, {'count': 2, 'fruits': {'banana': 3}})
+
+class TestEventAttributeDelete(unittest.TestCase):
+
+    def test_single_event_atribute(self):
+        actor = TestActorWrapper(EventAttributeDelete('actor', key_paths=['foo']))
+        _input = Event(foo='foo')
+
+        self.assertEqual(_input.foo, 'foo')
+        actor.input = _input
+        output = actor.output
+        with self.assertRaises(AttributeError):
+            output.foo
+
+    def test_multiple_event_atribute(self):
+        actor = TestActorWrapper(EventAttributeDelete('actor', key_paths=['foo', 'bar']))
+        _input = Event(foo='foo', bar='bar')
+
+        self.assertEqual(_input.foo, 'foo')
+        actor.input = _input
+        output = actor.output
+        with self.assertRaises(AttributeError):
+            output.foo
+
+        with self.assertRaises(AttributeError):
+            output.bar
