@@ -1,10 +1,11 @@
 import unittest
-from compysition.event import *
-from compysition.errors import InvalidEventDataModification
+
+from compysition.event import HttpEvent, Event, CompysitionException
+from compysition.errors import ResourceNotFound
+
 
 
 class TestEvent(unittest.TestCase):
-
     def setUp(self):
         self.event = Event(data={'foo': 'bar'}, meta_id='123456abcdef')
 
@@ -13,33 +14,35 @@ class TestEvent(unittest.TestCase):
 
 
 class TestHttpEvent(unittest.TestCase):
-
-    def setUp(self):
+    def test_default_status(self):
         self.event = HttpEvent(data='quick brown fox')
+        self.assertEquals(self.event.status, (200, 'OK'))
 
-    def test_basic_content_type(self):
-        self.assertEqual(self.event.headers.get('Content-Type'), 'text/plain')
+    def test_setting_status_tuple(self):
+        error = (404, 'Not Found')
+        self.event = HttpEvent(data='quick brown fox')
+        self.event.status = error
+        self.assertEquals(self.event.status, error)
+
+    def test_setting_status_string_space_delimited(self):
+        error = '404 Not Found'
+        self.event = HttpEvent(data='quick brown fox')
+        self.event.status = error
+        self.assertEquals(self.event.status, (404, 'Not Found'))
+
+    def test_setting_status_string_dash_delimited(self):
+        error = '404-Not Found'
+        self.event = HttpEvent(data='quick brown fox')
+        self.event.status = error
+        self.assertEquals(self.event.status, (404, 'Not Found'))
+
+    def test_resource_not_found_status_updated(self):
+        self.event = HttpEvent()
+        self.event.error = ResourceNotFound()
+        self.assertEquals(self.event.status, (404, 'Not Found'))
 
 
-class TestJSONEvent(unittest.TestCase):
-
-    def test_invalid_json_event_modification(self):
-        self.assertRaises(InvalidEventDataModification, JSONEvent, data='cat')
-
-
-class TestXMLHttpEvent(unittest.TestCase):
-
-    def setUp(self):
-        self.event = XMLHttpEvent(data={'cat': 'fat'})
-
-    def test_xml_event_content_type(self):
-        self.assertEqual(self.event.headers.get('Content-Type'), 'application/xml')
-
-
-class TestJSONHttpEvent(unittest.TestCase):
-
-    def setUp(self):
-        self.event = JSONHttpEvent(data={'cat': 'fat'})
-
-    def test_json_event_content_type(self):
-        self.assertEqual(self.event.headers.get('Content-Type'), 'application/json')
+    def test_internal_server_error(self):
+        self.event = HttpEvent()
+        self.event.error = CompysitionException()
+        self.assertEquals(self.event.status, (500, 'Internal Server Error'))

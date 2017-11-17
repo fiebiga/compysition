@@ -187,7 +187,7 @@ class Actor(object):
         if not queues:
             queues = self.pool.outbound
 
-        self._loop_send(event, queues)
+        self._loop_send(event, queues, check_output)
 
     def send_error(self, event):
         """
