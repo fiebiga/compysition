@@ -1,10 +1,25 @@
 language: python
 python:
   - "2.7"
-  - "3.6"
-# command to install dependencies
+addons:
+  apt:
+    packages:
+    - build-essential
+    - cython
+    - python-dev
+    - libxslt1-dev
+    - libxml2-dev
+    - zlib1g-dev
+    - libevent-dev
+    - libffi-dev
+    - libfreetype6-dev
+    - liblcms2-dev
+    - cmake
+    - imagemagick
+    - libssl-dev
+    - libzmq-dev
+    - libmysqlclient-dev
 install:
-  - python setup.py install
-# command to run tests
+  - make install
 script:
-  - python -m unittest discover
+  - python setup.py test
