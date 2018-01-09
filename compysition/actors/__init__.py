@@ -43,7 +43,7 @@ from .eventattributemodifier import (EventAttributeModifier, HTTPStatusModifier,
                                      HTTPXpathEventAttributeModifier, JSONEventAttributeModifier, HTTPJSONAttributeModifier, ErrorEventAttributeModifier,
                                      XMLErrorEventAttributeModifier, XMLEventAttributeModifier, XMLEventAttributeLookupModifier,
                                      JSONEventAttributeDelete, EventDataEventAttributeModifier, EventDataStaticAttributeModifier,
-                                     EventAttributeDelete)
+                                     EventAttributeDelete, EventAttributeRegexSubstitution)
 from .tcp import TCPIn, TCPOut
 from .zeromq import ZMQPush, ZMQPull
 from .xsd import XSD

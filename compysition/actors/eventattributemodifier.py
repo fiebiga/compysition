@@ -26,6 +26,7 @@
 
 from compysition import Actor
 from lxml import etree
+import re
 from util import XPathLookup
 from compysition.event import XMLEvent, JSONEvent
 from compysition.errors import MalformedEventData, CompysitionException
@@ -405,3 +406,23 @@ class EventDataStaticAttributeModifier(EventAttributeModifier):
     def get_modify_value(self, event):
         event.data = {self.key:self.value}
         return self.value
+
+
+class EventAttributeRegexSubstitution(Actor):
+    """ Allow you to replace parts of string values on event attributes"""
+
+    def __init__(self, name, pattern="*", event_attr=None, replace_with="", *args, **kwargs):
+        super(EventAttributeRegexSubstitution, self).__init__(name, *args, **kwargs)
+
+        if event_attr is None:
+            raise ValueError("event_attr must be defined")
+
+        self.pattern = pattern
+        self.event_attr = event_attr
+        self.replace_with = replace_with
+
+    def consume(self, event, *args, **kwargs):
+        value = event.lookup(self.event_attr)
+        value = re.sub(self.pattern, self.replace_with, value)
+        event.set(self.event_attr, value)
+        self.send_event(event)

@@ -1,6 +1,6 @@
 import unittest
 
-from compysition.actors import JSONEventAttributeDelete, EventAttributeDelete
+from compysition.actors import JSONEventAttributeDelete, EventAttributeDelete, EventAttributeRegexSubstitution
 from compysition.event import JSONEvent, Event
 
 from compysition.testutils.test_actor import TestActorWrapper
@@ -62,3 +62,14 @@ class TestEventAttributeDelete(unittest.TestCase):
 
         with self.assertRaises(AttributeError):
             output.bar
+
+
+class TestEventRegexSubstitution(unittest.TestCase):
+
+    def test_non_data_attribute_substitution(self):
+        actor = TestActorWrapper(EventAttributeRegexSubstitution('actor', pattern='_', event_attr='foo', replace_with=' '))
+        _input = Event(foo='the_far_car')
+
+        actor.input = _input
+        output = actor.output
+        self.assertEquals(output.foo, 'the far car')
