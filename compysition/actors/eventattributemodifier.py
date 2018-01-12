@@ -132,8 +132,11 @@ class EventAttributeDelete(Actor):
         self.key_paths = [[path] if not isinstance(path, list) else path for path in self.key_paths]
 
     def consume(self, event, *args, **kwargs):
+        # create copy so we're not iterating over mutable defaults, whoops...
+        key_paths = [path[:] for path in self.key_paths]
+
         try:
-            for path in self.key_paths:
+            for path in key_paths:
                 self.delete(event, path)
                 self.logger.info('Deleted event attribute: {attr}'.format(attr=path), event=event)
         except Exception as error:
