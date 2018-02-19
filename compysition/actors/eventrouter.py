@@ -285,7 +285,10 @@ class EventFilter(object):
             for scope_step in event_scope:
                 if isinstance(current_step, dict):
                     current_step = current_step.get(scope_step, None)
+                elif isinstance(current_step, (tuple, list)):
+                    current_step = current_step[scope_step]
                 elif isinstance(current_step, object):
+                    # This is confusing, as everything is an object, so this is always True. Leaving in for now.
                     current_step = getattr(current_step, scope_step, None)
         except Exception as err:
             current_step = None
