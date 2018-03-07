@@ -83,7 +83,7 @@ class RESTTranslator(Actor):
         return self.translate_patch(event)
 
     def translate_put(self, event):
-        return self.translate_post(event)
+        return self.translate_patch(event)
 
     def translate_delete(self, event):
         return self.translate_patch(event)
