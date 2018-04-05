@@ -21,6 +21,7 @@ before_install:
       libzmq-dev
       libmysqlclient-dev
 install:
+  - pip list
   - make install
 script:
   - python setup.py test
