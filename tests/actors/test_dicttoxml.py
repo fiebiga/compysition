@@ -71,7 +71,7 @@ class TestPropertiesToXML(unittest.TestCase):
         self.actor = TestActorWrapper(PropertiesToXML("propertiestoxml"))
 
     def test_event_property_xml_conversion(self):
-        _input = JSONEvent(data={"foo": "bar"})
+        _input = XMLEvent(data={"foo": "bar"})
         self.actor.input = _input
         output = self.actor.output
         self.assertRegexpMatches(output.data_string(), "<propertiestoxml>.*<service>.*<\/service>.*<\/propertiestoxml>")

@@ -27,12 +27,15 @@ from setuptools import setup, find_packages
 import re
 
 PROJECT = 'compysition'
-VERSION = re.search("__version__\s*=\s*'(.*)'", open('compysition/__init__.py').read(), re.M).group(1)
+try:
+    with open('compysition/__init__.py') as init:
+        VERSION = re.search("__version__\s*=\s*'(.*)'", init.read(), re.M).group(1)
+except (AttributeError, IndexError, OSError, IOError) as e:
+    VERSION = ''
 REQUIRES = ["gevent",
             "greenlet",
             "pyzmq",
             "amqp",
-            "gearman",
             "pycrypto",
             "configobj",
             "restartlet",
@@ -48,8 +51,9 @@ REQUIRES = ["gevent",
             "mimeparse"]
 
 try:
-    long_description = open('README.rst', 'rt').read()
-except IOError:
+     with open('README.rst', 'rt') as readme:
+        long_description = readme.read()
+except (OSError, IOError) as e:
     long_description = ''
 
 setup(
@@ -57,17 +61,14 @@ setup(
     version=VERSION,
     description='Build event pipeline servers with minimal effort.',
     long_description=long_description,
-    author='Adam Fiebig',
-    author_email='fiebig.adam@gmail.com',
-    url='https://github.com/fiebiga/compysition',
-    download_url='https://github.com/fiebiga/compysition/tarball/master',
+    author='Integrations Team',
+    author_email='integrations@cuanswers.com',
     classifiers=['Development Status :: 5 - Production/Stable',
                  'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
                  'Programming Language :: Python',
                  'Programming Language :: Python :: 2',
                  'Programming Language :: Python :: 2.7',
                  'Programming Language :: Python :: 3.3',
-                 'Programming Language :: Python :: Implementation :: PyPy',
                  'Intended Audience :: Developers',
                  'Intended Audience :: System Administrators'],
     platforms=['Linux'],

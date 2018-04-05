@@ -75,7 +75,7 @@ class MDPActor(Actor):
         while self.loop():
             try:
                 event = self.outbound_queue.get(timeout=2.5)
-            except:
+            except Exception:
                 event = None
 
             if event is not None:

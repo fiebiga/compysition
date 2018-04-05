@@ -46,7 +46,8 @@ class RotatingFileHandler(logging.handlers.RotatingFileHandler):
         if not os.path.isfile(file_path):
             if not os.path.exists(file_dir):
                 self.make_file_dir(file_dir)
-            open(file_path, 'w+')
+            with open(file_path, 'w+'):
+                pass
 
     def make_file_dir(self, file_path):
         sub_path = os.path.dirname(os.path.abspath(file_path))
@@ -108,7 +109,7 @@ class FileLogger(Actor):
 
         try:
             logger.log(level, "{0}{1}".format(entry_prefix, entry))
-        except:
+        except Exception:
             print traceback.format_exc()
 
     def consume(self, event, *args, **kwargs):

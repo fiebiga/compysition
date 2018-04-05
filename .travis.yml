@@ -1,0 +1,27 @@
+language: python
+python:
+  - "2.7"
+before_install:
+  - sudo apt-get -qq update
+  - >
+      sudo apt-get install -y
+      build-essential
+      cython
+      python-dev
+      libxslt1-dev
+      libxml2-dev
+      zlib1g-dev
+      libevent-dev
+      libffi-dev
+      libfreetype6-dev
+      liblcms2-dev
+      cmake
+      imagemagick
+      libssl-dev
+      libzmq-dev
+      libmysqlclient-dev
+install:
+  - pip install wheel
+  - make install
+script:
+  - python setup.py test

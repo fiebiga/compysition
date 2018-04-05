@@ -1,6 +1,4 @@
 from compysition.queue import Queue
-import time
-from compysition.queue import Queue
 
 
 class FunneledQueue(Queue):
@@ -59,7 +57,7 @@ class TestActorWrapper(object):
     @input.setter
     def input(self, _input):
         self._input = _input
-        self.actor.send_event(_input, queues=self.input_queues.values())
+        self.actor.send_event(_input, queues=self.input_queues, check_output=False)
 
     @property
     def output(self):

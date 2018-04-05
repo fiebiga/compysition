@@ -44,7 +44,7 @@ class TestXSD(unittest.TestCase):
         _input = XMLEvent(data=valid_xml)
         self.actor.input = _input
         _output = self.actor.output
-        self.assertEqual(_input, _output)
+        self.assertEqual(_input.data_string(), _output.data_string())
 
     def test_invalid_xml(self):
         _input = XMLEvent(data=invalid_xml)
