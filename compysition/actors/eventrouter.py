@@ -156,9 +156,7 @@ class SimpleRouter(EventRouter):
 
     def pre_hook(self):
         for queue in self.pool.outbound:
-            if queue == self.default_queue:
-                self.default_outboxes.append(self.pool.outbound[queue])
-            else:
+            if queue != self.default_queue:
                 self.set_filter(EventFilter(value_regexes=queue, outbox_names=[queue], event_scope=(self.scope, )))
 
         super(SimpleRouter, self).pre_hook()
