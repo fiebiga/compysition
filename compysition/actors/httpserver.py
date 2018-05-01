@@ -21,19 +21,20 @@
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #  MA 02110-1301, USA.
 
+import json
+
+import mimeparse
+import re
+from bottle import *
+from collections import defaultdict
+from datetime import datetime
+from functools import wraps
+from gevent import pywsgi
+from gevent.queue import Queue
+
 from compysition import Actor
 from compysition.errors import InvalidEventDataModification, MalformedEventData, ResourceNotFound
 from compysition.event import HttpEvent, JSONHttpEvent, XMLHttpEvent
-from gevent import pywsgi
-import json
-from functools import wraps
-from collections import defaultdict
-from gevent.queue import Queue
-from bottle import *
-import re
-import time
-import mimeparse
-from datetime import datetime
 
 BaseRequest.MEMFILE_MAX = 1024 * 1024 # (or whatever you want)
 
@@ -233,7 +234,8 @@ class HTTPServer(Actor, Bottle):
     def format_response_data(self, event):
         """
         Meant to return a json response nested under a data tag if it isn't already done so, or return formatted
-        errors under the "errors" tag.
+        errors under the "errors" tag. If _pagination attribute exists on the event, will attempt to generate pagination
+        links based on limit and offset. Pagination is currently only supported for JSON responses.
         """
         if event.error:
             if isinstance(event, JSONHttpEvent):
@@ -243,9 +245,27 @@ class HTTPServer(Actor, Bottle):
         else:
             if not isinstance(event.data, (list, dict, str)) or \
                     (isinstance(event.data, dict) and len(event.data) == 1 and event.data.get("data", None)):
+                # This seems to be an implicit check for whether or not the data is an XMLEvent
                 response_data = event.data_string()
             else:
-                response_data = json.dumps({"data": event.data})
+                response_dict = {'data': event.data}
+
+                if event.pagination:
+                    limit, offset = event._pagination['limit'], event._pagination['offset']
+                    results_length = len(event.data)
+                    qs = '?limit={limit}&offset={offset}'
+                    base_url = '{path}'.format(path=event.environment['PATH_INFO'])
+
+                    links = {}
+                    links['prev'] = base_url + qs.format(limit=limit, offset=offset)
+
+                    if limit <= results_length:
+                        new_offset = offset + limit
+                        links['next'] = base_url + qs.format(limit=limit, offset=new_offset)
+
+                    response_dict.update({'_pagination': links})
+
+                response_data = json.dumps(response_dict)
 
         return response_data
 

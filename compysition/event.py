@@ -273,11 +273,12 @@ class HttpEvent(Event):
 
     content_type = "text/plain"
 
-    def __init__(self, headers=None, status=(200, "OK"), environment={}, *args, **kwargs):
+    def __init__(self, headers=None, status=(200, "OK"), environment={}, pagination=None, *args, **kwargs):
         self.headers = headers or {}
         self.method = environment.get('REQUEST_METHOD', None)
         self.status = status
         self.environment = environment
+        self._pagination = pagination
         super(HttpEvent, self).__init__(*args, **kwargs)
 
     @property
@@ -300,6 +301,18 @@ class HttpEvent(Event):
             self.headers.update(error_state.get("headers", {}))
 
         super(HttpEvent, self)._set_error(exception)
+
+    @property
+    def pagination(self):
+        return self._pagination
+
+    @pagination.setter
+    def pagination(self, pagination_dict):
+        if 'limit' in pagination_dict and 'offset' in pagination_dict:
+            self._pagination = pagination_dict
+        else:
+            raise ValueError('Must have limit and offset keys set in pagination_dict')
+
 
 
 class _XMLFormatInterface(DataFormatInterface):
