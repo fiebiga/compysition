@@ -3,8 +3,6 @@ import unittest
 from compysition.event import HttpEvent, Event, CompysitionException
 from compysition.errors import ResourceNotFound
 
-
-
 class TestEvent(unittest.TestCase):
     def setUp(self):
         self.event = Event(data={'foo': 'bar'}, meta_id='123456abcdef')
@@ -40,7 +38,6 @@ class TestHttpEvent(unittest.TestCase):
         self.event = HttpEvent()
         self.event.error = ResourceNotFound()
         self.assertEquals(self.event.status, (404, 'Not Found'))
-
 
     def test_internal_server_error(self):
         self.event = HttpEvent()

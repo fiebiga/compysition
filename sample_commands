@@ -1,0 +1,10 @@
+python setup.py install
+python setup.py test
+pytest
+
+
+NOTES:
+classes prepended with "Test" are treated as test classes by pytest
+per config in pytest.ini files within /tests that match test_*.py are treated as test files
+current python version = 2.7.6
+target python version = 3.6.5

@@ -47,7 +47,10 @@ REQUIRES = ["gevent",
             "jsonschema",
             "bs4",
             "apscheduler",
-            "mimeparse"]
+            "mimeparse",
+            "pytest",
+            "pytest-socket",
+            "pytest-cov"]
 
 try:
      with open('README.rst', 'rt') as readme:

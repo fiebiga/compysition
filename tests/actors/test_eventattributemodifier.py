@@ -1,10 +1,31 @@
 import unittest
 
-from compysition.actors import JSONEventAttributeDelete, EventAttributeDelete, EventAttributeRegexSubstitution
+from compysition.actors import EventAttributeModifier, JSONEventAttributeDelete, EventAttributeDelete, EventAttributeRegexSubstitution
 from compysition.event import JSONEvent, Event
 
 from compysition.testutils.test_actor import TestActorWrapper
 
+class TestEventAttributeModifier(unittest.TestCase):
+    def test_init(self):
+        with self.assertRaises(TypeError):
+            actor = EventAttributeModifier()
+        actor = EventAttributeModifier('actor')
+
+    def test_defaults(self):
+        actor = EventAttributeModifier('actor')
+        self.assertEqual('test', 'test')
+        self.assertEqual(actor.key, 'data')
+        self.assertEqual(actor.log_change, False)
+        self.assertEqual(actor.separator, '/')
+
+    def test_get_key_chain_value(self):
+        actor1 = EventAttributeModifier(name='actor')
+        event = Event()
+        event.data = "some test data"
+        event = actor1.get_key_chain_value(event, 'new value')
+        self.assertEqual(event.data, 'new value')
+        event = actor1.get_key_chain_value(event, 'new value')
+        ##TODO Continue
 
 class TestJSONEventAttributeDelete(unittest.TestCase):
 

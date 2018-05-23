@@ -33,11 +33,15 @@ class FlowController(Actor):
 
     '''
 
-    def __init__(self, name, trigger_errors=False, *args, **kwargs):
+    def __init__(self, name, trigger_errors=False, generate_fresh_ids=False, *args, **kwargs):
         self.trigger_errors = trigger_errors
+        self.generate_fresh_ids = generate_fresh_ids
         super(FlowController, self).__init__(name, *args, **kwargs)
 
     def consume(self, event, *args, **kwargs):
+        if self.generate_fresh_ids:
+            event._event_id = uuid().get_hex()
+            event.meta_id = event._event_id
         if event.error and self.trigger_errors:
             self.send_error(event)
         else:

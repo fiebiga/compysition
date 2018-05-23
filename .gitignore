@@ -4,7 +4,7 @@
 *.so
 
 # Packages
-*.egg
+*.egg*
 *.egg-info
 dist
 build
@@ -42,3 +42,8 @@ wishbone.sublime-workspace
 
 # Visual Studio
 *.pyproj
+
+#pytest
+.coverage
+__pycache__
+.pytest_cache
