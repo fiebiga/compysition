@@ -22,6 +22,7 @@
 #  MA 02110-1301, USA.
 
 from compysition import Actor
+from uuid import uuid4 as uuid
 
 class FlowController(Actor):
     '''

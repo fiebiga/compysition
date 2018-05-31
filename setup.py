@@ -32,7 +32,8 @@ try:
         VERSION = re.search("__version__\s*=\s*'(.*)'", init.read(), re.M).group(1)
 except (AttributeError, IndexError, OSError, IOError) as e:
     VERSION = ''
-REQUIRES = ["gevent",
+REQUIRES = [
+            "gevent",
             "greenlet",
             "pyzmq",
             "amqp",
@@ -71,6 +72,7 @@ setup(
                  'Programming Language :: Python :: 2',
                  'Programming Language :: Python :: 2.7',
                  'Programming Language :: Python :: 3.3',
+                 'Programming Language :: Python :: 3.6',
                  'Intended Audience :: Developers',
                  'Intended Audience :: System Administrators'],
     platforms=['Linux'],
