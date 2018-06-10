@@ -135,7 +135,6 @@ class Queue(gqueue.Queue):
         """**Dump all items on this queue to another queue**"""
         try:
             while True:
-                other_queue.put(self.next())
-        except (gqueue.Full, Exception):
+                other_queue.put(self.get(block=False))
+        except QueueEmpty:
             pass
-
