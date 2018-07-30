@@ -45,7 +45,6 @@ class EventLogger(Actor):
         self.log_full_event = log_full_event
 
     def consume(self, event, *args, **kwargs):
-        print('event', event.data_string())
         message = self.prefix + ""
         if self.log_full_event:
             message += str(event)
