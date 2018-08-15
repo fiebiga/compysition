@@ -49,9 +49,9 @@ REQUIRES = [
             "bs4",
             "apscheduler",
             "mimeparse",
-            "pytest",
             "pytest-socket",
-            "pytest-cov"]
+            "pytest-cov",
+            "pytest>=3.6.3",]
 
 try:
      with open('README.rst', 'rt') as readme:

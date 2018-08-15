@@ -369,13 +369,42 @@ def decimal_default(obj):
         return float(obj)
     raise TypeError
 
+def should_force_list(path, key, value):
+    """
+    This is a callback passed to xmltodict.parse which checks for an xml attribute force_list in the XML, and if present
+    the outputted JSON is an list, regardless of the number of XML elements. The default behavior of xmltodict is that
+    if there is only one <element>, to output as a dict, but if there are multiple then to output as a list. @force_list
+    is useful in situations where the xml could have 1 or more <element>'s, but code handling the JSON elsewhere expects
+    a list.
+
+    For example, if you have an XSLT that produces 1 or more items, you could have the resulting output of the XSLT
+    transformation be
+        <transactions force_list=True>
+            <amount>85</amount>
+        </transactions>
+
+    and the JSON output will be:
+        {"transactions" : [
+            "amount": "85"
+            ]
+        }
+    whereas the default when the @force_list attribute is not present would be:
+        {"transactions": {
+            "amount": "85"
+            }
+        }
+
+    which could break code handling this JSON which always expects "transactions" to be a list.
+    """
+    return isinstance(value, dict) and '@force_list' in value
+
 class _JSONFormatInterface(DataFormatInterface):
 
     content_type = "application/json"
 
     conversion_methods = {str: lambda data: json.loads(data)}
     conversion_methods.update(dict.fromkeys(_JSON_TYPES, lambda data: json.loads(json.dumps(data, default=decimal_default))))
-    conversion_methods.update(dict.fromkeys(_XML_TYPES, lambda data: remove_internal_xmlify(xmltodict.parse(etree.tostring(data), expat=expat))))
+    conversion_methods.update(dict.fromkeys(_XML_TYPES, lambda data: remove_internal_xmlify(xmltodict.parse(etree.tostring(data), expat=expat, force_list=should_force_list))))
     conversion_methods.update({None.__class__: lambda data: {}})
 
     def __getstate__(self):
