@@ -47,7 +47,7 @@ from .eventattributemodifier import (EventAttributeModifier, HTTPStatusModifier,
 from .tcp import TCPIn, TCPOut
 from .zeromq import ZMQPush, ZMQPull
 from .xsd import XSD
-from .smtp import SMTPIn, SMTPOut
+from .smtp import SMTPOut
 from .rest import RESTTranslator
 from .dicttoxml import DictToXML, PropertiesToXML
 from .xml_to_dict import XMLToDict

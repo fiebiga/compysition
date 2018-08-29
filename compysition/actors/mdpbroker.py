@@ -23,12 +23,13 @@
 
 import gevent
 import time
-from util.mdpregistrar import BrokerRegistrator
-from compysition import Actor
 import zmq.green as zmq
-import util.mdpdefinition as MDPDefinition
+
 from uuid import uuid4 as uuid
-import cPickle as pickle
+
+from .util import mdpdefinition as MDPDefinition
+from .util.mdpregistrar import BrokerRegistrator
+from compysition.actor import Actor
 
 class Service(object):
     """a single Service"""

@@ -25,7 +25,6 @@ from gevent.pool import Pool
 from gevent import sleep
 from gevent.greenlet import Greenlet
 
-
 class RestartPool(Pool):
     """
     A simple extension of the gevent Pool class that, by default, adds a callback to all greenlet spawns that will

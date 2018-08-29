@@ -22,22 +22,21 @@
 #  MA 02110-1301, USA.
 
 import json
-
 import mimeparse
 import re
-from bottle import *
+
+from bottle import * #TODO identify exact imports
 from collections import defaultdict
 from datetime import datetime
 from functools import wraps
 from gevent import pywsgi
 from gevent.queue import Queue
 
-from compysition import Actor
+from compysition.actor import Actor
 from compysition.errors import InvalidEventDataModification, MalformedEventData, ResourceNotFound
 from compysition.event import HttpEvent, JSONHttpEvent, XMLHttpEvent
 
 BaseRequest.MEMFILE_MAX = 1024 * 1024 # (or whatever you want)
-
 
 class ContentTypePlugin(object):
     """**Bottle plugin that filters basic content types that are processable by Compysition**"""
@@ -180,7 +179,7 @@ class HTTPServer(Actor, Bottle):
 
         return path
 
-    def __init__(self, name, address="0.0.0.0", port=8080, keyfile=None, certfile=None, routes_config=None, send_errors=False, *args, **kwargs):
+    def __init__(self, name, address="0.0.0.0", port=8080, keyfile=None, certfile=None, routes_config=None, send_errors=False, use_response_wrapper=True, *args, **kwargs):
         Actor.__init__(self, name, *args, **kwargs)
         Bottle.__init__(self)
         self.blockdiag_config["shape"] = "cloud"
@@ -190,6 +189,7 @@ class HTTPServer(Actor, Bottle):
         self.certfile = certfile
         self.responders = {}
         self.send_errors = send_errors
+        self.use_response_wrapper = use_response_wrapper
         routes_config = routes_config or self.DEFAULT_ROUTE
 
         if isinstance(routes_config, str):
@@ -248,7 +248,9 @@ class HTTPServer(Actor, Bottle):
                 # This seems to be an implicit check for whether or not the data is an XMLEvent
                 response_data = event.data_string()
             else:
-                response_dict = {'data': event.data}
+                response_dict = event.data
+                if self.use_response_wrapper and getattr(event, "use_response_wrapper", True):
+                    response_dict = {'data': event.data}
 
                 if event.pagination:
                     limit, offset = event._pagination['limit'], event._pagination['offset']

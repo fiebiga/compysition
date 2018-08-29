@@ -1,9 +1,7 @@
 from __future__ import absolute_import
 
 from compysition.actor import Actor
-import xmltodict
 from compysition.event import XMLEvent, JSONEvent, Event
-
 
 class DictToXML(Actor):
 

@@ -21,10 +21,10 @@
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #  MA 02110-1301, USA.
 
-
 import base64
 
-from pprint import pformat
+from compysition.actor import Actor
+from compysition.errors import UnauthorizedEvent
 
 from compysition.actor import Actor
 from compysition.errors import UnauthorizedEvent, ForbiddenEvent

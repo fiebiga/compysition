@@ -24,10 +24,10 @@
 import gevent
 import zmq.green as zmq
 import time
-from binascii import hexlify
-import util.mdpdefinition as MDPDefinition
-from compysition import Actor
-from util.mdpregistrar import HeartbeatManager, RegistrationService, Broker
+
+from .util import mdpdefinition as MDPDefinition
+from .util.mdpregistrar import HeartbeatManager, RegistrationService, Broker
+from compysition.actor import Actor
 
 class MDPBrokerRegistrationService(Actor, RegistrationService):
     """

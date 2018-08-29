@@ -3,24 +3,8 @@ python:
   - "2.7"
 before_install:
   - sudo apt-get -qq update
-  - >
-      sudo apt-get install -y
-      python-setuptools
-      build-essential
-      cython
-      python-dev
-      libxslt1-dev
-      libxml2-dev
-      zlib1g-dev
-      libevent-dev
-      libffi-dev
-      libfreetype6-dev
-      liblcms2-dev
-      cmake
-      imagemagick
-      libssl-dev
-      libzmq-dev
-      libmysqlclient-dev
+  - make dependencies
+  - make install-pytest
 install:
   - make install
 script:

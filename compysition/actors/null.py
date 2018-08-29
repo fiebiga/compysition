@@ -22,7 +22,7 @@
 #
 #
 
-from compysition import Actor
+from compysition.actor import Actor
 
 class Null(Actor):
 

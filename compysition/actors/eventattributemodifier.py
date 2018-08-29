@@ -24,12 +24,21 @@
 #
 #
 
-from compysition import Actor
-from lxml import etree
 import re
-from util import XPathLookup
+
+from lxml import etree
+
+from .util.xpath import XPathLookup
+from compysition.actor import Actor
 from compysition.event import XMLEvent, JSONEvent
 from compysition.errors import MalformedEventData, CompysitionException
+
+class _FormatErrorInsertMixin:
+    def get_modify_value(self, event):
+        value = event.format_error()
+        if not value:
+            value = event.data
+        return value
 
 class EventAttributeModifier(Actor):
 
@@ -252,7 +261,8 @@ class HTTPJSONAttributeModifier(JSONEventAttributeModifier, HTTPStatusModifier):
 
 
 class XMLEventAttributeModifier(EventAttributeModifier):
-
+    input = XMLEvent
+    
     def get_key_chain_value(self, event, value):
         keys = self.key.split(self.separator)
         event_key = keys.pop(0)
@@ -269,8 +279,8 @@ class XMLEventAttributeModifier(EventAttributeModifier):
                 while True:
                     if len(keys) > 0:
                         item = keys.pop(0)
-                        next_step = current_element.get(item, None)
-                        if not next_step:
+                        next_step = current_element.find(item)
+                        if not etree.iselement(next_step):
                             next_step = etree.Element(item)
                             current_element.append(next_step)
                         current_element = next_step
@@ -431,3 +441,6 @@ class EventAttributeRegexSubstitution(Actor):
         value = re.sub(self.pattern, self.replace_with, value)
         event.set(self.event_attr, value)
         self.send_event(event)
+
+class FormatErrorModifyEventAttribute(_FormatErrorInsertMixin, EventAttributeModifier):
+    pass

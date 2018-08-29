@@ -21,11 +21,13 @@
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #  MA 02110-1301, USA.
 
-from compysition import Actor
-from lxml import etree
-import re
-from util import XPathLookup
 import json
+import re
+
+from lxml import etree
+
+from .util.xpath import XPathLookup
+from compysition.actor import Actor
 from compysition.event import HttpEvent
 from compysition.errors import SetupError, EventCommandNotAllowed
 

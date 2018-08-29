@@ -24,12 +24,13 @@
 #  MA 02110-1301, USA.
 #
 #
-
-from compysition import Actor
 import gevent
+
+from apscheduler.schedulers.gevent import GeventScheduler
+
+from compysition.actor import Actor
 from compysition.event import Event
 from compysition.actors.util.udplib import UDPInterface
-from apscheduler.schedulers.gevent import GeventScheduler
 
 class EventProducer(Actor):
     '''
@@ -171,6 +172,17 @@ class CallbackScheduledEventProducer(CallbackEventProducer, ScheduledEventProduc
         CallbackEventProducer.__init__(self, name, *args, **kwargs)
         ScheduledEventProducer._init_scheduler(self, *args, **kwargs)
 
+class CallbackScheduledUDPEventProducer(CallbackEventProducer, ScheduledUDPEventProducer):
+    def __init__(self, name, *args, **kwargs):
+        CallbackEventProducer.__init__(self, name, *args, **kwargs)
+        ScheduledUDPEventProducer._init_scheduler(self, *args, **kwargs)
+        ScheduledUDPEventProducer._init_peers_interface(self, *args, **kwargs)
+
+    def _do_produce(self):
+        if not self.__is_running:
+            self.__is_running = True
+            super(ScheduledUDPEventProducer, self)._do_produce()
+
 class IntervalSchedulingMixin:
     '''
     Description:
@@ -230,6 +242,9 @@ class CallbackEventGenerator(IntervalSchedulingMixin, CallbackScheduledEventProd
     pass
 
 class UDPEventGenerator(IntervalSchedulingMixin, ScheduledUDPEventProducer):
+    pass
+
+class CallbackUDPEventGenerator(IntervalSchedulingMixin, CallbackScheduledUDPEventProducer):
     pass
 
 class CronEventGenerator(CronSchedulingMixin, ScheduledEventProducer):

@@ -22,15 +22,23 @@
 #
 
 import zmq.green as zmq
-from util.mdpregistrar import BrokerManager
 import gevent
-from gevent.queue import Queue
-from compysition import Actor
-from uuid import uuid4 as uuid
-import util.mdpdefinition as MDPDefinition
 import traceback
-import cPickle as pickle
+
+pickle = None
+try:
+    import cPickle as pickle #Python 2
+except ImportError:
+    import _pickle as pickle #Python 3
+
 import abc
+
+from gevent.queue import Queue #TODO Don't need this AND the generic gevent import
+from uuid import uuid4 as uuid
+
+from .util.mdpregistrar import BrokerManager #TODO Fix Redundancy?
+from .util import mdpdefinition as MDPDefinition
+from compysition.actor import Actor
 
 """
 The MDPWorker and MDPClient are implementations of the ZeroMQ MajorDomo configuration, which deals with dynamic process routing based on service configuration and registration.

@@ -1,1 +1,1 @@
-from xpath import *
+from .xpath import *

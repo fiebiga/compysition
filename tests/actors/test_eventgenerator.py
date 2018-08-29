@@ -15,7 +15,187 @@ from compysition.actors.eventgenerator import (
     CronEventGenerator, UDPCronEventGenerator)
 from compysition.event import Event, XMLEvent, JSONEvent
 from compysition.testutils.test_actor import TestActorWrapper
-from apscheduler.schedulers.gevent import GeventScheduler
+
+class MockedPeersInterface():
+    def __init__(self, is_master=False):
+        self._is_master = is_master
+        self.is_running = False
+
+    def start(self):
+        self.is_running = True
+
+    def is_master(self):
+        return self._is_master
+
+class MockedScheduler():
+    def __init__(self, is_master=False):
+        self.is_running = False
+        self.job_count = 0
+
+    def start(self):
+        self.is_running = True
+
+    def shutdown(self):
+        self.is_running = False
+
+    def add_job(self, *args, **kwargs):
+        self.job_count += 1
+
+
+class MockedSchedulingMixin():
+    DEFAULT_INTERVAL = {"test_interval": 0}
+
+    def _parse_interval(self, interval):
+        self.parsed = True
+        return interval
+
+    def _initialize_jobs(self):
+        self.jobs_initialized = True
+
+class MockedActorMixin:
+    parsed = False
+    jobs_initialized = False
+
+class PrepClazz:
+    def actor_prep(self, actor, *args, **kwargs):
+        self.sent_event = None
+        self.errored_event = None
+        actor.send_event = self.mock_send_event
+        actor.send_error = self.mock_error_event
+        actor.output = (actor.output, ) #performed during Base Actor start()
+        return actor
+
+    def mock_send_event(self, event, *args, **kwargs):
+        self.sent_event = event
+
+    def mock_error_event(self, event, *args, **kwargs):
+        self.errored_event = event
+
+    def mock_do_produce(self):
+        self.mock_data = self.mock_data + 1
+
+    def produce_event_class_testing_template(self, event_class=None, *args, **kwargs):
+        actor = self.__test_class__('actor', *args, **kwargs)
+        if event_class:
+            actor = self.__test_class__('actor', event_class=event_class, *args, **kwargs)
+        else:
+            event_class = Event
+        self.assertEqual(actor.output, event_class)
+        actor = self.actor_prep(actor)
+        actor._do_produce()
+        self.assertIsInstance(self.sent_event, event_class)
+
+class MockedSchedulingActor(PrepClazz):
+    def __init__(self, name, producers=1, interval=5, delay=0, scheduler=None, *args, **kwargs):
+        self.interval = self._parse_interval(interval)
+        self.delay = delay
+        self.producers = producers
+        self.scheduler = scheduler
+        if not self.scheduler:
+            self.scheduler = GeventScheduler()
+
+    def _do_produce(self):
+        self.mock_do_produce()
+
+    def pre_hook(self):
+        self.scheduler.start()
+
+class TestEventProducer(unittest.TestCase, PrepClazz):
+    class MockedEventProducer(MockedActorMixin, EventProducer):
+        pass
+
+    __test_class__ = MockedEventProducer
+
+    def test_init(self, *args, **kwargs):
+        actor = self.__test_class__('actor', *args, **kwargs)
+        self.assertEqual(actor.generate_error, False)
+        self.assertEqual(actor.event_kwargs, {})
+        self.assertEqual(actor.output, Event)
+
+    def test_do_produce(self, *args, **kwargs):
+        #tests event class generation
+        self.produce_event_class_testing_template(*args, **kwargs)
+        self.produce_event_class_testing_template(event_class=Event, *args, **kwargs)
+        self.produce_event_class_testing_template(event_class=XMLEvent, *args, **kwargs)
+        self.produce_event_class_testing_template(event_class=JSONEvent, *args, **kwargs)
+
+        #tests error handling
+        actor = self.__test_class__('actor', *args, **kwargs)
+        actor = self.actor_prep(actor)
+        actor._do_produce()
+        self.assertIsInstance(self.sent_event, Event)
+        self.assertEqual(self.errored_event, None)
+        actor = self.__test_class__('actor', generate_error=False, *args, **kwargs)
+        actor = self.actor_prep(actor)
+        actor._do_produce()
+        self.assertIsInstance(self.sent_event, Event)
+        self.assertEqual(self.errored_event, None)
+        actor = self.__test_class__('actor', generate_error=True, *args, **kwargs)
+        actor = self.actor_prep(actor)
+        actor._do_produce()
+        self.assertIsInstance(self.sent_event, Event)
+        self.assertIsInstance(self.errored_event, Event)
+
+        #tests kwargs
+        actor = self.__test_class__('actor', event_kwargs={'test_data': 'some_value'}, *args, **kwargs)
+        actor = self.actor_prep(actor)
+        actor._do_produce()
+        self.assertEqual(self.sent_event.get('test_data', None), 'some_value')
+        actor = self.__test_class__('actor', *args, **kwargs)
+        actor = self.actor_prep(actor)
+        actor._do_produce()
+        self.assertEqual(self.sent_event.get('test_data', None), None)
+
+    def test_consume(self, *args, **kwargs):
+        self.test_do_produce()
+
+class TestUDPEventProducer(TestEventProducer):
+    class MockedUDPEventProducer(MockedActorMixin, UDPEventProducer):
+        pass
+
+    __test_class__ = MockedUDPEventProducer
+
+    def test_init(self, *args, **kwargs):
+        actor = self.__test_class__('actor', peers_interface=MockedPeersInterface(), *args, **kwargs)
+
+    def test_pre_hook(self, *args, **kwargs):
+        actor = self.__test_class__('actor', peers_interface=MockedPeersInterface(), *args, **kwargs)
+        actor.pre_hook()
+        self.assertTrue(actor.peers_interface.is_running)
+
+    def test_do_produce(self, *args, **kwargs):        
+        actor = self.__test_class__('actor', interval=1, peers_interface=MockedPeersInterface(is_master=False), *args, **kwargs)
+        actor = self.actor_prep(actor)
+        self.assertFalse(actor.peers_interface.is_master())
+        self.assertEqual(getattr(self, 'sent_event', None), None)
+        actor._do_produce()
+        self.assertEqual(getattr(self, 'sent_event', None), None)
+
+        actor = self.__test_class__('actor', peers_interface=MockedPeersInterface(is_master=True), *args, **kwargs)
+        actor = self.actor_prep(actor)
+        self.assertTrue(actor.peers_interface.is_master())
+        self.assertEqual(getattr(self, 'sent_event', None), None)
+        actor._do_produce()
+        self.assertIsInstance(getattr(self, 'sent_event', None), Event)
+
+        #this complexity requires __test_class__
+        TestEventProducer.test_do_produce(self, peers_interface=MockedPeersInterface(is_master=True), *args, **kwargs)
+
+class TestScheduledEventProducer(TestEventProducer):
+    class MockedScheduledEventProducer(MockedActorMixin, MockedSchedulingMixin, ScheduledEventProducer):
+        pass
+
+    __test_class__ = MockedScheduledEventProducer
+
+    def test_init(self, *args, **kwargs):
+        TestEventProducer.test_init(self, *args, **kwargs)
+
+        actor = self.__test_class__('actor', *args, **kwargs)
+        self.assertEqual(actor.interval, 5)
+        self.assertEqual(actor.delay, 0)
+        self.assertEqual(actor.producers, 1)
+        self.assertNotEqual(actor.scheduler, None)
+        self.assertEqual(actor.parsed, True)
 
 class MockedPeersInterface():
     def __init__(self, is_master=False):

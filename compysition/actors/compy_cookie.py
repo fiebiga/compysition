@@ -21,10 +21,12 @@
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #  MA 02110-1301, USA.
 
-from compysition import Actor
-from uuid import uuid4 as uuid
 import Cookie
 import datetime
+
+from uuid import uuid4 as uuid
+
+from compysition.actor import Actor
 
 class SetCookie(Actor):
 

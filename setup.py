@@ -44,14 +44,10 @@ REQUIRES = [
             "blockdiag",
             "bottle",
             "xmltodict",
-            "gsmtpd",
             "jsonschema",
             "bs4",
             "apscheduler",
-            "mimeparse",
-            "pytest-socket",
-            "pytest-cov",
-            "pytest>=3.6.3",]
+            "mimeparse"]
 
 try:
      with open('README.rst', 'rt') as readme:
@@ -79,6 +75,6 @@ setup(
     install_requires=REQUIRES,
     namespace_packages=[],
     test_suite="tests",
-    packages=find_packages(),
+    packages=find_packages(include=('compysition*',)),
     package_data={'': ['*.txt', '*.rst', '*.xml', '*.xsl', '*.conf']},
     zip_safe=False)

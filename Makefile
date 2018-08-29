@@ -1,3 +1,5 @@
+SHELL:=/bin/bash
+
 clean: clean-build clean-pyc
 
 clean-build: ## remove build artifacts
@@ -9,6 +11,7 @@ clean-build: ## remove build artifacts
 	find . -name '*.egg' -exec rm -f {} +
 
 clean-pyc: ## remove Python file artifacts
+	rm -fr .pytest_cache/
 	find . -name '*.pyc' -exec rm -f {} +
 	find . -name '*.pyo' -exec rm -f {} +
 	find . -name '*~' -exec rm -f {} +
@@ -27,25 +30,39 @@ test-setpy2:
 test-run: install
 	python -m pytest
 
+install-pytest:
+	sudo apt-get install -y python-logilab-common
+	pip install -U pip pytest pytest-cov pytest-socket
+
 install-pyenv:
-	#executing multiple times will fail upon cloning of git repo into a preexisting directory
-	#caution multiple successful executions will clutter ~/.bashrc and ~/.bash_profile
-	apt-get install -y git
+	sudo apt-get install -y git
+	rm -rf ~/.pyenv
+	rm -f ~/bin/pyenv
 	git clone https://github.com/pyenv/pyenv.git ~/.pyenv
-	echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bash_profile
-	echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bash_profile
-	echo -e 'if command -v pyenv 1>/dev/null 2>&1; then\n  eval "$(pyenv init -)"\nfi' >> ~/.bash_profile
-	echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bashrc
-	echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bashrc
-	echo -e 'if command -v pyenv 1>/dev/null 2>&1; then\n  eval "$(pyenv init -)"\nfi' >> ~/.bashrc
+	ln -s ~/.pyenv/bin/pyenv ~/bin/pyenv
+	pyenv init -
 	pyenv install 2.7.6
 	pyenv install 3.6.5
 
-clean-deploy:
-	rm -fr examples/
-	rm -fr tests/
-	rm -fr README.*
-	rm -fr changelog.rst
-	rm -fr pytest.ini
-	rm -fr .pytest_cache/
-	find . -name '__pycache__' -exec rm -fr {} +
+dependencies:
+	sudo apt-get install -y \
+		python-setuptools \
+		build-essential \
+		cython \
+		python-dev \
+		libxslt1-dev \
+		libxml2-dev \
+		zlib1g-dev \
+		libevent-dev \
+		libffi-dev \
+		libfreetype6-dev \
+		liblcms2-dev \
+		cmake \
+		imagemagick \
+		libssl-dev \
+		libzmq-dev \
+		libmysqlclient-dev \
+		python-pip
+	pip install -U pip
+
+install-dev-env: dependencies install-pytest install install-pyenv

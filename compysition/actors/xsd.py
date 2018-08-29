@@ -21,12 +21,19 @@
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #  MA 02110-1301, USA.
 
-from compysition import Actor
 from lxml import etree
-from compysition.event import XMLEvent
+
+from compysition.actor import Actor
+from compysition.event import XMLEvent, JSONEvent
 from compysition.errors import MalformedEventData
 
-class XSD(Actor):
+__all__ = [
+    "XSD",
+    "XMLXSD",
+    "JSONXSD"
+]
+
+class _XSD(Actor):
     '''**A simple actor which applies a provided XSD to an incoming event XML data. If no XSD is defined, it will validate XML format correctness**
 
     Parameters:
@@ -45,10 +52,9 @@ class XSD(Actor):
     '''
 
     input = XMLEvent
-    output = XMLEvent
 
     def __init__(self, name, xsd=None, *args, **kwargs):
-        super(XSD, self).__init__(name, *args, **kwargs)
+        super(_XSD, self).__init__(name, *args, **kwargs)
         if xsd:
             self.schema = etree.XMLSchema(etree.XML(xsd))
         else:
@@ -70,3 +76,12 @@ class XSD(Actor):
     def process_error(self, message, event):
         self.logger.error("Error validating incoming XML: {0}".format(message), event=event)
         raise MalformedEventData(message)
+
+class XSD(_XSD):
+    output = XMLEvent
+
+class XMLXSD(XSD):
+    pass
+
+class JSONXSD(_XSD):
+    output = JSONEvent

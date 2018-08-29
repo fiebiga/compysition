@@ -23,10 +23,11 @@
 #  MA 02110-1301, USA.
 #
 
+import logging
+
+from compysition.queue import _InternalQueuePool
 from compysition.event import LogEvent
 from compysition.errors import QueueFull
-import logging
-from compysition.queue import _InternalQueuePool
 
 class Logger(object):
 

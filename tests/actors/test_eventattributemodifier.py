@@ -2,7 +2,6 @@ import unittest
 
 from compysition.actors import EventAttributeModifier, JSONEventAttributeDelete, EventAttributeDelete, EventAttributeRegexSubstitution
 from compysition.event import JSONEvent, Event
-
 from compysition.testutils.test_actor import TestActorWrapper
 
 class TestEventAttributeModifier(unittest.TestCase):

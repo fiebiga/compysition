@@ -22,8 +22,9 @@
 #
 #
 
-from compysition import Actor
 import logging
+
+from compysition import Actor
 
 class EventLogger(Actor):
 

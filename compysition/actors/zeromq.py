@@ -21,12 +21,19 @@
 #  MA 02110-1301, USA.
 #
 
-from compysition import Actor
 import zmq.green as zmq
-from gevent.queue import Queue
 import socket
-import cPickle as pickle
 import abc
+
+pickle = None
+try:
+    import cPickle as pickle #Python 2
+except ImportError:
+    import _pickle as pickle #Python 3
+
+from gevent.queue import Queue
+
+from compysition.actor import Actor
 
 DEFAULT_PORT = 9000
 

@@ -21,13 +21,14 @@
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #  MA 02110-1301, USA.
 
-from compysition import Actor
 import jsonschema
-from jsonschema import FormatChecker, ValidationError, SchemaError
 import json
+
+from jsonschema import FormatChecker, ValidationError, SchemaError
+
+from compysition.actor import Actor
 from compysition.event import JSONEvent
 from compysition.errors import MalformedEventData
-
 
 def _required(validator, required, instance, schema):
     """Validate 'required' properties.

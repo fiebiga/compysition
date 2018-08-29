@@ -21,19 +21,24 @@
 #  MA 02110-1301, USA.
 #
 
-from compysition.actors import Null, STDOUT, EventLogger
-from compysition.errors import ActorInitFailure
-from gevent import signal as gsignal, event
 import signal
 import os
 import traceback
+
+from gevent import signal as gsignal, event
+
 from compysition.actor import Actor
+from compysition.actors import Null, STDOUT, EventLogger
+from compysition.errors import ActorInitFailure
 
 class Director(object):
+
+    _async_class = event.Event
 
     def __init__(self, size=500, name="default", generate_blockdiag=True, blockdiag_dir="./build/blockdiag"):
         gsignal(signal.SIGINT, self.stop)
         gsignal(signal.SIGTERM, self.stop)
+
         self.name = name
         self.actors = {}
         self.size = size
@@ -42,7 +47,7 @@ class Director(object):
         self.error_actor = self.__create_actor(EventLogger, "default_error_logger")
 
         self.__running = False
-        self.__block = event.Event()
+        self.__block = self._async_class()
         self.__block.clear()
 
         self.blockdiag_dir = blockdiag_dir
@@ -188,7 +193,7 @@ class Director(object):
                     if len(actor.pool.error) == 0:
                         self.connect_error_queue(actor, self.error_actor)
                 except Exception as err:
-                    print err
+                    print(err)
 
             actor.connect_log_queue(source_queue_name="logs", destination=self.log_actor, check_existing=False)
 

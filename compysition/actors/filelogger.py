@@ -22,12 +22,13 @@
 #
 #
 
-from compysition import Actor
 import logging
 import logging.handlers
 import traceback
 import os
 import gevent.lock
+
+from compysition.actor import Actor
 from compysition.event import LogEvent
 
 class RotatingFileHandler(logging.handlers.RotatingFileHandler):
@@ -110,7 +111,7 @@ class FileLogger(Actor):
         try:
             logger.log(level, "{0}{1}".format(entry_prefix, entry))
         except Exception:
-            print traceback.format_exc()
+            print(traceback.format_exc())
 
     def consume(self, event, *args, **kwargs):
         self._process_log_entry(event)

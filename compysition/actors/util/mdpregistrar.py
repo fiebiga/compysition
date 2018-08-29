@@ -24,8 +24,10 @@
 import gevent
 import zmq.green as zmq
 import time
+
 from binascii import hexlify
-import mdpdefinition as MDPDefinition
+
+from . import mdpdefinition as MDPDefinition
 
 class RegistratorSocket(zmq.Socket):
     """

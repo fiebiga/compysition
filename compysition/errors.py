@@ -41,8 +41,9 @@ class QueueEmpty(CompysitionException):
 
 
 class QueueFull(CompysitionException):
-    pass
-
+    def __init__(self, queue=None, **kwargs):
+        self.queue = queue
+        super(QueueFull, self).__init__(**kwargs)
 
 class QueueConnected(CompysitionException):
     pass

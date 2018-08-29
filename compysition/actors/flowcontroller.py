@@ -21,8 +21,20 @@
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #  MA 02110-1301, USA.
 
-from compysition import Actor
 from uuid import uuid4 as uuid
+
+from compysition.actor import Actor
+from compysition.event import XMLEvent, JSONEvent
+
+__all__ = [
+    "FlowController",
+    "ToDict",
+    "ToXML"
+]
+
+class _Flow(Actor):
+    def consume(self, event, *args, **kwargs):
+        self.send_event(event)
 
 class FlowController(Actor):
     '''
@@ -47,3 +59,9 @@ class FlowController(Actor):
             self.send_error(event)
         else:
             self.send_event(event)
+
+class ToDict(_Flow):
+    output = JSONEvent
+
+class ToXML(_Flow):
+    output = XMLEvent

@@ -20,25 +20,29 @@
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #  MA 02110-1301, USA.
 #
-from types import NoneType
-from uuid import uuid4 as uuid
-from .errors import *
 import json
-from lxml import etree
-import xmltodict
-from collections import OrderedDict, defaultdict
-from xml.parsers import expat
 import traceback
-from xml.sax.saxutils import XMLGenerator
 import re
+import xmltodict
+
+from uuid import uuid4 as uuid
+from lxml import etree
 from copy import deepcopy
 from datetime import datetime
 from decimal import Decimal
+from collections import OrderedDict, defaultdict
+from xml.parsers import expat
+from xml.sax.saxutils import XMLGenerator
+
+from .errors import (ResourceNotModified, MalformedEventData, InvalidEventDataModification, UnauthorizedEvent,
+    ForbiddenEvent, ResourceNotFound, EventCommandNotAllowed, ActorTimeout, ResourceConflict, ResourceGone,
+    UnprocessableEventData, EventRateExceeded, CompysitionException, ServiceUnavailable)
 
 """
 Compysition event is created and passed by reference among actors
 """
 
+NoneType = type(None)
 DEFAULT_EVENT_SERVICE = "default"
 DEFAULT = object()
 

@@ -28,7 +28,7 @@ def mocked_raise_authenticate(username, password):
 	raise UnauthorizedEvent()
 
 class MockBasicAuth(MockActor, BasicAuth):
-		pass
+	pass
 
 class TestBasicAuth(unittest.TestCase):
 

@@ -1,10 +1,9 @@
 import json
 import unittest
 
-from compysition.actors import HTTPServer
+from compysition.actors.httpserver import HTTPServer
 from compysition.event import JSONHttpEvent, HttpEvent, XMLHttpEvent
 from compysition.testutils.test_actor import TestActorWrapper
-
 
 class TestHTTPServer(unittest.TestCase):
     """

@@ -1,7 +1,7 @@
 import unittest
 
-from compysition.actors import *
-from compysition.event import *
+from compysition.actors.xsd import XSD
+from compysition.event import XMLEvent
 from compysition.errors import MalformedEventData
 from compysition.testutils.test_actor import TestActorWrapper
 

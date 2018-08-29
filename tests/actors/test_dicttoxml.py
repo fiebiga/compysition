@@ -1,10 +1,8 @@
 import unittest
 
-from compysition.actors import *
-from compysition.event import *
-
+from compysition.actors.dicttoxml import DictToXML, PropertiesToXML
+from compysition.event import JSONEvent, XMLEvent, XMLHttpEvent, HttpEvent
 from compysition.testutils.test_actor import TestActorWrapper
-
 
 class TestDictToXML(unittest.TestCase):
     """

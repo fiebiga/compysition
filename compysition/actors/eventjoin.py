@@ -22,13 +22,14 @@
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #  MA 02110-1301, USA.
 
-from compysition import Actor
-from time import time
-from compysition.event import XMLEvent, JSONEvent
 import traceback
-from lxml import etree
 import gevent
 
+from time import time
+from lxml import etree
+
+from compysition.actor import Actor
+from compysition.event import XMLEvent, JSONEvent
 
 class MatchedEvent(object):
 

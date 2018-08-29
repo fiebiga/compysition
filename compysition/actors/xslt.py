@@ -21,14 +21,22 @@
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #  MA 02110-1301, USA.
 
-from compysition import Actor
-from lxml import etree
-from lxml.etree import XSLTApplyError
 import traceback
-from compysition.event import XMLEvent
+
+from lxml import etree
+from lxml.etree import XSLTApplyError #TODO Don't need this and generic etree import
+
+from compysition.actor import Actor
+from compysition.event import XMLEvent, JSONEvent
 from compysition.errors import MalformedEventData
 
-class XSLT(Actor):
+__all__ = [
+    "XSLT",
+    "JSONXSLT",
+    "XMLXSLT"
+]
+
+class _XSLT(Actor):
     '''**A sample module which applies a provided XSLT to an incoming event XML data**
 
     Parameters:
@@ -47,10 +55,9 @@ class XSLT(Actor):
     '''
 
     input = XMLEvent
-    output = XMLEvent
 
     def __init__(self, name, xslt=None, *args, **kwargs):
-        super(XSLT, self).__init__(name, *args, **kwargs)
+        super(_XSLT, self).__init__(name, *args, **kwargs)
 
         if xslt is None and not isinstance(xslt, str):
             raise TypeError("Invalid xslt defined. {_type} is not a valid xslt. Expected 'str'".format(_type=type(xslt)))
@@ -78,3 +85,12 @@ class XSLT(Actor):
 
     def transform(self, etree_element):
         return self.template(etree_element).getroot()
+
+class XSLT(_XSLT):
+    output = XMLEvent
+
+class XMLXSLT(XSLT):
+    pass
+
+class JSONXSLT(_XSLT):
+    output = JSONEvent
