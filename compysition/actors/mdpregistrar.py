@@ -127,7 +127,11 @@ class MDPBrokerRegistrationService(Actor, RegistrationService):
             items = self.poller.poll(self.timeout)
             if items:
                 message = self.receiver_socket.recv_multipart()
-                assert len(message) >= 3
+                if not len(message) >= 3:
+                    # On production we very occasionally seem to receive an invalid message from the broker, in which
+                    # case we just want to ignore it and move on to listening for the next message.
+                    self.logger.error('Received an invalid message from the broker: {msg}'.format(msg=message))
+                    continue
 
                 sender = message.pop(0)
                 empty = message.pop(0)
