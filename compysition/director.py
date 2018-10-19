@@ -35,7 +35,7 @@ class Director(object):
 
     _async_class = event.Event
 
-    def __init__(self, size=500, name="default", generate_blockdiag=True, blockdiag_dir="./build/blockdiag"):
+    def __init__(self, size=500, name="default", generate_blockdiag=False, blockdiag_dir="./build/blockdiag"):
         gsignal(signal.SIGINT, self.stop)
         gsignal(signal.SIGTERM, self.stop)
 
