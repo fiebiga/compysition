@@ -74,8 +74,8 @@ class TestDirector(unittest.TestCase):
 		self.assertEqual(director._Director__running, False)
 		self.assertIsInstance(director._Director__block, event.Event)
 		self.assertEqual(director.blockdiag_dir, './build/blockdiag')
-		self.assertEqual(director.generate_blockdiag, True)
-		self.assertEqual(director.blockdiag_out, """diagram admin {\n""")
+		self.assertEqual(director.generate_blockdiag, False)
+		self.assertEqual(getattr(director, "blockdiag_out", None), None)
 		self.assertIsInstance(director._Director__block, event.Event) # test block clear
 
 	def test_init(self):

@@ -87,7 +87,10 @@ class PropertiesToXML(DictToXML):
 
     def convert(self, event):
         properties_dict = {self.key: event.get_properties()}
-        event.data = properties_dict
+        if isinstance(event, JSONEvent):
+            event._data = properties_dict
+        else:
+            event.data = properties_dict
         if not isinstance(event, XMLEvent):
             event = event.convert(XMLEvent)
 
