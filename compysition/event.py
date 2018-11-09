@@ -486,3 +486,5 @@ http_code_map = defaultdict(lambda: {"status": ((500, "Internal Server Error"))}
                                 ServiceUnavailable:     {"status": (503, "Service Unavailable")},
                                 NoneType:               {"status": (200, "OK")}         # Clear an error
                             })
+
+__all__.append(http_code_map)
