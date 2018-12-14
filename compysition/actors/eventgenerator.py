@@ -1,6 +1,4 @@
-
-
-#!/usr/bin/env python
+# !/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 #  testevent.py
@@ -106,6 +104,10 @@ class ScheduledEventProducer(EventProducer):
         delay (Optional[float]):
             | The time (in seconds) to wait before initial event generation.
             | Default: 0
+        interval_grace_time (Optional[int]):
+            | Sometimes the scheduler can fail to wakeup and execute a job right at the set interval. This is how much
+            | time (in seconds) the scheduler can miss the interval time by and the job will still be run.
+            | Default: None (will use apscheduler's default miss_grace_time of 1 second)
     '''
 
     '''
@@ -118,13 +120,14 @@ class ScheduledEventProducer(EventProducer):
         super(ScheduledEventProducer, self).__init__(name, *args, **kwargs)
         self._init_scheduler(*args, **kwargs)
 
-    def _init_scheduler(self, producers=1, interval=5, delay=0, scheduler=None, *args, **kwargs):
+    def _init_scheduler(self, producers=1, interval=5, delay=0, scheduler=None, interval_grace_time=None, *args, **kwargs):
         self.interval = self._parse_interval(interval)
         self.delay = delay
         self.producers = producers
         self.scheduler = scheduler
+        self.interval_grace_time = interval_grace_time
         if not self.scheduler:
-            self.scheduler = GeventScheduler()
+            self.scheduler = GeventScheduler(misfire_grace_time=self.interval_grace_time)
 
     def pre_hook(self):
         #super(ScheduledEventProducer, self).pre_hook()

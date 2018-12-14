@@ -196,6 +196,7 @@ class TestScheduledEventProducer(TestEventProducer):
         self.assertEqual(actor.producers, 1)
         self.assertNotEqual(actor.scheduler, None)
         self.assertEqual(actor.parsed, True)
+        self.assertEqual(actor.interval_grace_time, None)
 
 class MockedPeersInterface():
     def __init__(self, is_master=False):
