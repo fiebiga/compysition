@@ -132,5 +132,5 @@ class JSONValidator(Actor):
         return FormatChecker()
 
     def process_error(self, message, event):
-        self.logger.error("Error validating incoming JSON: {0}".format(message), event=event)
+        self.logger.warning("Error validating incoming JSON: {0}".format(message), event=event)
         raise MalformedEventData(message)
