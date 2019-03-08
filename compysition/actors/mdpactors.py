@@ -90,7 +90,8 @@ class MDPActor(Actor):
                 broker = self.broker_manager.get_next_broker_in_queue()
                 if broker is None:
                     self.outbound_queue.put(event)
-                    self.logger.info("There are events waiting on the client queue, but no brokers are registered. Queue size is {0}".format(self.outbound_queue.qsize()))
+                    self.logger.error("There are events waiting on the client queue, but no brokers are registered. Queue size is {0}".format(
+                        self.outbound_queue.qsize()), event=event)
                     gevent.sleep(1)         # Place back on queue and wait for a broker
                 else:
                     self.send_outbound_message(broker.outbound_socket, event)
