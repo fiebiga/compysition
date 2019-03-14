@@ -21,14 +21,13 @@
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #  MA 02110-1301, USA.
 
+from collections import defaultdict
+from datetime import datetime
 import json
 import mimeparse
 import re
 
-from bottle import * #TODO identify exact imports
-from collections import defaultdict
-from datetime import datetime
-from functools import wraps
+from bottle import BaseRequest, Bottle, HTTPError, HTTPResponse, request
 from gevent import pywsgi
 from gevent.queue import Queue
 
@@ -209,21 +208,7 @@ class HTTPServer(Actor, Bottle):
                 self.route(callback=callback, **route)
 
         self.wsgi_app = self
-        self.wsgi_app.install(self.log_to_logger)
         self.wsgi_app.install(ContentTypePlugin())
-
-    def log_to_logger(self, fn):
-        '''
-        Wrap a Bottle request so that a log line is emitted after it's handled.
-        '''
-        @wraps(fn)
-        def _log_to_logger(*args, **kwargs):
-            self.logger.info('[{address}] {method} {url}'.format(address=request.remote_addr,
-                                            method=request.method,
-                                            url=request.url))
-            actual_response = fn(*args, **kwargs)
-            return actual_response
-        return _log_to_logger
 
     def __call__(self, e, h):
         """**Override Bottle.__call__ to strip trailing slash from incoming requests**"""
@@ -373,7 +358,6 @@ class HTTPServer(Actor, Bottle):
                 data = None
 
             event = event_class(environment=environment, service=queue_name, data=data, accept=accept, **kwargs)
-
         except (ResourceNotFound, InvalidEventDataModification, MalformedEventData) as err:
             event_class = event_class or JSONHttpEvent
             event = event_class(environment=environment, service=queue_name, accept=accept, **kwargs)
@@ -381,6 +365,9 @@ class HTTPServer(Actor, Bottle):
             if not self.send_errors:
                 queue = self.pool.inbound[next(self.pool.inbound.iterkeys())]
 
+        self.logger.info('[{address}] {method} {url}'.format(address=request.remote_addr,
+                                                             method=request.method,
+                                                             url=request.url), event=event)
         response_queue = Queue()
         self.responders.update({event.event_id: (event_class, response_queue)})
         local_response = response_queue
