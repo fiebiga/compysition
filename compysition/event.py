@@ -404,10 +404,11 @@ def should_force_list(path, key, value):
     """
     if isinstance(value, dict) and '@force_list' in value:
         # pop attribute off so that it doesn't get included in the response
-        # value.pop('@force_list')
+        value.pop('@force_list')
         return True
     else:
         return False
+
 
 class _JSONFormatInterface(DataFormatInterface):
 
