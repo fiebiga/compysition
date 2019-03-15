@@ -382,10 +382,12 @@ def should_force_list(path, key, value):
     a list.
 
     For example, if you have an XSLT that produces 1 or more items, you could have the resulting output of the XSLT
-    transformation be
-        <transactions force_list=True>
-            <amount>85</amount>
-        </transactions>
+    transformation be (note we only need to set force_list on the first node, the rest will automatically be appended):
+        <xsl:if test="position() = 1">
+            <transactions force_list=True>
+                <amount>85</amount>
+            </transactions>
+        </xsl:if>
 
     and the JSON output will be:
         {"transactions" : [
@@ -400,7 +402,12 @@ def should_force_list(path, key, value):
 
     which could break code handling this JSON which always expects "transactions" to be a list.
     """
-    return isinstance(value, dict) and '@force_list' in value
+    if isinstance(value, dict) and '@force_list' in value:
+        # pop attribute off so that it doesn't get included in the response
+        # value.pop('@force_list')
+        return True
+    else:
+        return False
 
 class _JSONFormatInterface(DataFormatInterface):
 

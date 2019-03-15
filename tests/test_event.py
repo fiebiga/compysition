@@ -98,10 +98,10 @@ class TestHttpEvent(unittest.TestCase):
                 <sample_item force_list="True">
                     <stuff>45</stuff>
                 </sample_item>
-                <sample_item force_list="True">
+                <sample_item>
                     <stuff>45</stuff>
                 </sample_item>
-                <sample_item force_list="True">
+                <sample_item>
                     <stuff>45</stuff>
                 </sample_item>
             </root>
@@ -110,6 +110,7 @@ class TestHttpEvent(unittest.TestCase):
         json_event = event.convert(JSONEvent)
         assert isinstance(json_event.data['root']['sample_item'], list)
         assert json_event.data['root']['sample_item'][2]['stuff'] == '45'
+        assert '@force_list' not in json_event.data['root']['sample_item'][0]
 
 
     def test_json_to_xml_simple(self):
