@@ -74,7 +74,7 @@ class _XSD(Actor):
             self.process_error(error, event)
 
     def process_error(self, message, event):
-        self.logger.error("Error validating incoming XML: {0}".format(message), event=event)
+        self.logger.warning("Error validating incoming XML: {0}".format(message), event=event)
         raise MalformedEventData(message)
 
 class XSD(_XSD):
