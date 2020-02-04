@@ -26,6 +26,19 @@ import gevent
 
 from apscheduler.schedulers.gevent import GeventScheduler
 
+'''
+# Can be used to help troubleshoot errors inside the GeventScheduler
+import logging
+
+log = logging.getLogger('apscheduler.executors.default')
+log.setLevel(logging.INFO)  # DEBUG
+
+fmt = logging.Formatter('%(levelname)s:%(name)s:%(message)s')
+h = logging.StreamHandler()
+h.setFormatter(fmt)
+log.addHandler(h)
+'''
+
 from compysition.actor import Actor
 from compysition.event import Event
 from compysition.actors.util.udplib import UDPInterface
@@ -156,19 +169,19 @@ class ScheduledUDPEventProducer(UDPEventProducer, ScheduledEventProducer):
 class CallbackEventProducer(EventProducer):
     def __init__(self, name, is_running=False, *args, **kwargs):
         super(CallbackEventProducer, self).__init__(name, *args, **kwargs)
-        self.__is_running = is_running
+        self._is_running = is_running
 
     @property
     def is_running(self):
-        return self.__is_running
+        return self._is_running
 
     def _do_produce(self):
-        if not self.__is_running:
-            self.__is_running = True
+        if not self._is_running:
+            self._is_running = True
             super(CallbackEventProducer, self)._do_produce()
 
     def consume(self, event, *args, **kwargs):
-        self.__is_running = False
+        self._is_running = False
 
 class CallbackScheduledEventProducer(CallbackEventProducer, ScheduledEventProducer):
     def __init__(self, name, *args, **kwargs):
@@ -182,8 +195,8 @@ class CallbackScheduledUDPEventProducer(CallbackEventProducer, ScheduledUDPEvent
         ScheduledUDPEventProducer._init_peers_interface(self, *args, **kwargs)
 
     def _do_produce(self):
-        if not self.__is_running:
-            self.__is_running = True
+        if not self._is_running:
+            self._is_running = True
             super(ScheduledUDPEventProducer, self)._do_produce()
 
 class IntervalSchedulingMixin:
