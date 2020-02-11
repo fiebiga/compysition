@@ -263,7 +263,11 @@ class HTTPServer(Actor, Bottle):
 
         if response_queue:
 
-            accept = event.get('accept', original_event_class.content_type)
+            # accept defaults to */* so previously never changed from internal event type unless accept was defined in request
+            # now if accept is set to */* then defaults to the incoming request content-type
+            _default_accept = "*/*"
+            accept = event.get('accept', _default_accept)
+            accept = original_event_class.content_type if accept == _default_accept else accept 
 
             if not isinstance(event, self.CONTENT_TYPE_MAP[accept]):
                 self.logger.warning(
