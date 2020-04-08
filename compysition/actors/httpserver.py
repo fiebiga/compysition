@@ -46,7 +46,17 @@ class ContentTypePlugin(object):
                            "text/html",
                            "application/json",
                            "application/x-www-form-urlencoded")
-
+    '''
+    # with the change to the apply function the DEFAULT_VALID_TYPES should be as follows to match content-type/event mapping
+    DEFAULT_VALID_TYPES = ("text/xml",
+                           "application/xml",
+                           "text/plain",
+                           "text/html",
+                           "application/json",
+                           "application/x-www-form-urlencoded",
+                           "application/json+schema",
+                           "application/xml+schema")
+    '''
     name = "ctypes"
     api = 2
 
@@ -54,6 +64,9 @@ class ContentTypePlugin(object):
         self.default_types = default_types or self.DEFAULT_VALID_TYPES
 
     def apply(self, callback, route):
+        #ATTENTION
+        #Bottle expects a decorator
+        #This should be implemented as below
         ctype = request.content_type.split(';')[0]
         ignore_ctype = route.config.get('ignore_ctype', False) or request.content_length < 1
         if ignore_ctype or ctype in route.config.get('ctypes', self.default_types):
@@ -61,6 +74,17 @@ class ContentTypePlugin(object):
         else:
             raise HTTPError(415, "Unsupported Content-Type '{_type}'".format(_type=ctype))
 
+    '''
+    def apply(self, callback, route):
+        def callback_wrapper(*args, **kwargs):
+            ctype = request.content_type.split(';')[0]
+            ignore_ctype = route.config.get('ignore_ctype', False) or request.content_length < 1
+            if ignore_ctype or ctype in route.config.get('ctypes', self.default_types):
+                return callback(*args, **kwargs)
+            else:
+                raise HTTPError(415, "Unsupported Content-Type '{_type}'".format(_type=ctype))
+        return callback_wrapper
+    '''
 
 class HTTPServer(Actor, Bottle):
     """**Receive events over HTTP.**
@@ -135,6 +159,7 @@ class HTTPServer(Actor, Bottle):
     X_WWW_FORM_URLENCODED_KEY_MAP = defaultdict(lambda: HttpEvent, {"XML": XMLHttpEvent, "JSON": JSONHttpEvent})
     X_WWW_FORM_URLENCODED = "application/x-www-form-urlencoded"
 
+    WSGI_SERVER_CLASS = pywsgi.WSGIServer
     def combine_base_paths(self, route, named_routes):
         base_path_id = route.get('base_path', None)
         if base_path_id:
@@ -205,7 +230,7 @@ class HTTPServer(Actor, Bottle):
                     route['method'] = []
 
                 self.logger.debug("Configured route '{path}' with methods '{methods}'".format(path=route['path'], methods=route['method']))
-                self.route(callback=callback, **route)
+                self.route(callback=callback, atypes=["app/data"], **route)#ctypes here will trigger restrictions on content-type
 
         self.wsgi_app = self
         self.wsgi_app.install(ContentTypePlugin())
@@ -258,7 +283,6 @@ class HTTPServer(Actor, Bottle):
 
     def consume(self, event, *args, **kwargs):
         # There is an error that results in responding with an empty list that will cause an internal server error
-
         original_event_class, response_queue = self.responders.pop(event.event_id, None)
 
         if response_queue:
@@ -381,14 +405,16 @@ class HTTPServer(Actor, Bottle):
         return local_response
 
     def post_hook(self):
+        self.__server.close()
         self.__server.stop()
+        self.__server.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.logger.info("Stopped serving")
 
     def __serve(self):
         if self.keyfile is not None and self.certfile is not None:
-            self.__server = pywsgi.WSGIServer((self.address, self.port), self, keyfile=self.keyfile, certfile=self.certfile)
+            self.__server = self.WSGI_SERVER_CLASS((self.address, self.port), self, keyfile=self.keyfile, certfile=self.certfile)
         else:
-            self.__server = pywsgi.WSGIServer((self.address, self.port), self, log=None)
+            self.__server = self.WSGI_SERVER_CLASS((self.address, self.port), self, log=None)
         self.logger.info("Serving on {address}:{port}".format(address=self.address, port=self.port))
         self.__server.start()
 

@@ -18,6 +18,10 @@ clean-pyc: ## remove Python file artifacts
 	find . -name '__pycache__' -exec rm -fr {} +
 
 install: clean ## install the package to the active Python's site-packages
+	python -m pip install -U pip
+	python -m pip install -U webcolors
+	python -m pip install -U funcparserlib
+	python -m pip install -U setuptools==43.0.0
 	python setup.py install
 
 test: test-py2 test-py3
@@ -32,7 +36,7 @@ test-run: install
 
 install-pytest:
 	sudo apt-get install -y python-logilab-common
-	pip install -U pip pytest pytest-cov pytest-socket
+	python -m pip install -U pip pytest==4.6.8 pytest-cov pytest-socket
 
 install-pyenv:
 	sudo apt-get install -y git
@@ -40,9 +44,12 @@ install-pyenv:
 	rm -f ~/bin/pyenv
 	git clone https://github.com/pyenv/pyenv.git ~/.pyenv
 	ln -s ~/.pyenv/bin/pyenv ~/bin/pyenv
-	pyenv init -
+	eval "$(pyenv init -)"
 	pyenv install 2.7.6
 	pyenv install 3.6.5
+
+install-2.7.6: test-setpy2 install install-pytest
+install-3.6.5: test-setpy3 install install-pytest
 
 dependencies:
 	sudo apt-get install -y \
@@ -60,9 +67,9 @@ dependencies:
 		cmake \
 		imagemagick \
 		libssl-dev \
-		libzmq-dev \
+		libzmq3-dev \
 		libmysqlclient-dev \
-		python-pip
-	pip install -U pip
-
-install-dev-env: dependencies install-pytest install install-pyenv
+		python-pip \
+		libsqlite3-dev
+	
+install-dev-env: dependencies install-pyenv install-3.6.5 install-2.7.6
