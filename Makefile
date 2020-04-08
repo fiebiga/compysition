@@ -67,7 +67,7 @@ dependencies:
 		cmake \
 		imagemagick \
 		libssl-dev \
-		libzmq3-dev \
+		libzmq-dev \
 		libmysqlclient-dev \
 		python-pip \
 		libsqlite3-dev

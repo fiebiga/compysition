@@ -160,6 +160,7 @@ class HTTPServer(Actor, Bottle):
     X_WWW_FORM_URLENCODED = "application/x-www-form-urlencoded"
 
     WSGI_SERVER_CLASS = pywsgi.WSGIServer
+
     def combine_base_paths(self, route, named_routes):
         base_path_id = route.get('base_path', None)
         if base_path_id:
@@ -230,7 +231,7 @@ class HTTPServer(Actor, Bottle):
                     route['method'] = []
 
                 self.logger.debug("Configured route '{path}' with methods '{methods}'".format(path=route['path'], methods=route['method']))
-                self.route(callback=callback, atypes=["app/data"], **route)#ctypes here will trigger restrictions on content-type
+                self.route(callback=callback, **route)
 
         self.wsgi_app = self
         self.wsgi_app.install(ContentTypePlugin())
