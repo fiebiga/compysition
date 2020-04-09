@@ -18,24 +18,25 @@ clean-pyc: ## remove Python file artifacts
 	find . -name '__pycache__' -exec rm -fr {} +
 
 install: clean ## install the package to the active Python's site-packages
-	python -m pip install -U pip
-	python -m pip install -U webcolors
-	python -m pip install -U funcparserlib
-	python -m pip install -U setuptools==43.0.0
 	python setup.py install
 
 test: test-py2 test-py3
 test-py2: test-setpy2 test-run
 test-py3: test-setpy3 test-run
 test-setpy3:
+	eval "$(pyenv init -)"
 	pyenv global 3.6.5
 test-setpy2:
+	eval "$(pyenv init -)"
 	pyenv global 2.7.6
 test-run: install
+	eval "$(pyenv init -)"
+	python -V
 	python -m pytest
 
 install-pytest:
 	sudo apt-get install -y python-logilab-common
+	eval "$(pyenv init -)"
 	python -m pip install -U pip pytest==4.6.8 pytest-cov pytest-socket
 
 install-pyenv:
@@ -48,8 +49,15 @@ install-pyenv:
 	pyenv install 2.7.6
 	pyenv install 3.6.5
 
-install-2.7.6: test-setpy2 install install-pytest
-install-3.6.5: test-setpy3 install install-pytest
+pre_install:
+	eval "$(pyenv init -)"
+	python -m pip install -U pip
+	python -m pip install -U webcolors
+	python -m pip install -U funcparserlib
+	python -m pip install -U setuptools==43.0.0
+
+install-2.7.6: test-setpy2 pre_install install install-pytest
+install-3.6.5: test-setpy3 pre_install install install-pytest
 
 dependencies:
 	sudo apt-get install -y \
@@ -66,10 +74,11 @@ dependencies:
 		liblcms2-dev \
 		cmake \
 		imagemagick \
-		libssl-dev \
-		libzmq-dev \
-		libmysqlclient-dev \
+		libssl1.0-dev \
+		libzmq3-dev \
 		python-pip \
-		libsqlite3-dev
-	
+		libsqlite3-dev 
+
 install-dev-env: dependencies install-pyenv install-3.6.5 install-2.7.6
+	eval "$(pyenv init -)"
+	pyenv global system

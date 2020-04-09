@@ -1,10 +1,7 @@
 import unittest
 import json
 from lxml import etree
-from collections import OrderedDict, defaultdict
-from contextlib import contextmanager
-
-from collections import Mapping
+from collections import OrderedDict, Mapping
 
 from compysition.errors import ResourceNotFound, InvalidEventDataModification
 from compysition.event import HttpEvent, Event, CompysitionException, XMLEvent, JSONEvent
@@ -17,7 +14,6 @@ class TestEvent(unittest.TestCase):
 
     def test_distinct_meta_and_event_ids(self):
         self.assertNotEqual(self.event.event_id, self.event.meta_id)
-
 
 class TestHttpEvent(unittest.TestCase):
     def test_default_status(self):
@@ -168,16 +164,6 @@ def xml_formatter(xml_str):
 def json_formatter(json_str):
     return json.dumps(json.loads(json_str))
 
-
-@contextmanager
-def throws_excpetion(*exceptions):
-    exceptions = (Exception) if len(exceptions) == 0 else exceptions
-    try:
-        yield
-        assert False
-    except exceptions:
-        pass
-
 class TestXMLEvent(unittest.TestCase):
 
     def test_conversion_classes(self):
@@ -212,7 +198,7 @@ class TestXMLEvent(unittest.TestCase):
         assert event.data_string() == xml_formatter("<jsonified_envelope><jsonified_envelope>1</jsonified_envelope><jsonified_envelope>2</jsonified_envelope><jsonified_envelope>3</jsonified_envelope></jsonified_envelope>")
 
         src = {}
-        with throws_excpetion(InvalidEventDataModification):
+        with self.assertRaises(InvalidEventDataModification):
             event = XMLEvent(data=src)
         #ATTENTION
         # I think this should be true instead
@@ -224,26 +210,26 @@ class TestXMLEvent(unittest.TestCase):
         assert event.data_string() == xml_formatter("<my_data my_attr='type'>123</my_data>")
 
         src = ""
-        with throws_excpetion(InvalidEventDataModification):
+        with self.assertRaises(InvalidEventDataModification):
             event = XMLEvent(data=src)
         #ATTENTION
         # I think this should be true instead
         #assert event.data_string() == xml_formatter("<data/>")
     
         src = json_formatter('{"test":"ok"}')
-        with throws_excpetion(InvalidEventDataModification):
+        with self.assertRaises(InvalidEventDataModification):
             event = XMLEvent(data=src)
 
         src = "some random text"
-        with throws_excpetion(InvalidEventDataModification):
+        with self.assertRaises(InvalidEventDataModification):
             event = XMLEvent(data=src)
 
         src = "<element><invalid_xml></element>"
-        with throws_excpetion(InvalidEventDataModification):
+        with self.assertRaises(InvalidEventDataModification):
             event = XMLEvent(data=src)
 
         src = "<element>"
-        with throws_excpetion(InvalidEventDataModification):
+        with self.assertRaises(InvalidEventDataModification):
             event = XMLEvent(data=src)
 
     def test_none_conversion_methods(self):
@@ -274,7 +260,7 @@ class TestXMLEvent(unittest.TestCase):
 
         event = XMLEvent()
         event.error = InvalidEventDataModification(message="Oops Something Went Wrong", code=555)
-        with throws_excpetion(TypeError):
+        with self.assertRaises(TypeError):
             event.error_string()
         #ATTENTION
         # I don't think this should throw and error
@@ -393,22 +379,22 @@ class TestJSONEvent(unittest.TestCase):
         assert event.data_string() == json_formatter(json.dumps({"my_data":"ok"}))
 
         src = ""
-        with throws_excpetion(InvalidEventDataModification):
+        with self.assertRaises(InvalidEventDataModification):
             event = JSONEvent(data=src)
         #ATTENTION
         # I think this should be true instead
         #assert event.data_string() == json_formatter(json.dumps({}))
 
         src = "some random text"
-        with throws_excpetion(InvalidEventDataModification):
+        with self.assertRaises(InvalidEventDataModification):
             event = JSONEvent(data=src)
 
         src = "<some_xml/>"
-        with throws_excpetion(InvalidEventDataModification):
+        with self.assertRaises(InvalidEventDataModification):
             event = JSONEvent(data=src)
 
         src = '{"invalid: "json"}'
-        with throws_excpetion(InvalidEventDataModification):
+        with self.assertRaises(InvalidEventDataModification):
             event = JSONEvent(data=src)
 
     def test_none_conversion_methods(self):
@@ -458,5 +444,5 @@ class TestJSONEvent(unittest.TestCase):
         src = etree.fromstring(xml_formatter("<my_data my_attr='type'>123</my_data>"))
         event = JSONEvent()
         event.error = InvalidEventDataModification(message="Oops Something Went Wrong", code="555", override=src)
-        with throws_excpetion(TypeError):
+        with self.assertRaises(TypeError):
             json_formatter(event.error_string())
