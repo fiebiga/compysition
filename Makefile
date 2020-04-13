@@ -18,6 +18,11 @@ clean-pyc: ## remove Python file artifacts
 	find . -name '__pycache__' -exec rm -fr {} +
 
 install: clean ## install the package to the active Python's site-packages
+	eval "$(pyenv init -)"
+	python -m pip install -U pip
+	python -m pip install -U webcolors
+	python -m pip install -U funcparserlib
+	python -m pip install -U setuptools==43.0.0
 	python setup.py install
 
 test: test-py2 test-py3
@@ -49,15 +54,9 @@ install-pyenv:
 	pyenv install 2.7.6
 	pyenv install 3.6.5
 
-pre_install:
-	eval "$(pyenv init -)"
-	python -m pip install -U pip
-	python -m pip install -U webcolors
-	python -m pip install -U funcparserlib
-	python -m pip install -U setuptools==43.0.0
 
-install-2.7.6: test-setpy2 pre_install install install-pytest
-install-3.6.5: test-setpy3 pre_install install install-pytest
+install-2.7.6: test-setpy2 install install-pytest
+install-3.6.5: test-setpy3 install install-pytest
 
 dependencies:
 	sudo apt-get install -y \
