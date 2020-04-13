@@ -27,6 +27,8 @@ class HTTPServerTestWrapper:
             self.wrapper._handler = self
             super(HTTPServerTestWrapper.MockHandler, self).__init__(sock, address, server, rfile=StringIO(""), *args, **kwargs)
             self.header_data = None
+            self.status = None
+            self.status_line = None
 
         def read_requestline(self):
             return "%s %s HTTP/1.1" % (self.mocked_method.upper(), self.mocked_path)
@@ -69,16 +71,18 @@ class HTTPServerTestWrapper:
         def __pop_first_line(self, data, split="\n"):
             lines = data.split(split)
             lines = [line for line in lines if len(line.strip()) > 0]
-            return split.join(lines[1:])
+            return lines[0], split.join(lines[1:])
 
         def _sendall(self, *args, **kwargs):
             data = str(args[0])
             if self.header_data is None:
-                data = self.__pop_first_line(data=data, split="\r\n")
+                line, data = self.__pop_first_line(data=data, split="\r\n")
+                self.status_line = line.split(" ", 1)[1]
+                self.status = int(self.status_line.split()[0])
                 self.header_data = self.__break_message(message=data, split="\r\n")
             else:
-                self.wrapper.responses.append((self.header_data, data))
-                self.header_data = None
+                self.wrapper.responses.append((self.header_data, data, self.status, self.status_line))
+                self.header_data, self.status, self.status_line = None, None, None
             
     class MockWSGIServer(WSGIServer):
         def __init__(self, socket, application, *args, **kwargs):
@@ -474,7 +478,7 @@ class TestHTTPServer(unittest.TestCase):
         wrapper.send_request(method="POST", path="/sample_service", headers={"Content-Type":content_type}, body=data_obj)
         event = actor.pool.outbound["sample_service"].get(block=True)
         assert isinstance(event, JSONHttpEvent)
-        headers, data = wrapper.get_response(event=event)
+        headers, data, _, _ = wrapper.get_response(event=event)
         assert headers["Content-Type"] == content_type
         assert json_formatter(data) == json_formatter(data_obj)
 
@@ -486,7 +490,7 @@ class TestHTTPServer(unittest.TestCase):
         wrapper.send_request(method="POST", path="/sample_service", headers={"Content-Type":content_type, "Accept":accept}, body=data_obj)
         event = actor.pool.outbound["sample_service"].get(block=True)
         assert isinstance(event, JSONHttpEvent)
-        headers, data = wrapper.get_response(event=event)
+        headers, data, _, _ = wrapper.get_response(event=event)
         assert headers["Content-Type"] == accept
         event = XMLHttpEvent()
         event.data = json.loads(data_obj)
@@ -501,7 +505,7 @@ class TestHTTPServer(unittest.TestCase):
         wrapper.send_request(method="POST", path="/sample_service", headers={"Content-Type":content_type, "Accept":accept}, body=data_obj)
         event = actor.pool.outbound["sample_service"].get(block=True)
         assert isinstance(event, JSONHttpEvent)
-        headers, data = wrapper.get_response(event=event)
+        headers, data, _, _ = wrapper.get_response(event=event)
         #should this not be 'text/plain'
         #I understand there is no good way to convert json to plain text (other than json as a string) so maybe just 'SUCCESS'/'ERROR'??
         #Regardless of data I think the header should be this
@@ -518,7 +522,7 @@ class TestHTTPServer(unittest.TestCase):
         wrapper.send_request(method="POST", path="/sample_service", headers={"Content-Type":content_type, "Accept":accept}, body=data_obj)
         event = actor.pool.outbound["sample_service"].get(block=True)
         assert isinstance(event, JSONHttpEvent)
-        headers, data = wrapper.get_response(event=event)
+        headers, data, _, _ = wrapper.get_response(event=event)
         assert headers["Content-Type"] == accept
         #XML and HTML are not necessarily the same maybe a new HTMLEvent down the road?
         event = XMLHttpEvent()
@@ -535,7 +539,7 @@ class TestHTTPServer(unittest.TestCase):
         wrapper.send_request(method="POST", path="/sample_service", headers={"Accept":accept}, body=data_obj)
         event = actor.pool.outbound["sample_service"].get(block=True)
         assert isinstance(event, JSONHttpEvent)
-        headers, data = wrapper.get_response(event=event)
+        headers, data, _, _ = wrapper.get_response(event=event)
         assert headers["Content-Type"] == accept
         assert json_formatter(data) == json_formatter(data_obj)
 
@@ -549,7 +553,7 @@ class TestHTTPServer(unittest.TestCase):
         wrapper.send_request(method="POST", path="/sample_service", headers={}, body=data_obj)
         event = actor.pool.outbound["sample_service"].get(block=True)
         assert isinstance(event, JSONHttpEvent)
-        headers, data = wrapper.get_response(event=event)
+        headers, data, _, _ = wrapper.get_response(event=event)
         assert headers["Content-Type"] == accept
         assert json_formatter(data) == json_formatter(data_obj)
         actor.stop()
@@ -567,7 +571,7 @@ class TestHTTPServer(unittest.TestCase):
         wrapper.send_request(method="POST", path="/sample_service", headers={"Content-Type": "application/json"}, body=data_obj)
         assert len(actor.pool.outbound["sample_service"]) == 1
         event = actor.pool.outbound["sample_service"].get(block=True)
-        headers, data = wrapper.get_response(event=event)
+        headers, data, _, _ = wrapper.get_response(event=event)
         assert json_formatter(data) != json_formatter(data_obj)
         assert json_formatter(data) == json_formatter(json.dumps({"data":[1,2,3]}))
 
@@ -575,7 +579,7 @@ class TestHTTPServer(unittest.TestCase):
         wrapper.send_request(method="POST", path="/sample_service", headers={"Content-Type": "application/json"}, body=data_obj)
         assert len(actor.pool.outbound["sample_service"]) == 1
         event = actor.pool.outbound["sample_service"].get(block=True)
-        headers, data = wrapper.get_response(event=event)
+        headers, data, _, _ = wrapper.get_response(event=event)
         assert json_formatter(data) != json_formatter(data_obj)
         assert json_formatter(data) == json_formatter(json.dumps({"data":{"temp": 213}}))
 
@@ -583,7 +587,7 @@ class TestHTTPServer(unittest.TestCase):
         wrapper.send_request(method="POST", path="/sample_service", headers={"Content-Type": "application/json"}, body=data_obj)
         assert len(actor.pool.outbound["sample_service"]) == 1
         event = actor.pool.outbound["sample_service"].get(block=True)
-        headers, data = wrapper.get_response(event=event)
+        headers, data, _, _ = wrapper.get_response(event=event)
         assert json_formatter(data) != json_formatter(data_obj)
         assert json_formatter(data) == json_formatter(json.dumps({"data":{"temp": 213, "data": 123}}))
 
@@ -592,7 +596,7 @@ class TestHTTPServer(unittest.TestCase):
         wrapper.send_request(method="POST", path="/sample_service", headers={"Content-Type": "application/json"}, body=data_obj)
         assert len(actor.pool.outbound["sample_service"]) == 1
         event = actor.pool.outbound["sample_service"].get(block=True)
-        headers, data = wrapper.get_response(event=event)
+        headers, data, _, _ = wrapper.get_response(event=event)
         assert json_formatter(data) == json_formatter(data_obj)
         
         #ignore wrapper variable
@@ -601,7 +605,7 @@ class TestHTTPServer(unittest.TestCase):
         assert len(actor.pool.outbound["sample_service"]) == 1
         event = actor.pool.outbound["sample_service"].get(block=True)
         event.set("use_response_wrapper", False)
-        headers, data = wrapper.get_response(event=event)
+        headers, data, _, _ = wrapper.get_response(event=event)
         assert json_formatter(data) == json_formatter(data_obj)
 
         actor.stop()
@@ -657,7 +661,67 @@ class TestHTTPServer(unittest.TestCase):
         assert not actor.test_plugin_1 and not actor.test_plugin_2 == True
         wrapper.send_request(method="POST", path="/sample_service", headers={"Content-Type": "application/json"}, body=data_obj)
         assert actor.test_plugin_1 and actor.test_plugin_2 == True
+    
+    def test_bottle_error_handling(self):
+        routes_config = {"routes":[{"id": "base","path": "/<queue:re:[a-zA-Z_0-9]+?>","method": ["POST"]}]}
+        wrapper = HTTPServerTestWrapper()
+        actor = wrapper.create_httpserver("http_server", routes_config=routes_config)
+        actor.pool.outbound.add("sample_service")
+        actor.start()
+
+        data_obj = "doesn't matter"
+
+        wrapper.send_request(method="POST", path="/sample_service", headers={"Content-Type": "radom/mime-type"}, body=data_obj)
+        headers, data, status, _ = wrapper.get_response(event=None)
+        assert headers["Content-Type"] == "text/html; charset=UTF-8"
+        assert data.strip("\n").strip().startswith("<!DOCTYPE HTML PUBLIC")
+        assert status == 415
+
+        wrapper.send_request(method="GET", path="/sample_service", headers={"Content-Type": "application/json", "Accept": "application/xml"}, body=data_obj)
+        headers, data, status, _ = wrapper.get_response(event=None)
+        assert headers["Content-Type"] == "text/html; charset=UTF-8"
+        assert data.strip("\n").strip().startswith("<!DOCTYPE HTML PUBLIC")
+        assert status == 405
         
+        wrapper.send_request(method="POST", path="/test/sample_service", headers={"Content-Type": "application/json"}, body=data_obj)
+        headers, data, status, _ = wrapper.get_response(event=None)
+        assert headers["Content-Type"] == "text/html; charset=UTF-8"
+        assert data.strip("\n").strip().startswith("<!DOCTYPE HTML PUBLIC")
+        assert status == 404
+        
+        actor.stop()
+
+        routes_config = {"routes":[{"id": "base","path": "/<queue:re:[a-zA-Z_0-9]+?>","method": ["POST"]}]}
+        wrapper = HTTPServerTestWrapper()
+        actor = wrapper.create_httpserver("http_server", routes_config=routes_config, process_bottle_exceptions=True)
+        actor.pool.outbound.add("sample_service")
+        actor.start()
+
+        data_obj = "doesn't matter"
+
+        wrapper.send_request(method="POST", path="/sample_service", headers={"Content-Type": "radom/mime-type"}, body=data_obj)
+        headers, data, status, _ = wrapper.get_response(event=None)
+        assert headers["Content-Type"] == "text/plain"
+        assert data == '[{\'override\': None, \'message\': "Unsupported Content-Type \'radom/mime-type\'", \'code\': None}]'
+        #ATTENTION
+        #I would think this should be true
+        #assert data == "Unsupported Content-Type 'radom/mime-type'"
+        assert status == 415
+
+        wrapper.send_request(method="GET", path="/sample_service", headers={"Content-Type": "application/json", "Accept": "application/xml"}, body=data_obj)
+        headers, data, status, _ = wrapper.get_response(event=None)
+        assert headers["Content-Type"] == "application/xml"
+        assert data == etree.tostring(etree.fromstring("<errors><error><message>Method not allowed.</message></error></errors>"), pretty_print=True)
+        assert status == 405
+        
+        wrapper.send_request(method="POST", path="/test/sample_service", headers={"Content-Type": "application/json", "Accept": "application/json"}, body=data_obj)
+        headers, data, status, _ = wrapper.get_response(event=None)
+        assert headers["Content-Type"] == "application/json"
+        assert data == json.dumps({"errors": [{'override': None, 'message': "Not found: \'/test/sample_service\'", 'code': None}]})
+        assert status == 404
+
+        actor.stop()
+
     def _test_manual(self):
         routes_config = {"routes":[{"id": "base","path": "/<queue:re:[a-zA-Z_0-9]+?>","method": ["POST"]}]}
         actor = HTTPServer("http_server", port=34567, address="0.0.0.0", routes_config=routes_config)
