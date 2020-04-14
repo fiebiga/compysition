@@ -351,13 +351,6 @@ class HTTPServer(Actor, Bottle):
         with ignore(ValueError):
             return mimeparse.best_match(self.CONTENT_TYPES, accept_header)
         self.logger.warning("Invalid mimetype defined in client Accepts header. '{accept}' is not a valid mime type".format(accept=accept_header))
-        '''
-        # What is the functionality here? Am I missing something? Perhaps this is incomplete.
-        if request.method in ["GET", "OPTIONS", "HEAD", "DELETE"]:
-            for accept_type in accept_header:
-                if self.CONTENT_TYPE_MAP.get(accept_type, None):
-                    pass
-        '''
         return "*/*"
 
     def _interpret_ctype(self, ctype):
