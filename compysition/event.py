@@ -37,6 +37,7 @@ from xml.sax.saxutils import XMLGenerator
 from .errors import (ResourceNotModified, MalformedEventData, InvalidEventDataModification, UnauthorizedEvent,
     ForbiddenEvent, ResourceNotFound, EventCommandNotAllowed, ActorTimeout, ResourceConflict, ResourceGone,
     UnprocessableEventData, EventRateExceeded, CompysitionException, ServiceUnavailable)
+from .util import ignore
 
 """
 Compysition event is created and passed by reference among actors
@@ -141,9 +142,12 @@ class Event(object):
 
     @data.setter
     def data(self, data):
+        self._data = self._convert_data(data=data)
+
+    def _convert_data(self, data):
         try:
-            self._data = self.conversion_methods[data.__class__](data)
-        except KeyError:
+            return self.conversion_methods[data.__class__](data)
+        except KeyError as e:
             raise InvalidEventDataModification("Data of type '{_type}' was not valid for event type {cls}: {err}".format(_type=type(data),
                                                                                           cls=self.__class__, err=traceback.format_exc()))
         except ValueError as err:
@@ -163,22 +167,19 @@ class Event(object):
             self._event_id = event_id
 
     def _list_get(self, obj, key, default):
-        try:
+        with ignore(ValueError, IndexError, TypeError, KeyError, AttributeError):
             return obj[int(key)]
-        except (ValueError, IndexError, TypeError, KeyError, AttributeError) as e:
-            return default
+        return default
 
     def _getattr(self, obj, key, default):
-        try:
+        with ignore(TypeError):
             return getattr(obj, key, default)
-        except TypeError as e:
-            return default
+        return default
 
     def _obj_get(self, obj, key, default):
-        try:
+        with ignore(TypeError, AttributeError):
             return obj.get(key, default)
-        except (TypeError, AttributeError) as e:
-            return default
+        return default
 
     def lookup(self, path):
         """
@@ -189,7 +190,7 @@ class Event(object):
 
         value = reduce(lambda obj, key: self._obj_get(obj, key, self._getattr(obj, key, self._list_get(obj, key, NullLookupValue()))), [self] + path)
         if isinstance(value, NullLookupValue):
-            value = None
+            return None
         return value
 
     def get_properties(self):
@@ -227,22 +228,17 @@ class Event(object):
         if self.error:
             if hasattr(self.error, 'override') and self.error.override:
                 return self.error.override
-            else:
-                messages = self.error.message
-                if not isinstance(messages, list):
-                    messages = [messages]
-                errors = map(lambda _error:
-                             dict(message=str(getattr(_error, "message", _error)), **self.error.__dict__),
-                             messages)
-                return errors
-        else:
-            return None
+            messages = self.error.message
+            if not isinstance(messages, list):
+                messages = [messages]
+            errors = map(lambda _error:
+                        dict(message=str(getattr(_error, "message", _error)), **self.error.__dict__),
+                        messages)
+            return errors
+        return None
 
     def error_string(self):
-        if self.error:
-            return str(self.format_error())
-        else:
-            return None
+        return None if self.error is None else str(self.format_error())
 
     def data_string(self):
         return str(self.data)
@@ -340,9 +336,9 @@ class _XMLFormatInterface(DataFormatInterface):
         errors = super(_XMLFormatInterface, self).format_error()
         if self.error and self.error.override:
             try:
-                result = etree.fromstring(errors)
-            except Exception:
-                result = errors
+                return etree.fromstring(errors)
+            except (ValueError, etree.XMLSyntaxError):
+                return errors
         elif errors:
             result = etree.Element("errors")
             for error in errors:
@@ -360,10 +356,8 @@ class _XMLFormatInterface(DataFormatInterface):
     def error_string(self):
         error = self.format_error()
         if error is not None:
-            try:
-                error = etree.tostring(error, pretty_print=True)
-            except Exception:
-                pass
+            with ignore(TypeError):
+                return etree.tostring(error)
         return error
 
 
@@ -429,11 +423,9 @@ class _JSONFormatInterface(DataFormatInterface):
 
     def error_string(self):
         error = self.format_error()
-        if error:
-            try:
-                error = json.dumps(error)
-            except Exception:
-                pass
+        if error is not None:
+            with ignore(TypeError):
+                return json.dumps(error)
         return error
 
 
