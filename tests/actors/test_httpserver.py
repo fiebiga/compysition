@@ -711,7 +711,7 @@ class TestHTTPServer(unittest.TestCase):
         wrapper.send_request(method="GET", path="/sample_service", headers={"Content-Type": "application/json", "Accept": "application/xml"}, body=data_obj)
         headers, data, status, _ = wrapper.get_response(event=None)
         assert headers["Content-Type"] == "application/xml"
-        assert data == etree.tostring(etree.fromstring("<errors><error><message>Method not allowed.</message></error></errors>"), pretty_print=True)
+        assert data == etree.tostring(etree.fromstring("<errors><error><message>Method not allowed.</message></error></errors>"))
         assert status == 405
         
         wrapper.send_request(method="POST", path="/test/sample_service", headers={"Content-Type": "application/json", "Accept": "application/json"}, body=data_obj)
