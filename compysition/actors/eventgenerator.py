@@ -195,9 +195,9 @@ class CallbackScheduledUDPEventProducer(CallbackEventProducer, ScheduledUDPEvent
         ScheduledUDPEventProducer._init_peers_interface(self, *args, **kwargs)
 
     def _do_produce(self):
-        if not self._is_running:
+        if not self._is_running and self.peers_interface.is_master():
             self._is_running = True
-            super(ScheduledUDPEventProducer, self)._do_produce()
+            EventProducer._do_produce(self)
 
 class IntervalSchedulingMixin:
     '''
