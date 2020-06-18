@@ -172,6 +172,7 @@ class TestXMLEvent(unittest.TestCase):
     event_class = XMLEvent
 
     string_wrapper = lambda self, data: data
+    input_string_wrapper = lambda self, data: data
 
     def test_conversion_classes(self):
         current_conversion_classes = XMLEvent().conversion_methods.keys()
@@ -212,30 +213,30 @@ class TestXMLEvent(unittest.TestCase):
         #assert xml_formatter(etree.tostring(event.data)) == xml_formatter("<jsonified_envelope/>")
 
     def test_str_conversion_methods(self):
-        src = self.string_wrapper("<my_data my_attr='type'>123</my_data>")
+        src = self.input_string_wrapper("<my_data my_attr='type'>123</my_data>")
         event = self.event_class(data=src)
         assert xml_formatter(etree.tostring(event.data)) == xml_formatter("<my_data my_attr='type'>123</my_data>")
 
-        src = self.string_wrapper("")
+        src = self.input_string_wrapper("")
         with self.assertRaises(InvalidEventDataModification):
             event = self.event_class(data=src)
         #ATTENTION
         # I think this should be true instead
         #assert xml_formatter(etree.tostring(event.data)) == xml_formatter("<data/>")
     
-        src = self.string_wrapper(json_formatter('{"test":"ok"}'))
+        src = self.input_string_wrapper(json_formatter('{"test":"ok"}'))
         with self.assertRaises(InvalidEventDataModification):
             event = self.event_class(data=src)
 
-        src = self.string_wrapper("some random text")
+        src = self.input_string_wrapper("some random text")
         with self.assertRaises(InvalidEventDataModification):
             event = self.event_class(data=src)
 
-        src = self.string_wrapper("<element><invalid_xml></element>")
+        src = self.input_string_wrapper("<element><invalid_xml></element>")
         with self.assertRaises(InvalidEventDataModification):
             event = self.event_class(data=src)
 
-        src = self.string_wrapper("<element>")
+        src = self.input_string_wrapper("<element>")
         with self.assertRaises(InvalidEventDataModification):
             event = self.event_class(data=src)
 
@@ -337,6 +338,7 @@ class TestJSONEvent(unittest.TestCase):
     event_class = JSONEvent
 
     string_wrapper = lambda self, data: data
+    input_string_wrapper = lambda self, data: data
 
     def test_conversion_classes(self):
         current_conversion_classes = self.event_class.conversion_methods.keys()
@@ -421,26 +423,26 @@ class TestJSONEvent(unittest.TestCase):
         assert json_formatter(json.dumps(event.data)) == json_formatter(json.dumps({"lvl1":["1","2","3"]}))
 
     def test_str_conversion_methods(self):
-        src = self.string_wrapper(json.dumps({"my_data":"ok"}))
+        src = self.input_string_wrapper(json.dumps({"my_data":"ok"}))
         event = self.event_class(data=src)
         assert json_formatter(json.dumps(event.data)) == json_formatter(json.dumps({"my_data":"ok"}))
 
-        src = self.string_wrapper("")
+        src = self.input_string_wrapper("")
         with self.assertRaises(InvalidEventDataModification):
             event = self.event_class(data=src)
         #ATTENTION
         # I think this should be true instead
         #assert event.data_string() == json_formatter(json.dumps({}))
 
-        src = self.string_wrapper("some random text")
+        src = self.input_string_wrapper("some random text")
         with self.assertRaises(InvalidEventDataModification):
             event = self.event_class(data=src)
 
-        src = self.string_wrapper("<some_xml/>")
+        src = self.input_string_wrapper("<some_xml/>")
         with self.assertRaises(InvalidEventDataModification):
             event = self.event_class(data=src)
 
-        src = self.string_wrapper('{"invalid: "json"}')
+        src = self.input_string_wrapper('{"invalid: "json"}')
         with self.assertRaises(InvalidEventDataModification):
             event = self.event_class(data=src)
 
@@ -676,6 +678,7 @@ class TestXMLXWWWFORMHttpEvent(TestXMLHttpEvent):
     event_class = _XMLXWWWFORMHttpEvent
 
     string_wrapper = lambda self, data: "XML={}".format(urllib.quote(data, ''))
+    input_string_wrapper = lambda self, data: "XML={}".format(urllib.quote(data, ''))
 
     def test_str_conversion_methods_no_wrapper(self):
         src = ""
@@ -698,11 +701,17 @@ class TestXMLXWWWFORMHttpEvent(TestXMLHttpEvent):
         event.error = InvalidEventDataModification(message="Oops Something Went Wrong", code="555", override="123")
         assert event.error_string() == "123"
 
+class TestXMLXWWWFORMHttpEventLower(TestXMLXWWWFORMHttpEvent):
+
+    string_wrapper = lambda self, data: "XML={}".format(urllib.quote(data, ''))
+    input_string_wrapper = lambda self, data: "xml={}".format(urllib.quote(data, ''))
+
 class TestJSONXWWWFORMHttpEvent(TestJSONHttpEvent):
 
     event_class = _JSONXWWWFORMHttpEvent
     
     string_wrapper = lambda self, data: "JSON={}".format(urllib.quote(data, ''))
+    input_string_wrapper = lambda self, data: "JSON={}".format(urllib.quote(data, ''))
 
     def test_str_conversion_methods_no_wrapper(self):
         src = ""
@@ -727,3 +736,8 @@ class TestJSONXWWWFORMHttpEvent(TestJSONHttpEvent):
         #ATTENTION
         # This seems odd probably should be without the added quotes
         #assert event.error_string() == self.string_wrapper(json.dumps({"my_data":123}))
+
+class TestJSONXWWWFORMHttpEventLower(TestJSONXWWWFORMHttpEvent):
+
+    string_wrapper = lambda self, data: "JSON={}".format(urllib.quote(data, ''))
+    input_string_wrapper = lambda self, data: "json={}".format(urllib.quote(data, ''))

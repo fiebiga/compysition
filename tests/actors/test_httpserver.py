@@ -392,10 +392,32 @@ class TestHTTPServer(unittest.TestCase):
         assert xml_formatter(event.data_string()) == xml_formatter(data_obj2)
 
         #application/x-www-form-urlencoded
+        #with xml data
+        assert len(actor.pool.outbound["sample_service"]) == 0
+        data_obj = "xml=<data>123</data>"
+        data_obj2 = "<data>123</data>"
+        wrapper.send_request(method="POST", path="/sample_service", headers={"Content-Type":"application/x-www-form-urlencoded"}, body=data_obj)
+        assert len(actor.pool.outbound["sample_service"]) == 1
+        event = actor.pool.outbound["sample_service"].get(block=True)
+        assert event.__class__ == XMLHttpEvent
+        assert xml_formatter(event.data_string()) == xml_formatter(data_obj2)
+
+        #application/x-www-form-urlencoded
         #with JSON data
         assert len(actor.pool.outbound["sample_service"]) == 0
         data_obj2 = json.dumps({"data":123})
         data_obj = "JSON=%s" % data_obj2
+        wrapper.send_request(method="POST", path="/sample_service", headers={"Content-Type":"application/x-www-form-urlencoded"}, body=data_obj)
+        assert len(actor.pool.outbound["sample_service"]) == 1
+        event = actor.pool.outbound["sample_service"].get(block=True)
+        assert event.__class__ == JSONHttpEvent
+        assert json_formatter(event.data_string()) == json_formatter(data_obj2)
+
+        #application/x-www-form-urlencoded
+        #with json data
+        assert len(actor.pool.outbound["sample_service"]) == 0
+        data_obj2 = json.dumps({"data":123})
+        data_obj = "json=%s" % data_obj2
         wrapper.send_request(method="POST", path="/sample_service", headers={"Content-Type":"application/x-www-form-urlencoded"}, body=data_obj)
         assert len(actor.pool.outbound["sample_service"]) == 1
         event = actor.pool.outbound["sample_service"].get(block=True)
@@ -481,6 +503,21 @@ class TestHTTPServer(unittest.TestCase):
         assert event.data_string() == data_obj2
 
         #application/x-www-form-urlencoded
+        #with xml data
+        assert len(actor.pool.outbound["sample_service"]) == 0
+        data_obj = 'xml=%3Cdata%3E123%3C%2Fdata%3E'
+        data_obj3 = 'XML=%3Cdata%3E123%3C%2Fdata%3E'
+        data_obj2 = "<data>123</data>"
+        wrapper.send_request(method="POST", path="/sample_service", headers={"Content-Type":"application/x-www-form-urlencoded"}, body=data_obj)
+        assert len(actor.pool.outbound["sample_service"]) == 1
+        event = actor.pool.outbound["sample_service"].get(block=True)
+        assert event.__class__ == _XMLXWWWFORMHttpEvent
+        assert event.data_string() == data_obj3
+        event = event.convert(XMLHttpEvent)
+        assert event.__class__ == XMLHttpEvent
+        assert event.data_string() == data_obj2
+
+        #application/x-www-form-urlencoded
         #with XML data and other random data
         assert len(actor.pool.outbound["sample_service"]) == 0
         data_obj = 'XML=%3Cdata%3E123%3C%2Fdata%3E&sample=123'
@@ -505,6 +542,21 @@ class TestHTTPServer(unittest.TestCase):
         event = actor.pool.outbound["sample_service"].get(block=True)
         assert event.__class__ == _JSONXWWWFORMHttpEvent
         assert event.data_string() == data_obj
+        event = event.convert(JSONHttpEvent)
+        assert event.__class__ == JSONHttpEvent
+        assert event.data_string() == data_obj2
+
+        #application/x-www-form-urlencoded
+        #with json data
+        assert len(actor.pool.outbound["sample_service"]) == 0
+        data_obj2 = json.dumps({"data":123})
+        data_obj = "json={}".format("%7B%22data%22%3A%20123%7D")
+        data_obj3 = "JSON={}".format("%7B%22data%22%3A%20123%7D")
+        wrapper.send_request(method="POST", path="/sample_service", headers={"Content-Type":"application/x-www-form-urlencoded"}, body=data_obj)
+        assert len(actor.pool.outbound["sample_service"]) == 1
+        event = actor.pool.outbound["sample_service"].get(block=True)
+        assert event.__class__ == _JSONXWWWFORMHttpEvent
+        assert event.data_string() == data_obj3
         event = event.convert(JSONHttpEvent)
         assert event.__class__ == JSONHttpEvent
         assert event.data_string() == data_obj2

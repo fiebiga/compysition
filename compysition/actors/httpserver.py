@@ -375,6 +375,7 @@ class HTTPServer(Actor, Bottle):
                 # Triggers JSON/XML X_WWW_FORM_URLENCODED request handling on the event level (via special events)
                 data = dict(request.forms)
                 for key in data.iterkeys():
+                    key = key.upper()
                     if key in self.X_WWW_FORM_URLENCODED_KEYS:
                         event_class = self.X_WWW_FORM_URLENCODED_KEY_MAP_JX[key]
                         break
@@ -386,6 +387,7 @@ class HTTPServer(Actor, Bottle):
                 # Default handling of JSON/XML X_WWW_FORM_URLENCODED request where they are treated as JSON/XML Events
                 data = dict(request.forms)
                 for key, value in data.iteritems():
+                    key = key.upper()
                     if key in self.X_WWW_FORM_URLENCODED_KEYS:
                         event_class, data = self.X_WWW_FORM_URLENCODED_KEY_MAP[key], value
                         break

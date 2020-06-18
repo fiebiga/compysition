@@ -346,7 +346,7 @@ class _XMLXWWWFormFormatInterface(_XMLFormatInterface):
         if data is not None and len(data) > 0:
             for variable in data.split("&"):
                 key, value = variable.split("=")
-                key, value = urllib.unquote(key), urllib.unquote(value)
+                key, value = urllib.unquote(key).upper(), urllib.unquote(value)
                 if key == "XML":
                     return etree.fromstring(value)
         return etree.fromstring(_XMLFormatInterface._default_tab_string)
@@ -483,7 +483,7 @@ class _JSONXWWWFormFormatInterface(_JSONFormatInterface):
         if data is not None and len(data) > 0:
             for variable in data.split("&"):
                 key, value = variable.split("=")
-                key, value = urllib.unquote(key), urllib.unquote(value)
+                key, value = urllib.unquote(key).upper(), urllib.unquote(value)
                 if key == "JSON":
                     return json.loads(value)
         return {}

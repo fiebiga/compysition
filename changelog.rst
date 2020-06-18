@@ -14,3 +14,8 @@ Version
 - Fixed CallbackUDPEventProducer to properly persist callback capabilities through master/slave changes.
 - Added EventDataCompare Actor
 - Fixed Decimal import for Events
+
+1.3.2
+
+- Adjusted x-www-form-urlencoded JSON/XML handling to be case insensitive
+    - Required minor changes to HTTPServer, _XMLXWWWFORMHttpEvent, and _JSONXWWWFORMHttpEvent
