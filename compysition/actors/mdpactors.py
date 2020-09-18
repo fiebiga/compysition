@@ -285,7 +285,7 @@ class MDPWorker(MDPActor):
 
     def send_outbound_message(self, socket, event):
         request_id = event.event_id
-        request = self.requests.get(request_id)
+        request = self.requests.pop(request_id, None)
         if request is not None:
             broker = request.origin_broker
             return_address = request.return_address
