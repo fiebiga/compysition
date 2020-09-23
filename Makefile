@@ -23,7 +23,7 @@ install: clean ## install the package to the active Python's site-packages
 	python -m pip install -U webcolors
 	python -m pip install -U funcparserlib
 	python -m pip install -U setuptools==43.0.0
-	python setup.py install
+	python -m pip install .
 
 test: test-py2 test-py3
 test-py2: test-setpy2 test-run
