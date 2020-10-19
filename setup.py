@@ -45,12 +45,11 @@ REQUIRES = [
             "blockdiag",
             "bottle",
             "xmltodict",
-            "jsonschema==2.6.0",
+            "jsonschema",
             "apscheduler",
             "mimeparse",
             "requests"
             ]
-
 try:
      with open('README.rst', 'rt') as readme:
         long_description = readme.read()
