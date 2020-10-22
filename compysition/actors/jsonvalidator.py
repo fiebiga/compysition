@@ -72,7 +72,7 @@ class JSONValidator(Actor):
         if self.schema:
             formatter = self._build_formatter()
             Validator = jsonschema.validators.extend(
-                validator=jsonschema.Draft4Validator,
+                validator=jsonschema.Draft7Validator,
                 validators={
                     'required': _required
                 }
