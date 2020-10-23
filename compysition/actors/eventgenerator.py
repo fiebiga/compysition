@@ -138,9 +138,8 @@ class ScheduledEventProducer(EventProducer):
         self.delay = delay
         self.producers = producers
         self.scheduler = scheduler
-        self.interval_grace_time = interval_grace_time
         if not self.scheduler:
-            self.scheduler = GeventScheduler(misfire_grace_time=self.interval_grace_time)
+            self.scheduler = GeventScheduler(job_defaults={'misfire_grace_time': interval_grace_time})
 
     def pre_hook(self):
         #super(ScheduledEventProducer, self).pre_hook()
