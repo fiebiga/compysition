@@ -38,7 +38,6 @@ REQUIRES = [
             "greenlet",
             "pyzmq",
             "amqp",
-            "pycrypto",
             "configobj",
             "lxml",
             "Pillow==6.2.1",
