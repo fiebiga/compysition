@@ -486,7 +486,6 @@ class _JSONXWWWFormFormatInterface(_JSONFormatInterface):
 
     def error_string(self):
         error = self.format_error()
-        print "error", error
         if error is not None:
             with ignore(TypeError):
                 return "JSON={}".format(RawXWWWForm.quote(json.dumps(error)))

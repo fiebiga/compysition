@@ -33,7 +33,7 @@ test-setpy3:
 	pyenv global 3.6.5
 test-setpy2:
 	eval "$(pyenv init -)"
-	pyenv global 2.7.6
+	pyenv global 2.7.16
 test-run: install
 	eval "$(pyenv init -)"
 	python -V
@@ -51,11 +51,11 @@ install-pyenv:
 	git clone https://github.com/pyenv/pyenv.git ~/.pyenv
 	ln -s ~/.pyenv/bin/pyenv ~/bin/pyenv
 	eval "$(pyenv init -)"
-	pyenv install 2.7.6
+	pyenv install 2.7.16
 	pyenv install 3.6.5
 
 
-install-2.7.6: test-setpy2 install install-pytest
+install-2.7.16: test-setpy2 install install-pytest
 install-3.6.5: test-setpy3 install install-pytest
 
 dependencies:
@@ -79,6 +79,6 @@ dependencies:
 		python-pip \
 		libsqlite3-dev 
 
-install-dev-env: dependencies install-pyenv install-3.6.5 install-2.7.6
+install-dev-env: dependencies install-pyenv install-3.6.5 install-2.7.16
 	eval "$(pyenv init -)"
 	pyenv global system
