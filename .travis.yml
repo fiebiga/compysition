@@ -1,13 +1,6 @@
 language: python
-python: 2.7
-matrix:
-  include:
-    - name: "Ubuntu 18.04"
-      os: linux
-      dist: bionic
-    - name: "Ubuntu 20.04"
-      os: linux
-      dist: focal
+python:
+  - "2.7"
 before_install:
   - sudo apt-get -qq update
   - make dependencies
