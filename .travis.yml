@@ -1,7 +1,10 @@
-dist: bionic
 language: python
 python:
-  - "2.7"
+  - "2.7.16"
+jobs:
+  include:
+    - name: "Ubuntu 18.04"
+      dist: bionic
 before_install:
   - sudo apt-get -qq update
   - make dependencies
