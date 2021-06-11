@@ -310,6 +310,7 @@ class HTTPServer(Actor, Bottle):
         status, status_message = event.status
         local_response.status = "{code} {message}".format(code=status, message=status_message)
         local_response.set_header("Content-Type", event.content_type)
+        local_response.set_header("X-Request-ID", event.event_id)
         local_response.body = "" if int(status) == 204 else self._format_response_data(event)
         return local_response
 
