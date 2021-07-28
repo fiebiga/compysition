@@ -1,5 +1,6 @@
-from lxml import etree
 import re
+
+from lxml import etree
 
 class XPathLookup(object):
     """

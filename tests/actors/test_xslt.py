@@ -1,9 +1,8 @@
 import unittest
 
-from compysition.actors import *
-from compysition.event import *
+from compysition.actors.xslt import XSLT
+from compysition.event import XMLEvent
 from compysition.errors import MalformedEventData
-
 from compysition.testutils.test_actor import TestActorWrapper
 
 simple_xslt_case = {
@@ -54,7 +53,6 @@ xslt_raised_error_case = {"input": simple_xslt_case["input"],
 
 
 class TestXSLT(unittest.TestCase):
-
 
     def test_simple_xslt(self):
         case = simple_xslt_case

@@ -26,11 +26,12 @@
 
 class CompysitionException(Exception):
 
-    def __init__(self, message="", code=None, **kwargs):
+    def __init__(self, message="", code=None, override=None, **kwargs):
         if not isinstance(message, list):
             message = [message]
 
         self.code = code
+        self.override = override
         self.__dict__.update(kwargs)
         super(CompysitionException, self).__init__(message)
 
@@ -40,8 +41,9 @@ class QueueEmpty(CompysitionException):
 
 
 class QueueFull(CompysitionException):
-    pass
-
+    def __init__(self, queue=None, **kwargs):
+        self.queue = queue
+        super(QueueFull, self).__init__(**kwargs)
 
 class QueueConnected(CompysitionException):
     pass

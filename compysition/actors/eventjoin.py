@@ -22,13 +22,14 @@
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #  MA 02110-1301, USA.
 
-from compysition import Actor
-from time import time
-from compysition.event import XMLEvent, JSONEvent
 import traceback
-from lxml import etree
 import gevent
 
+from time import time
+from lxml import etree
+
+from compysition.actor import Actor
+from compysition.event import XMLEvent, JSONEvent
 
 class MatchedEvent(object):
 
@@ -72,7 +73,7 @@ class MatchedJSONEvent(MatchedEvent):
 
     @property
     def joined(self):
-        return {k: v for d in self.inboxes_reported.itervalues() for k, v in d.items()}
+        return {k: v for d in self.inboxes_reported.itervalues() for k, v in d.iteritems()}
 
 
 class EventJoin(Actor):
@@ -105,8 +106,8 @@ class EventJoin(Actor):
 
     def event_purger(self):
         while self.loop():
-            keys = self.events.keys()
-            for key in keys:
+            event_keys = self.events.keys()
+            for key in event_keys:
                 event = self.events.get(key, None)
                 if event:
                     purge_time = event.created + self.purge_interval

@@ -2,9 +2,8 @@ import random
 import unittest
 from uuid import uuid4 as uuid
 
-from compysition.actors import *
-from compysition.event import *
-
+from compysition.actors.zeromq import ZMQPush, ZMQPull
+from compysition.event import JSONEvent, XMLEvent
 from compysition.testutils.test_actor import TestActorWrapper
 
 

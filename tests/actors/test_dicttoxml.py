@@ -1,10 +1,8 @@
 import unittest
 
-from compysition.actors import *
-from compysition.event import *
-
+from compysition.actors.dicttoxml import DictToXML, PropertiesToXML
+from compysition.event import JSONEvent, XMLEvent, XMLHttpEvent, HttpEvent
 from compysition.testutils.test_actor import TestActorWrapper
-
 
 class TestDictToXML(unittest.TestCase):
     """
@@ -71,7 +69,7 @@ class TestPropertiesToXML(unittest.TestCase):
         self.actor = TestActorWrapper(PropertiesToXML("propertiestoxml"))
 
     def test_event_property_xml_conversion(self):
-        _input = JSONEvent(data={"foo": "bar"})
+        _input = XMLEvent(data={"foo": "bar"})
         self.actor.input = _input
         output = self.actor.output
         self.assertRegexpMatches(output.data_string(), "<propertiestoxml>.*<service>.*<\/service>.*<\/propertiestoxml>")

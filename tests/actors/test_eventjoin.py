@@ -1,11 +1,9 @@
 import json
 import unittest
 
-from compysition.actors import *
-from compysition.errors import *
-
+from compysition.actors.eventjoin import EventJoin, XMLEventJoin, JSONEventJoin
+from compysition.errors import QueueEmpty
 from compysition.testutils.test_actor import TestActorWrapper
-
 
 class TestEventJoin(unittest.TestCase):
 

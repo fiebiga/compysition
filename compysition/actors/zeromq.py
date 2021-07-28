@@ -21,12 +21,19 @@
 #  MA 02110-1301, USA.
 #
 
-from compysition import Actor
 import zmq.green as zmq
-from gevent.queue import Queue
 import socket
-import cPickle as pickle
 import abc
+
+pickle = None
+try:
+    import cPickle as pickle #Python 2
+except ImportError:
+    import _pickle as pickle #Python 3
+
+from gevent.queue import Queue
+
+from compysition.actor import Actor
 
 DEFAULT_PORT = 9000
 
@@ -96,7 +103,7 @@ class _ZMQ(Actor):
                                     self.IPC: "ipc://{0}".format(socket_file),
                                     self.INPROC: "inproc://{0}".format(socket_file)}
 
-        if transmission_protocol in self.format_connection.keys():
+        if transmission_protocol in self.format_connection:
             self.transmission_protocol = transmission_protocol
         else:
             raise ValueError("Transmission protocol must be in {0}".format(self.format_connection.keys()))
@@ -144,7 +151,7 @@ class _ZMQOut(_ZMQ):
         while self.loop():
             try:
                 event = self.outbound_queue.get(timeout=2.5)
-            except:
+            except Exception:
                 event = None
 
             if event is not None:

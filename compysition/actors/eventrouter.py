@@ -21,11 +21,13 @@
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #  MA 02110-1301, USA.
 
-from compysition import Actor
-from lxml import etree
-import re
-from util import XPathLookup
 import json
+import re
+
+from lxml import etree
+
+from .util.xpath import XPathLookup
+from compysition.actor import Actor
 from compysition.event import HttpEvent
 from compysition.errors import SetupError, EventCommandNotAllowed
 
@@ -57,7 +59,7 @@ class EventRouter(Actor):
         super(EventRouter, self).__init__(name, *args, **kwargs)
         self.blockdiag_config["shape"] = "flowchart.condition"
         self.filters = []
-        self.default_outbox_regexes = default_outbox_regexes
+        self.default_outbox_regexes = default_outbox_regexes if isinstance(default_outbox_regexes, list) else [default_outbox_regexes]
         self.default_outboxes = []
         if not isinstance(routing_filters, list):
             routing_filters = [routing_filters]
@@ -156,9 +158,7 @@ class SimpleRouter(EventRouter):
 
     def pre_hook(self):
         for queue in self.pool.outbound:
-            if queue == self.default_queue:
-                self.default_outboxes.append(self.pool.outbound[queue])
-            else:
+            if queue != self.default_queue:
                 self.set_filter(EventFilter(value_regexes=queue, outbox_names=[queue], event_scope=(self.scope, )))
 
         super(SimpleRouter, self).pre_hook()
@@ -285,7 +285,10 @@ class EventFilter(object):
             for scope_step in event_scope:
                 if isinstance(current_step, dict):
                     current_step = current_step.get(scope_step, None)
+                elif isinstance(current_step, (tuple, list)):
+                    current_step = current_step[scope_step]
                 elif isinstance(current_step, object):
+                    # This is confusing, as everything is an object, so this is always True. Leaving in for now.
                     current_step = getattr(current_step, scope_step, None)
         except Exception as err:
             current_step = None

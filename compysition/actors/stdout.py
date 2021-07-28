@@ -22,9 +22,10 @@
 #
 #
 
-from compysition import Actor
 import sys
 import datetime
+
+from compysition.actor import Actor
 
 class STDOUT(Actor):
 

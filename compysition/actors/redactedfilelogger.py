@@ -22,8 +22,9 @@
 #
 #
 
-from filelogger import FileLogger
 import re
+
+from .filelogger import FileLogger
 
 class RedactedFileLogger(FileLogger):
 

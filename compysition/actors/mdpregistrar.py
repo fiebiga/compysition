@@ -24,10 +24,10 @@
 import gevent
 import zmq.green as zmq
 import time
-from binascii import hexlify
-import util.mdpdefinition as MDPDefinition
-from compysition import Actor
-from util.mdpregistrar import HeartbeatManager, RegistrationService, Broker
+
+from .util import mdpdefinition as MDPDefinition
+from .util.mdpregistrar import HeartbeatManager, RegistrationService, Broker
+from compysition.actor import Actor
 
 class MDPBrokerRegistrationService(Actor, RegistrationService):
     """
@@ -101,7 +101,8 @@ class MDPBrokerRegistrationService(Actor, RegistrationService):
         Check if a broker has not sent a heartbeat within the HEARTBEAT_INTERVAL timeframe. Reduce 'liveness' on the broker object by 1 for each occurrence, until liveness reaches 0.
         Liveness reaching 0 results in an immediate disconnect notification being sent to all clients
         """
-        for broker_identity in self.brokers.keys():
+        broker_keys = self.brokers.keys()
+        for broker_identity in broker_keys:
             broker = self.brokers[broker_identity]
             if time.time() > broker.expiration_time:
                 broker.liveness -= 1
@@ -126,7 +127,11 @@ class MDPBrokerRegistrationService(Actor, RegistrationService):
             items = self.poller.poll(self.timeout)
             if items:
                 message = self.receiver_socket.recv_multipart()
-                assert len(message) >= 3
+                if not len(message) >= 3:
+                    # On production we very occasionally seem to receive an invalid message from the broker, in which
+                    # case we just want to ignore it and move on to listening for the next message.
+                    self.logger.error('Received an invalid message from the broker: {msg}'.format(msg=message))
+                    continue
 
                 sender = message.pop(0)
                 empty = message.pop(0)

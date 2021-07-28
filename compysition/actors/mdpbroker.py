@@ -23,12 +23,13 @@
 
 import gevent
 import time
-from util.mdpregistrar import BrokerRegistrator
-from compysition import Actor
 import zmq.green as zmq
-import util.mdpdefinition as MDPDefinition
+
 from uuid import uuid4 as uuid
-import cPickle as pickle
+
+from .util import mdpdefinition as MDPDefinition
+from .util.mdpregistrar import BrokerRegistrator
+from compysition.actor import Actor
 
 class Service(object):
     """a single Service"""
@@ -274,7 +275,8 @@ class MDPBroker(Actor):
 
     def purge_workers(self):
         """Look for & kill expired workers"""
-        for worker in self.workers.values():
+        workers = self.workers.values()
+        for worker in workers:
             if worker.expiry < time.time():
                 if worker.liveness == 0:
                     self.logger.info("Downstream worker {0} in service {1} has expired and reached 0 liveness. Last heartbeat was received {2} seconds ago".format(worker.identity, 

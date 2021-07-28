@@ -1,8 +1,8 @@
 import unittest
-from compysition.actors import *
-from compysition.event import *
-from compysition.testutils.test_actor import TestActorWrapper
 
+from compysition.actors.rest import RESTTranslator
+from compysition.event import HttpEvent
+from compysition.testutils.test_actor import TestActorWrapper
 
 class TestRESTTranslator(unittest.TestCase):
     def setUp(self):

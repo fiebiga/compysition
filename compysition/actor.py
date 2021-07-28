@@ -22,17 +22,19 @@
 #  MA 02110-1301, USA.
 #
 
-from compysition.queue import QueuePool
-from compysition.logger import Logger
-from compysition.errors import *
-from restartlet import RestartPool
-from compysition.event import Event
-from gevent import sleep
-from gevent.event import Event as GEvent
-from copy import deepcopy
 import traceback
 import abc
 
+from gevent import sleep
+from gevent.event import Event as GEvent
+from copy import deepcopy
+
+from compysition.queue import QueuePool
+from compysition.logger import Logger
+from compysition.errors import (QueueConnected, InvalidActorOutput, QueueEmpty, InvalidEventConversion, 
+    InvalidActorInput, QueueFull)
+from compysition.restartlet import RestartPool
+from compysition.event import Event
 
 class Actor(object):
     """
@@ -48,9 +50,19 @@ class Actor(object):
     input = Event
     output = Event
     REQUIRED_EVENT_ATTRIBUTES = None
-    __NOT_DEFINED = object()
 
-    def __init__(self, name, size=0, blocking_consume=False, rescue=False, max_rescue=5, *args, **kwargs):
+    _async_class = GEvent
+    _RESCUE_ATTRIBUTE_NAME_TEMPLATE = "{actor}_rescue_num"
+
+    def __init__(self,
+            name,
+            size=0,
+            blocking_consume=False,
+            rescue=False,
+            max_rescue=5,
+            convert_output=False,
+            *args,
+            **kwargs):
         """
         **Base class for all compysition actors**
 
@@ -76,13 +88,18 @@ class Actor(object):
         self.__loop = True
         self.threads = RestartPool(logger=self.logger, sleep_interval=1)
 
-        self.__run = GEvent()
-        self.__run.clear()
-        self.__block = GEvent()
-        self.__block.clear()
+        self.__run = self._async_class()
+        self.__block = self._async_class()
+        self._clear_all()
         self.__blocking_consume = blocking_consume
         self.rescue = rescue
         self.max_rescue = max_rescue
+
+        self.convert_output = convert_output
+
+    def _clear_all(self):
+        self.__run.clear()
+        self.__block.clear()
 
     def block(self):
         self.__block.wait()
@@ -106,12 +123,9 @@ class Actor(object):
 
         if check_existing:
             if source_queue:
-                raise QueueConnected("Outbound queue {queue_name} on {source_name} is already connected".format(queue_name=source_queue_name,
-                                                                                                                source_name=self.name))
-
+                raise QueueConnected("Outbound queue {queue_name} on {source_name} is already connected".format(queue_name=source_queue_name, source_name=self.name))
             if destination_queue:
-                raise QueueConnected("Inbound queue {queue_name} on {destination_name} is already connected".format(queue_name=destination_queue_name,
-                                                                                                                    destination_name=destination.name))
+                raise QueueConnected("Inbound queue {queue_name} on {destination_name} is already connected".format(queue_name=destination_queue_name, destination_name=destination.name))
 
         if not source_queue:
             if not destination_queue:
@@ -130,8 +144,9 @@ class Actor(object):
         self.logger.info("Connected queue '{0}' to '{1}.{2}'".format(source_queue_name, destination.name, destination_queue_name))
 
     def loop(self):
-        '''The global lock for this module'''
-
+        '''
+        The global lock for this module
+        '''
         return self.__loop
 
     def is_running(self):
@@ -144,24 +159,26 @@ class Actor(object):
         self.pool.inbound.add(queue_name, queue=queue)
         self.threads.spawn(self.__consumer, self.consume, queue)
 
+    def ensure_tuple(self, data):
+        if not isinstance(data, tuple):
+            if isinstance(data, list):
+                return tuple(data)
+            else:
+                return (data, )
+        return data
+
     def start(self):
         '''Starts the module.'''
 
-        if not isinstance(self.input, tuple):
-            if isinstance(self.input, list):
-                self.input = tuple(self.input)
-            else:
-                self.input = (self.input, )
+        self.input = self.ensure_tuple(data=self.input)
+        self.output = self.ensure_tuple(data=self.output)
 
-        if not isinstance(self.output, tuple):
-            if isinstance(self.output, list):
-                self.output = tuple(self.output)
-            else:
-                self.output = (self.output, )
-
-        if hasattr(self, "pre_hook"):
-            self.logger.debug("pre_hook() found, executing")
+        try:
+            self.logger.debug("searching for pre_hook()")
             self.pre_hook()
+            self.logger.debug("pre_hook() found, and excuted")
+        except AttributeError:
+            pass
 
         self.__run.set()
         self.logger.debug("Started with max queue size of {size} events".format(size=self.size))
@@ -175,27 +192,29 @@ class Actor(object):
         # This should do a self.threads.join() but currently it is blocking. This issue needs to be resolved
         # But in the meantime post_hook will execute
 
-        if hasattr(self, "post_hook"):
-            self.logger.debug("post_hook() found, executing")
+        try:
+            self.logger.debug("searching for post_hook()")
             self.post_hook()
+            self.logger.debug("post_hook() found, and executed")
+        except AttributeError:
+            pass
 
-    def send_event(self, event, queues=__NOT_DEFINED, check_output=True):
+    def send_event(self, event, queues=None, check_output=True):
         """
         Sends event to all registered outbox queues. If multiple queues are consuming the event,
         a deepcopy of the event is sent instead of raw event.
         """
 
-        if queues is self.__NOT_DEFINED:
-            queues = self.pool.outbound.values()
+        if not queues:
+            queues = self.pool.outbound
 
-        self._loop_send(event, queues)
+        self._loop_send(event, queues, check_output)
 
     def send_error(self, event):
         """
         Calls 'send_event' with all error queues as the 'queues' parameter
         """
-        queues = self.pool.error.values()
-        self._loop_send(event, queues=queues, check_output=False)
+        self._loop_send(event, queues=self.pool.error, check_output=False)
 
     def _loop_send(self, event, queues, check_output=True):
         """
@@ -204,17 +223,32 @@ class Actor(object):
         :return:
         """
         if check_output and not isinstance(event, self.output):
-            raise InvalidActorOutput("Event was of type '{_type}', expected '{output}'".format(_type=type(event), output=self.output))
+            raise_error = True
+            if self.convert_output:
+                raise_error = False
+                try:
+                    if not isinstance(event, self.output):
+                        new_event = event.convert(self.output[0])
+                        self.logger.warning("Outgoing event was of type '{_type}' when type {output} was expected. Converted to {converted}".format(
+                            _type=type(event), output=self.output, converted=type(new_event)), event=event)
+                        event = new_event
+                except InvalidEventConversion:
+                    raise_error = True
+            if raise_error:
+                raise InvalidActorOutput("Event was of type '{_type}', expected '{output}'".format(_type=type(event), output=self.output))
 
-        if len(queues) > 0:
-            self._send(queues[0], deepcopy(event))
-            map(lambda _queue: self._send(_queue, deepcopy(event)), queues[1:])
+        try:
+            for queue in queues.itervalues():
+                self._send(queue, deepcopy(event))
+        except AttributeError:
+            for queue in queues:
+                self._send(queue, deepcopy(event))
 
     def _send(self, queue, event):
         queue.put(event)
         sleep(0)
 
-    def __consumer(self, function, queue):
+    def __consumer(self, function, queue, timeout=10, ensure_empty=True):
         '''Greenthread which applies <function> to each element from <queue>
         '''
 
@@ -222,26 +256,30 @@ class Actor(object):
 
         while self.loop():
             queue.wait_until_content()
-            try:
-                event = queue.get(timeout=10)
-            except QueueEmpty:
-                pass
-            else:
-                if self.__blocking_consume:
-                    self.__do_consume(function, event, queue)
-                else:
-                    self.threads.spawn(self.__do_consume, function, event, queue, restart=False)
+            self.__process_consumer_event(function=function, queue=queue, timeout=timeout)
 
-        while True:
-            if queue.qsize() > 0:
-                try:
-                    event = queue.get()
-                except QueueEmpty as err:
-                    break
-                else:
-                    self.threads.spawn(self.__do_consume, function, event, queue, restart=False)
+        try:
+            while ensure_empty and queue.qsize() > 0:
+                self.__process_consumer_event(function=function, queue=queue, raise_on_empty=True)
+        except QueueEmpty:
+            pass
+
+    def __process_consumer_event(self, function, queue, timeout=None, raise_on_empty=False):
+        try:
+            event = self.__get_queued_event(queue=queue, timeout=timeout)
+        except QueueEmpty as err:
+            if raise_on_empty:
+                raise err
+        else:
+            if self.__blocking_consume:
+                self.__do_consume(function, event, queue)
             else:
-                break
+                self.threads.spawn(self.__do_consume, function, event, queue, restart=False)
+
+    def __get_queued_event(self, queue, timeout=None):
+        if timeout:
+            return queue.get(block=True, timeout=timeout)
+        return queue.get()
 
     def __do_consume(self, function, event, queue):
         """
@@ -257,23 +295,25 @@ class Actor(object):
                 event = new_event
 
             if self.REQUIRED_EVENT_ATTRIBUTES:
-                missing = [event.get(attribute) for attribute in self.REQUIRED_EVENT_ATTRIBUTES if not event.get(attribute, None)]
+                missing = [attribute for attribute in self.REQUIRED_EVENT_ATTRIBUTES if not event.get(attribute, None)]
                 if len(missing) > 0:
                     raise InvalidActorInput("Required incoming event attributes were missing: {missing}".format(missing=missing))
 
-            function(event, origin=queue.name, origin_queue=queue)
-        except QueueFull as err:
-            err.wait_until_free()
-            queue.put(event)
+            try:
+                function(event, origin=queue.name, origin_queue=queue)
+            except QueueFull as err:
+                err.queue.wait_until_free() # potential TypeError if target queue is not sent
+                queue.put(event) # puts event back into origin queue
         except InvalidActorInput as error:
             self.logger.error("Invalid input detected: {0}".format(error))
         except InvalidEventConversion:
             self.logger.error("Event was of type '{_type}', expected '{input}'".format(_type=type(event), input=self.input))
         except Exception as err:
             self.logger.warning("Event exception caught: {traceback}".format(traceback=traceback.format_exc()), event=event)
-            rescue_tracker = "{actor}_rescue_num".format(actor=self.name)
-            if self.rescue and event.get(rescue_tracker, 0) < self.max_rescue:
-                setattr(event, rescue_tracker, event.get(rescue_tracker, 0) + 1)
+            rescue_attribute = Actor._RESCUE_ATTRIBUTE_NAME_TEMPLATE.format(actor=self.name)
+            rescue_attempts =  event.get(rescue_attribute, 0)
+            if self.rescue and rescue_attempts < self.max_rescue:
+                setattr(event, rescue_attribute, rescue_attempts + 1)
                 sleep(1)
                 queue.put(event)
             else:
@@ -281,10 +321,16 @@ class Actor(object):
                 self.send_error(event)
 
     def create_event(self, *args, **kwargs):
-        if len(self.output) == 1:
-            return self.output[0](**kwargs)
-        raise ValueError("Unable to call create_event function with multiple output types defined")
-
+        try:
+            self.output[1]
+        except IndexError:
+            try:
+                return self.output[0](**kwargs)
+            except IndexError:
+                raise ValueError("Unable to call create_event function without an output type defined")
+        else:
+            raise ValueError("Unable to call create_event function with multiple output types defined")
+            
     @abc.abstractmethod
     def consume(self, event, *args, **kwargs):
         """

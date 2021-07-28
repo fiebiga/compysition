@@ -1,6 +1,4 @@
-from compysition.queue import Queue
-import time
-from compysition.queue import Queue
+from compysition.queue import Queue, QueueEmpty
 
 
 class FunneledQueue(Queue):
@@ -59,11 +57,18 @@ class TestActorWrapper(object):
     @input.setter
     def input(self, _input):
         self._input = _input
-        self.actor.send_event(_input, queues=self.input_queues.values())
+        self.actor.send_event(_input, queues=self.input_queues, check_output=False)
 
     @property
     def output(self):
-        return self._output_funnel.get(block=True, timeout=self.output_timeout)
+        try:
+            return self._output_funnel.get(block=True, timeout=self.output_timeout)
+        except QueueEmpty:
+            # if we failed to get output queue, try dumping what's in the error queue
+            # will fail but gives more information about why
+            error = self._error_funnel.get(block=True, timeout=self.output_timeout)
+            print('ERROR: {}'.format(error))
+            return error
 
     @property
     def error(self):

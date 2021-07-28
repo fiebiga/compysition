@@ -1,11 +1,9 @@
 import json
 import unittest
 
-from compysition.actors import *
-from compysition.event import *
-
+from compysition.actors.xml_to_dict import XMLToDict
+from compysition.event import XMLEvent
 from compysition.testutils.test_actor import TestActorWrapper
-
 
 class TestDictToXML(unittest.TestCase):
     """

@@ -23,10 +23,11 @@
 #  MA 02110-1301, USA.
 #
 
+import logging
+
+from compysition.queue import _InternalQueuePool
 from compysition.event import LogEvent
 from compysition.errors import QueueFull
-import logging
-from compysition.queue import _InternalQueuePool
 
 class Logger(object):
 
@@ -57,7 +58,7 @@ class Logger(object):
             if event:
                 log_entry_id = event.meta_id
 
-        for key in self.__pool.keys():
+        for key in self.__pool.iterkeys():
             try:
                 log_event = LogEvent(level, self.name, message, id=log_entry_id)
                 self.__pool[key].put(log_event)

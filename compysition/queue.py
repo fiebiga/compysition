@@ -21,14 +21,14 @@
 #  MA 02110-1301, USA.
 #
 #
+import gevent.queue as gqueue
 
+from uuid import uuid4 as uuid
+from gevent import sleep
+from gevent.hub import LoopExit
+from gevent.event import Event
 
 from compysition.errors import QueueEmpty, QueueFull
-from gevent import sleep
-from gevent.event import Event
-import gevent.queue as gqueue
-from uuid import uuid4 as uuid
-
 
 class _InternalQueuePool(dict):
     """
@@ -73,9 +73,12 @@ class QueuePool(object):
         self.error = _InternalQueuePool(size=size)
         self.logs = _InternalQueuePool(size=size, placeholder=uuid().get_hex())
 
+    @property
+    def size(self):
+        return self.__size
+
     def list_all_queues(self):
-        queue_list = self.inbound.values() + self.outbound.values() + self.error.values() + self.logs.values()
-        return queue_list
+        return (self.inbound.values() + self.outbound.values() + self.error.values() + self.logs.values())
 
     def join(self):
         """**Blocks until all queues in the pool are empty.**"""
@@ -109,7 +112,7 @@ class Queue(gqueue.Queue):
             self.__has_content.clear()
             raise QueueEmpty("Queue {0} has no waiting events".format(self.name))
 
-        if self.qsize == 0:
+        if self.qsize() == 0:
             self.__has_content.clear()
 
         return element
@@ -120,7 +123,8 @@ class Queue(gqueue.Queue):
             super(Queue, self).put(element, *args, **kwargs)
             self.__has_content.set()
         except gqueue.Full:
-            raise QueueFull("Queue {0} is full".format(self.name))
+            #only if block = False or (block = True and timeout not None)
+            raise QueueFull(message="Queue {0} is full".format(self.name), queue=self)
 
     def wait_until_content(self):
         '''Blocks until at least 1 slot is taken.'''
@@ -132,11 +136,16 @@ class Queue(gqueue.Queue):
         while not self.__has_content.is_set():
             sleep(0)
 
+    def wait_until_free(self):
+        '''Blocks until the queue has at lease 1 free slot.'''
+
+        while self.qsize() >= self.maxsize:
+            sleep(0)
+            
     def dump(self, other_queue):
         """**Dump all items on this queue to another queue**"""
         try:
             while True:
-                other_queue.put(self.next())
-        except:
+                other_queue.put(self.get(block=False))
+        except QueueEmpty:
             pass
-

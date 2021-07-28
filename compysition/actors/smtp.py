@@ -5,14 +5,16 @@
 # Created by Adam Fiebig
 # Last modified: 4-15-2015 by Adam Fiebig
 
-from compysition import Actor
-from email.mime.text import MIMEText
 import smtplib
-import gsmtpd.server
+
 import email
 import traceback
-from bs4 import BeautifulSoup
 import re
+
+from email.mime.text import MIMEText
+#from bs4 import BeautifulSoup
+
+from compysition.actor import Actor
 from compysition.event import XMLEvent, JSONEvent
 
 class SMTPOut(Actor):
@@ -83,7 +85,8 @@ class SMTPOut(Actor):
         sender.sendmail(from_address, to.split(","), msg.as_string())
         sender.quit()
 
-
+"""
+# NOT FUNCTIONING
 class SMTPIn(Actor):
     '''**Module which sends mime emails with propertied specified in XML event data.**
 
@@ -103,7 +106,7 @@ class SMTPIn(Actor):
 
         self.servers = []
         for port in ports:
-            server = gsmtpd.server.SMTPServer("{host}:{port}".format(host=host, port=port),
+            server = gsmtpd_server.SMTPServer("{host}:{port}".format(host=host, port=port),
                                                keyfile=keyfile,
                                                certfile=certfile,
                                                ssl_version=ssl_version)
@@ -116,7 +119,7 @@ class SMTPIn(Actor):
     def process_message(self, peer, mailfrom, rcpttos, data):
         headers = email.message_from_string(data)
         payload = headers.get_payload()
-        new_data = dict(zip(headers.keys(), headers.values()))
+        new_data = dict(**headers)
 
         payload_data = headers.get_payload()
         if isinstance(payload_data, list):
@@ -142,3 +145,4 @@ class SMTPIn(Actor):
 
     def consume(self, event, *args, **kwargs):
         pass
+"""

@@ -21,11 +21,18 @@
 #  MA 02110-1301, USA.
 #
 
-from compysition import Actor
-import gevent.socket as socket
-from gevent.server import StreamServer
+import gevent.socket as socket #TODO dont need this and generic gevent import
 import gevent
-import cPickle as pickle
+
+pickle = None
+try:
+    import cPickle as pickle #Python 2
+except ImportError:
+    import _pickle as pickle #Python 3
+
+from gevent.server import StreamServer
+
+from compysition.actor import Actor
 
 """
 Implementation of a TCP in and out connection using gevent sockets
@@ -97,7 +104,7 @@ class TCPIn(Actor):
         try:
             event = pickle.loads(event_string)
             self.send_event(event)
-        except:
+        except Exception:
             self.logger.error("Received invalid event format: {0}".format(event_string))
 
 

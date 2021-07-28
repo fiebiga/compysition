@@ -22,15 +22,23 @@
 #
 
 import zmq.green as zmq
-from util.mdpregistrar import BrokerManager
 import gevent
-from gevent.queue import Queue
-from compysition import Actor
-from uuid import uuid4 as uuid
-import util.mdpdefinition as MDPDefinition
 import traceback
-import cPickle as pickle
+
+pickle = None
+try:
+    import cPickle as pickle #Python 2
+except ImportError:
+    import _pickle as pickle #Python 3
+
 import abc
+
+from gevent.queue import Queue #TODO Don't need this AND the generic gevent import
+from uuid import uuid4 as uuid
+
+from .util.mdpregistrar import BrokerManager #TODO Fix Redundancy?
+from .util import mdpdefinition as MDPDefinition
+from compysition.actor import Actor
 
 """
 The MDPWorker and MDPClient are implementations of the ZeroMQ MajorDomo configuration, which deals with dynamic process routing based on service configuration and registration.
@@ -75,14 +83,15 @@ class MDPActor(Actor):
         while self.loop():
             try:
                 event = self.outbound_queue.get(timeout=2.5)
-            except:
+            except Exception:
                 event = None
 
             if event is not None:
                 broker = self.broker_manager.get_next_broker_in_queue()
                 if broker is None:
                     self.outbound_queue.put(event)
-                    self.logger.info("There are events waiting on the client queue, but no brokers are registered. Queue size is {0}".format(self.outbound_queue.qsize()))
+                    self.logger.error("There are events waiting on the client queue, but no brokers are registered. Queue size is {0}".format(
+                        self.outbound_queue.qsize()), event=event)
                     gevent.sleep(1)         # Place back on queue and wait for a broker
                 else:
                     self.send_outbound_message(broker.outbound_socket, event)
@@ -276,7 +285,7 @@ class MDPWorker(MDPActor):
 
     def send_outbound_message(self, socket, event):
         request_id = event.event_id
-        request = self.requests.get(request_id)
+        request = self.requests.pop(request_id, None)
         if request is not None:
             broker = request.origin_broker
             return_address = request.return_address

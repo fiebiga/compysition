@@ -21,7 +21,20 @@
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #  MA 02110-1301, USA.
 
-from compysition import Actor
+from uuid import uuid4 as uuid
+
+from compysition.actor import Actor
+from compysition.event import XMLEvent, JSONEvent
+
+__all__ = [
+    "FlowController",
+    "ToDict",
+    "ToXML"
+]
+
+class _Flow(Actor):
+    def consume(self, event, *args, **kwargs):
+        self.send_event(event)
 
 class FlowController(Actor):
     '''
@@ -33,8 +46,22 @@ class FlowController(Actor):
 
     '''
 
-    def __init__(self, name, *args, **kwargs):
+    def __init__(self, name, trigger_errors=False, generate_fresh_ids=False, *args, **kwargs):
+        self.trigger_errors = trigger_errors
+        self.generate_fresh_ids = generate_fresh_ids
         super(FlowController, self).__init__(name, *args, **kwargs)
 
     def consume(self, event, *args, **kwargs):
-        self.send_event(event)
+        if self.generate_fresh_ids:
+            event._event_id = uuid().get_hex()
+            event.meta_id = event._event_id
+        if event.error and self.trigger_errors:
+            self.send_error(event)
+        else:
+            self.send_event(event)
+
+class ToDict(_Flow):
+    output = JSONEvent
+
+class ToXML(_Flow):
+    output = XMLEvent

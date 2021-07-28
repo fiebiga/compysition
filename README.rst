@@ -125,16 +125,3 @@ could all be run outside this process in their own compysitionscript, scalable a
     director.start()
 
 After running this process, initiating a http request to http://127.0.0.1:7000/test_service would show the dataflow across MDP components
-
-Installing
-----------
-
-Through Pypi:
-
-	$ pip install compysition
-
-Or the latest development branch from Github:
-
-	$ git clone git@github.com:drpoggi/compysition.git
-	$ cd compysition
-	$ sudo python setup.py install

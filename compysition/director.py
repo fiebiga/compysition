@@ -21,19 +21,24 @@
 #  MA 02110-1301, USA.
 #
 
-from compysition.actors import Null, STDOUT, EventLogger
-from compysition.errors import ActorInitFailure
-from gevent import signal as gsignal, event
 import signal
 import os
 import traceback
+
+from gevent import signal_handler, event
+
 from compysition.actor import Actor
+from compysition.actors import Null, STDOUT, EventLogger
+
 
 class Director(object):
 
-    def __init__(self, size=500, name="default", generate_blockdiag=True, blockdiag_dir="./build/blockdiag"):
-        gsignal(signal.SIGINT, self.stop)
-        gsignal(signal.SIGTERM, self.stop)
+    _async_class = event.Event
+
+    def __init__(self, size=500, name="default", generate_blockdiag=False, blockdiag_dir="./build/blockdiag"):
+        signal_handler(signal.SIGINT, self.stop)
+        signal_handler(signal.SIGTERM, self.stop)
+
         self.name = name
         self.actors = {}
         self.size = size
@@ -42,7 +47,7 @@ class Director(object):
         self.error_actor = self.__create_actor(EventLogger, "default_error_logger")
 
         self.__running = False
-        self.__block = event.Event()
+        self.__block = self._async_class()
         self.__block.clear()
 
         self.blockdiag_dir = blockdiag_dir
@@ -145,9 +150,8 @@ class Director(object):
             if not os.path.exists(img_dir):
                 os.makedirs(img_dir)
             from blockdiag.command import BlockdiagApp
-            f = open("{0}{1}{2}.diag".format(self.blockdiag_dir, os.sep, self.name),'w')
-            f.write(self.blockdiag_out)
-            f.close()
+            with open("{0}{1}{2}.diag".format(self.blockdiag_dir, os.sep, self.name),'w') as f:
+                f.write(self.blockdiag_out)
             BlockdiagApp().run(["{0}{1}{2}.diag".format(self.blockdiag_dir, os.sep, self.name),
                                 "-Tsvg",
                                 "-o",
@@ -163,8 +167,8 @@ class Director(object):
         self.actors[actor.name] = actor
         if self.generate_blockdiag:
             self.blockdiag_out += "{0} [".format(actor.name)
-            for config_item in actor.blockdiag_config.items():
-                self.blockdiag_out += "{0} = \"{1}\"".format(config_item[0], config_item[1])
+            for key, value in actor.blockdiag_config.iteritems():
+                self.blockdiag_out += "{0} = \"{1}\"".format(key, value)
             self.blockdiag_out += "]\n"
         return actor
 
@@ -183,13 +187,13 @@ class Director(object):
     def _setup_default_connections(self):
         '''Connect all log, metric, and error queues to their respective actors'''
 
-        for actor in self.actors.values():
+        for actor in self.actors.itervalues():
             if self.error_actor:
                 try:
                     if len(actor.pool.error) == 0:
                         self.connect_error_queue(actor, self.error_actor)
                 except Exception as err:
-                    print err
+                    print(err)
 
             actor.connect_log_queue(source_queue_name="logs", destination=self.log_actor, check_existing=False)
 
@@ -204,7 +208,7 @@ class Director(object):
         self.__running = True
         self._setup_default_connections()
 
-        for actor in self.actors.values():
+        for actor in self.actors.itervalues():
             actor.start()
 
         self.log_actor.start()
@@ -222,7 +226,7 @@ class Director(object):
     def stop(self):
         '''Stops all input actors.'''
 
-        for actor in self.actors.values():
+        for actor in self.actors.itervalues():
             actor.stop()
 
         self.log_actor.stop()

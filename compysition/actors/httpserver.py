@@ -21,22 +21,27 @@
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #  MA 02110-1301, USA.
 
-from compysition import Actor
-from compysition.errors import InvalidEventDataModification, MalformedEventData, ResourceNotFound
-from compysition.event import HttpEvent, JSONHttpEvent, XMLHttpEvent
-from gevent import pywsgi
-import json
-from functools import wraps
 from collections import defaultdict
-from gevent.queue import Queue
-from bottle import *
-import re
-import time
-import mimeparse
 from datetime import datetime
+import json
+import mimeparse
+import re
+
+from bottle import BaseRequest, Bottle, HTTPError, HTTPResponse, request
+from gevent import pywsgi
+from gevent.queue import Queue
+
+from compysition.actor import Actor
+from compysition.errors import InvalidEventDataModification, MalformedEventData, ResourceNotFound
+from compysition.event import (HttpEvent, JSONHttpEvent, XMLHttpEvent, _XWWWFORMHttpEvent, _XMLXWWWFORMHttpEvent,
+    _JSONXWWWFORMHttpEvent)
+from compysition.util.event import _XWWWFormList
+
+from compysition.util import ignore
+
+from compysition.util import ignore
 
 BaseRequest.MEMFILE_MAX = 1024 * 1024 # (or whatever you want)
-
 
 class ContentTypePlugin(object):
     """**Bottle plugin that filters basic content types that are processable by Compysition**"""
@@ -47,7 +52,17 @@ class ContentTypePlugin(object):
                            "text/html",
                            "application/json",
                            "application/x-www-form-urlencoded")
-
+    '''
+    # with the change to the apply function the DEFAULT_VALID_TYPES should be as follows to match content-type/event mapping
+    DEFAULT_VALID_TYPES = ("text/xml",
+                           "application/xml",
+                           "text/plain",
+                           "text/html",
+                           "application/json",
+                           "application/x-www-form-urlencoded",
+                           "application/json+schema",
+                           "application/xml+schema")
+    '''
     name = "ctypes"
     api = 2
 
@@ -55,6 +70,9 @@ class ContentTypePlugin(object):
         self.default_types = default_types or self.DEFAULT_VALID_TYPES
 
     def apply(self, callback, route):
+        #ATTENTION
+        #Bottle expects a decorator
+        #This should be implemented as below
         ctype = request.content_type.split(';')[0]
         ignore_ctype = route.config.get('ignore_ctype', False) or request.content_length < 1
         if ignore_ctype or ctype in route.config.get('ctypes', self.default_types):
@@ -62,6 +80,17 @@ class ContentTypePlugin(object):
         else:
             raise HTTPError(415, "Unsupported Content-Type '{_type}'".format(_type=ctype))
 
+    '''
+    def apply(self, callback, route):
+        def callback_wrapper(*args, **kwargs):
+            ctype = request.content_type.split(';')[0]
+            ignore_ctype = route.config.get('ignore_ctype', False) or request.content_length < 1
+            if ignore_ctype or ctype in route.config.get('ctypes', self.default_types):
+                return callback(*args, **kwargs)
+            else:
+                raise HTTPError(415, "Unsupported Content-Type '{_type}'".format(_type=ctype))
+        return callback_wrapper
+    '''
 
 class HTTPServer(Actor, Bottle):
     """**Receive events over HTTP.**
@@ -128,13 +157,18 @@ class HTTPServer(Actor, Bottle):
                   ('text/html', XMLHttpEvent),
                   ('text/xml', XMLHttpEvent),
                   ('application/xml', XMLHttpEvent),
-                  ('application/json', JSONHttpEvent)]
+                  ('application/json', JSONHttpEvent),
+                  ('application/x-www-form-urlencoded', _XWWWFORMHttpEvent)]
     CONTENT_TYPES = [_type[0] for _type in _TYPES_MAP]
     CONTENT_TYPE_MAP = defaultdict(lambda: JSONHttpEvent,
                                    _TYPES_MAP)
 
-    X_WWW_FORM_URLENCODED_KEY_MAP = defaultdict(lambda: HttpEvent, {"XML": XMLHttpEvent, "JSON": JSONHttpEvent})
+    X_WWW_FORM_URLENCODED_KEY_MAP = defaultdict(lambda: _XWWWFORMHttpEvent, {"XML": XMLHttpEvent, "JSON": JSONHttpEvent})
+    X_WWW_FORM_URLENCODED_KEY_MAP_JX = defaultdict(lambda: _XWWWFORMHttpEvent, {"XML": _XMLXWWWFORMHttpEvent, "JSON": _JSONXWWWFORMHttpEvent})
+    X_WWW_FORM_URLENCODED_KEYS = ["XML", "JSON"]
     X_WWW_FORM_URLENCODED = "application/x-www-form-urlencoded"
+
+    WSGI_SERVER_CLASS = pywsgi.WSGIServer
 
     def combine_base_paths(self, route, named_routes):
         base_path_id = route.get('base_path', None)
@@ -155,9 +189,7 @@ class HTTPServer(Actor, Bottle):
     @staticmethod
     def _parse_queue_names(path):
         path_variables = HTTPServer._parse_queue_variables(path)
-        path_names = [s.replace("<queue:re:", '')[:-1] for s in path_variables]
-
-        return path_names
+        return [s.replace("<queue:re:", '')[:-1] for s in path_variables]
 
     @staticmethod
     def _normalize_queue_definition(path):
@@ -179,7 +211,7 @@ class HTTPServer(Actor, Bottle):
 
         return path
 
-    def __init__(self, name, address="0.0.0.0", port=8080, keyfile=None, certfile=None, routes_config=None, *args, **kwargs):
+    def __init__(self, name, address="0.0.0.0", port=8080, keyfile=None, certfile=None, routes_config=None, send_errors=False, use_response_wrapper=True, process_bottle_exceptions=False, use_jx_xwwwform_events=False, *args, **kwargs):
         Actor.__init__(self, name, *args, **kwargs)
         Bottle.__init__(self)
         self.blockdiag_config["shape"] = "cloud"
@@ -188,6 +220,9 @@ class HTTPServer(Actor, Bottle):
         self.keyfile = keyfile
         self.certfile = certfile
         self.responders = {}
+        self.send_errors = send_errors
+        self.use_response_wrapper = use_response_wrapper
+        self.use_jx_xwwwform_events = use_jx_xwwwform_events
         routes_config = routes_config or self.DEFAULT_ROUTE
 
         if isinstance(routes_config, str):
@@ -207,21 +242,9 @@ class HTTPServer(Actor, Bottle):
                 self.route(callback=callback, **route)
 
         self.wsgi_app = self
-        self.wsgi_app.install(self.log_to_logger)
         self.wsgi_app.install(ContentTypePlugin())
-
-    def log_to_logger(self, fn):
-        '''
-        Wrap a Bottle request so that a log line is emitted after it's handled.
-        '''
-        @wraps(fn)
-        def _log_to_logger(*args, **kwargs):
-            self.logger.info('[{address}] {method} {url}'.format(address=request.remote_addr,
-                                            method=request.method,
-                                            url=request.url))
-            actual_response = fn(*args, **kwargs)
-            return actual_response
-        return _log_to_logger
+        if process_bottle_exceptions:
+            self.default_error_handler = self.__default_error_handler
 
     def __call__(self, e, h):
         """**Override Bottle.__call__ to strip trailing slash from incoming requests**"""
@@ -229,131 +252,191 @@ class HTTPServer(Actor, Bottle):
         e['PATH_INFO'] = e['PATH_INFO'].rstrip('/')
         return Bottle.__call__(self, e, h)
 
-    def format_response_data(self, event):
+    def __default_error_handler(self, res):
+        '''
+            Handles Bottle raised exceptions and applies event based error messaging and response formatting
+        '''
+        event = HttpEvent(
+            environment=self._format_bottle_env(request.environ), 
+            _error=MalformedEventData(res.body), 
+            accept=self._get_accept(), 
+            status=res._status_line)
+        event = self._process_response_accept(event=event)
+        local_response = self._create_response(event=event)
+        res.body = local_response.body
+        res.headers.update(**local_response.headers)
+        return res.body # we want to still use bottle built attributes s.a. status
+        
+    def _format_json_response_data(self, event):
+        response_dict = event.data
+        if self.use_response_wrapper and getattr(event, "use_response_wrapper", True):
+            response_dict = {'data': event.data}
+
+        if event.pagination is not None:
+            limit, offset = event._pagination['limit'], event._pagination['offset']
+            qs = '?limit={limit}&offset={offset}'
+            base_url = '{path}'.format(path=event.environment['PATH_INFO'])
+
+            links = {'prev': "{}{}".format(base_url, qs.format(limit=limit, offset=offset))}
+
+            if limit <= len(event.data):
+                links['next'] = base_url + qs.format(limit=limit, offset=offset + limit)
+
+            response_dict.update({'_pagination': links})
+
+        return json.dumps(response_dict)
+
+    def _format_response_data(self, event):
         """
         Meant to return a json response nested under a data tag if it isn't already done so, or return formatted
-        errors under the "errors" tag.
+        errors under the "errors" tag. If _pagination attribute exists on the event, will attempt to generate pagination
+        links based on limit and offset. Pagination is currently only supported for JSON responses.
         """
         if event.error:
             if isinstance(event, JSONHttpEvent):
-                response_data = json.dumps({"errors": event.format_error()})
-            else:
-                response_data = event.error_string()
-        else:
-            if not isinstance(event.data, (list, dict, str)) or \
-                    (isinstance(event.data, dict) and len(event.data) == 1 and event.data.get("data", None)):
-                response_data = event.data_string()
-            else:
-                response_data = json.dumps({"data": event.data})
+                return json.dumps({"errors": event.format_error()})
+            return event.error_string()
+        #ATTENTION
+        # So pagination gets skipped if data wrapper already exists?
+        if not isinstance(event.data, (list, dict, str)) or \
+                isinstance(event.data, _XWWWFormList) or \
+                (isinstance(event.data, dict) and len(event.data) == 1 and event.data.get("data", None)):
+            # This seems to be an implicit check for whether or not the data is an XMLEvent
+            return event.data_string()
+        return self._format_json_response_data(event=event)
 
-        return response_data
+    def _create_response(self, event):
+        local_response = HTTPResponse(headers=event.headers)
+        status, status_message = event.status
+        local_response.status = "{code} {message}".format(code=status, message=status_message)
+        local_response.set_header("Content-Type", event.content_type)
+        local_response.set_header("X-Request-ID", event.event_id)
+        local_response.body = "" if int(status) == 204 else self._format_response_data(event)
+        return local_response
+
+    def _process_response_accept(self, event, original_event_class=HttpEvent):
+        # accept defaults to */* so previously never changed from internal event type unless accept was defined in request
+        # now if accept is set to */* then defaults to the incoming request content-type
+        _default_accept = "*/*"
+        accept = event.get('accept', _default_accept)
+        accept = original_event_class.content_type if accept == _default_accept else accept 
+
+        if accept == self.X_WWW_FORM_URLENCODED and original_event_class.content_type == self.X_WWW_FORM_URLENCODED:
+            # check primarily used to determine whether original event was XWWWFORM_XML_HttpEvent or XWWWFORM_JSON_HttpEvent
+            # in which case the target output event would be one of those instead of the default XWWWFORMHttpEvent for this content-type
+            output_event_class = original_event_class
+        else:
+            output_event_class = self.CONTENT_TYPE_MAP[accept]
+
+        if not isinstance(event, output_event_class):
+            self.logger.warning(
+                "Incoming event did did not match the clients Accept format. Converting '{current}' to '{new}'".format(
+                    current=type(event), new=original_event_class.__name__))
+            #ATTENTION
+            #Is it even possible to respond with a 'text/plain' Content-Type?
+            #I'm not sure we do enough to respond with acceptable types.
+            #Maybe we could look into hard vs soft conversions
+            return event.convert(output_event_class)
+        return event  
 
     def consume(self, event, *args, **kwargs):
         # There is an error that results in responding with an empty list that will cause an internal server error
-
         original_event_class, response_queue = self.responders.pop(event.event_id, None)
 
-        if response_queue:
-
-            accept = event.get('accept', original_event_class.content_type)
-
-            if not isinstance(event, self.CONTENT_TYPE_MAP[accept]):
-                self.logger.warning(
-                    "Incoming event did did not match the clients Accept format. Converting '{current}' to '{new}'".format(
-                        current=type(event), new=original_event_class.__name__))
-                event = event.convert(self.CONTENT_TYPE_MAP[accept])
-
-            local_response = HTTPResponse()
-            status, status_message = event.status
-            local_response.status = "{code} {message}".format(code=status, message=status_message)
-
-            for header in event.headers.keys():
-                local_response.set_header(header, event.headers[header])
-
-            local_response.set_header("Content-Type", event.content_type)
-
-            if int(status) == 204:
-                response_data = ""
-            else:
-                response_data = self.format_response_data(event)
-
-            local_response.body = response_data
-
+        if response_queue is not None:
+            event = self._process_response_accept(event=event, original_event_class=original_event_class)
+            local_response = self._create_response(event=event)
             response_queue.put(local_response)
             response_queue.put(StopIteration)
-            self.logger.info("[{status}] Returned in {time} ms".format(status=local_response.status, time=(datetime.now()-event.created).microseconds / 1000), event=event)
+            self.logger.info("[{status}] Service '{service}' Returned in {time:0.0f} ms".format(
+                    service=event.service,
+                    status=local_response.status,
+                    time=(datetime.now()-event.created).total_seconds() * 1000),
+                event=event)
         else:
             self.logger.warning("Received event response for an unknown event ID. The request might have already received a response", event=event)
 
     def _format_bottle_env(self, environ):
         """**Filters incoming bottle environment of non-serializable objects, and adds useful shortcuts**"""
-
-        query_string_data = {}
-        for key in environ["bottle.request"].query.iterkeys():
-            query_string_data[key] = environ["bottle.request"].query.get(key)
-
-        environ = {key: environ[key] for key in environ.keys() if isinstance(environ[key], (str, tuple, bool, dict))}
+        query_string_data = {key: value for key, value in environ["bottle.request"].query.iteritems()}
+        environ = {key: value for key, value in environ.iteritems() if isinstance(value, (str, tuple, bool, dict))}
         environ['QUERY_STRING_DATA'] = query_string_data
-
         return environ
+
+    def _get_accept(self):
+        accept_header = request.headers.get("Accept", "*/*")
+        with ignore(ValueError):
+            return mimeparse.best_match(self.CONTENT_TYPES, accept_header)
+        self.logger.warning("Invalid mimetype defined in client Accepts header. '{accept}' is not a valid mime type".format(accept=accept_header))
+        return "*/*"
+
+    def _interpret_ctype(self, ctype):
+        if ctype == self.X_WWW_FORM_URLENCODED:
+            if self.use_jx_xwwwform_events:
+                # Triggers JSON/XML X_WWW_FORM_URLENCODED request handling on the event level (via special events)
+                data = dict(request.forms)
+                for key in data.iterkeys():
+                    key = key.upper()
+                    if key in self.X_WWW_FORM_URLENCODED_KEYS:
+                        event_class = self.X_WWW_FORM_URLENCODED_KEY_MAP_JX[key]
+                        break
+                else:
+                    event_class = self.X_WWW_FORM_URLENCODED_KEY_MAP_JX[""] #triggers default
+                with ignore(ValueError):
+                    data = request.body.read()
+            else:
+                # Default handling of JSON/XML X_WWW_FORM_URLENCODED request where they are treated as JSON/XML Events
+                data = dict(request.forms)
+                for key, value in data.iteritems():
+                    key = key.upper()
+                    if key in self.X_WWW_FORM_URLENCODED_KEYS:
+                        event_class, data = self.X_WWW_FORM_URLENCODED_KEY_MAP[key], value
+                        break
+                else:
+                    event_class = self.X_WWW_FORM_URLENCODED_KEY_MAP[""]
+                    with ignore(ValueError):
+                        data = request.body.read()
+        else:
+            event_class = self.CONTENT_TYPE_MAP[ctype]
+            with ignore(ValueError):
+                data = request.body.read()
+        if data != '':
+            return event_class, data
+        return event_class, None
 
     def callback(self, queue=None, *args, **kwargs):
         queue_name = queue or self.name
         queue = self.pool.outbound.get(queue_name, None)
+
         ctype = request.content_type.split(';')[0]
+        ctype = None if ctype == '' else ctype
 
-        accept_header = request.headers.get("Accept", "*/*")
-        try:
-            accept = mimeparse.best_match(self.CONTENT_TYPES, accept_header)
-        except ValueError:
-            accept = "*/*"
-            self.logger.warning("Invalid mimetype defined in client Accepts header. '{accept}' is not a valid mime type".format(accept=accept_header))
-
-        if request.method in ["GET", "OPTIONS", "HEAD", "DELETE"]:
-            for accept_type in accept_header:
-                if accept_type in self.CONTENT_TYPE_MAP.keys():
-                    pass
-
-        if ctype == '':
-            ctype = None
+        accept = self._get_accept()
 
         try:
-            event_class = None
-            data = None
+            event_class, data = None, None
             environment = self._format_bottle_env(request.environ)
 
-            if not queue:
-                self.logger.error("Received {method} request with URL '{url}'. Queue name '{queue_name}' was not found".format(method=request.method,
-                                                                                                                           url=request.path,
-                                                                                                                           queue_name=queue_name))
+            if queue is None:
+                self.logger.error("Received {method} request with URL '{url}'. Queue name '{queue_name}' was not found".format(
+                    method=request.method,
+                    url=request.path,
+                    queue_name=queue_name))
                 raise ResourceNotFound("Service '{0}' not found".format(queue_name))
 
-            if ctype == self.X_WWW_FORM_URLENCODED:
-                if len(request.forms.items()) < 1:
-                    raise MalformedEventData("Mismatched content type")
-                else:
-                    for item in request.forms.items():
-                        event_class, data = self.X_WWW_FORM_URLENCODED_KEY_MAP[item[0]], item[1]
-                        break
-            else:
-                event_class = self.CONTENT_TYPE_MAP[ctype]
-                try:
-                    data = request.body.read()
-                except:
-                    # A body is not required
-                    data = None
-
-            if data == '':
-                data = None
+            event_class, data = self._interpret_ctype(ctype=ctype)
 
             event = event_class(environment=environment, service=queue_name, data=data, accept=accept, **kwargs)
-
         except (ResourceNotFound, InvalidEventDataModification, MalformedEventData) as err:
             event_class = event_class or JSONHttpEvent
             event = event_class(environment=environment, service=queue_name, accept=accept, **kwargs)
             event.error = err
-            queue = self.pool.inbound[self.pool.inbound.keys()[0]]
+            if not self.send_errors:
+                queue = self.pool.inbound[next(self.pool.inbound.iterkeys())]
 
+        self.logger.info('[{address}] {method} {url}'.format(address=request.remote_addr,
+                                                             method=request.method,
+                                                             url=request.url), event=event)
         response_queue = Queue()
         self.responders.update({event.event_id: (event_class, response_queue)})
         local_response = response_queue
@@ -363,14 +446,16 @@ class HTTPServer(Actor, Bottle):
         return local_response
 
     def post_hook(self):
+        self.__server.close()
         self.__server.stop()
+        self.__server.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.logger.info("Stopped serving")
 
     def __serve(self):
         if self.keyfile is not None and self.certfile is not None:
-            self.__server = pywsgi.WSGIServer((self.address, self.port), self, keyfile=self.keyfile, certfile=self.certfile)
+            self.__server = self.WSGI_SERVER_CLASS((self.address, self.port), self, keyfile=self.keyfile, certfile=self.certfile)
         else:
-            self.__server = pywsgi.WSGIServer((self.address, self.port), self, log=None)
+            self.__server = self.WSGI_SERVER_CLASS((self.address, self.port), self, log=None)
         self.logger.info("Serving on {address}:{port}".format(address=self.address, port=self.port))
         self.__server.start()
 

@@ -1,11 +1,9 @@
 import unittest
 
-from compysition.actors import *
-from compysition.errors import *
-from compysition.event import *
-
+from compysition.actors import EventFilter, EventRouter, EventXMLFilter, EventXMLXpathsFilter
+from compysition.errors import QueueEmpty
+from compysition.event import Event, XMLEvent
 from compysition.testutils.test_actor import TestActorWrapper
-
 
 class TestEventRouter(unittest.TestCase):
 

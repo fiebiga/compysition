@@ -21,16 +21,37 @@
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #  MA 02110-1301, USA.
 
-from compysition import Actor
-from jsonschema import Draft4Validator, FormatChecker
-from jsonschema.exceptions import SchemaError, ValidationError
+import jsonschema
 import json
+
+from jsonschema import FormatChecker, ValidationError, SchemaError
+
+from compysition.actor import Actor
 from compysition.event import JSONEvent
 from compysition.errors import MalformedEventData
 
+def _required(validator, required, instance, schema):
+    """Validate 'required' properties.
+
+        This validator adds the index of the required field to the schema_path, which allows us to
+        look at error.schema and determine which required field is missing
+
+        If we had a good way to get which required fields failed validation, this wouldn't be necessary.
+        See: https://github.com/Julian/jsonschema/issues/119
+    """
+    if not validator.is_type(instance, 'object'):
+        return
+
+    for index, requirement in enumerate(required):
+        if requirement not in instance:
+            error = ValidationError(
+                '{0!r} is a required property'.format(requirement)
+            )
+            error.schema_path.append(index)
+            yield error
+
 
 class JSONValidator(Actor):
-
     input = JSONEvent
     output = JSONEvent
 
@@ -50,13 +71,19 @@ class JSONValidator(Actor):
         self.schema = schema
         if self.schema:
             formatter = self._build_formatter()
+            Validator = jsonschema.validators.extend(
+                validator=jsonschema.Draft7Validator,
+                validators={
+                    'required': _required
+                }
+            )
 
             try:
                 if isinstance(self.schema, str):
                     self.schema = json.loads(self.schema)
 
                 if isinstance(self.schema, dict):
-                    self.schema = Draft4Validator(self.schema, format_checker=formatter)
+                    self.schema = Validator(self.schema, format_checker=formatter)
                 else:
                     raise ValueError("Schema must be of type str or dict. Instead received type '{type}'".format(type=type(self.schema)))
             except Exception as err:
@@ -72,17 +99,21 @@ class JSONValidator(Actor):
             self.send_event(event)
 
         except (SchemaError, ValidationError):
-            error_reasons = []
-            for error in self.schema.iter_errors(event.data):
-                err_message = ""
-                path = map(str, list(error.path))
-                if len(path) > 0:
-                    err_message = ": ".join(path)
-
-                err_message += " " + error.message
-                error_reasons.append(err_message)
-            message = error_reasons
+            message = self.format_error_response(self.schema.iter_errors(event.data))
             self.process_error(message, event)
+
+
+    def format_error_response(self, errors):
+        error_reasons = []
+        for error in errors:
+            err_message = ""
+            path = map(str, list(error.path))
+            if len(path) > 0:
+                err_message = ": ".join(path)
+
+            err_message += " " + error.message
+            error_reasons.append(err_message)
+        return error_reasons
 
     @staticmethod
     def _build_formatter():
@@ -101,5 +132,5 @@ class JSONValidator(Actor):
         return FormatChecker()
 
     def process_error(self, message, event):
-        self.logger.error("Error validating incoming JSON: {0}".format(message), event=event)
+        self.logger.warning("Error validating incoming JSON: {0}".format(message), event=event)
         raise MalformedEventData(message)

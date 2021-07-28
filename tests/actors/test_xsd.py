@@ -1,7 +1,7 @@
 import unittest
 
-from compysition.actors import *
-from compysition.event import *
+from compysition.actors.xsd import XSD
+from compysition.event import XMLEvent
 from compysition.errors import MalformedEventData
 from compysition.testutils.test_actor import TestActorWrapper
 
@@ -44,7 +44,7 @@ class TestXSD(unittest.TestCase):
         _input = XMLEvent(data=valid_xml)
         self.actor.input = _input
         _output = self.actor.output
-        self.assertEqual(_input, _output)
+        self.assertEqual(_input.data_string(), _output.data_string())
 
     def test_invalid_xml(self):
         _input = XMLEvent(data=invalid_xml)
