@@ -87,10 +87,10 @@ class UDPEventProducer(EventProducer):
         super(UDPEventProducer, self).__init__(name, *args, **kwargs)
         self._init_peers_interface(*args, **kwargs)
 
-    def _init_peers_interface(self, service="default", environment_scope='default', peers_interface=None, *args, **kwargs):
+    def _init_peers_interface(self, service="default", environment_scope='default', peers_interface=None, udpconfigs={}, *args, **kwargs):
         self.peers_interface = peers_interface
-        if not self.peers_interface:
-            self.peers_interface = UDPInterface("{0}-{1}".format(service, environment_scope), logger=self.logger)
+        if self.peers_interface is None:
+            self.peers_interface = UDPInterface("{0}-{1}".format(service, environment_scope), logger=self.logger, **udpconfigs)
 
     def pre_hook(self):
         #super(UDPEventProducer, self).pre_hook()
