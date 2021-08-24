@@ -47,7 +47,7 @@ class _InternalJSONXMLConverter():
 
     @staticmethod
     def to_json(xml):
-        json = xmltodict.parse(etree.tostring(xml), expat=expat, force_list=_should_force_list)
+        json = xmltodict.parse(etree.tostring(xml), expat=expat, postprocessor=_postprocesser, force_list=_should_force_list)
         if len(json) == 1 and isinstance(json, dict):
             key, value = next(json.iteritems())
             if key in _internal_envelope_tags:
@@ -234,6 +234,35 @@ def _decimal_default(obj):
         return float(obj)
     raise TypeError
 
+json_type_func_map = {
+    'int': int,
+    'str': str,
+    'bool': lambda val: val.lower() == 'true',
+    'float': float,
+    'currency': lambda val: round(float(val), 2)    
+}
+
+def _postprocesser(path, key, value):
+    json_type_attr = '@json_type'
+    value_field = '#text'
+    try:
+        json_type = value.pop(json_type_attr)
+    except (AttributeError, KeyError):
+        pass
+    else:
+        try:
+            new_val = value.pop(value_field)
+        except (AttributeError, KeyError):
+            pass
+        else:
+            with ignore(KeyError, ValueError, TypeError):
+                new_val = json_type_func_map[json_type](new_val)
+            if len(value) == 0:
+                value = new_val
+            else:
+                value[value_field] = new_val
+    return key, value
+
 def _should_force_list(path, key, value):
     """
     This is a callback passed to xmltodict.parse which checks for an xml attribute force_list in the XML, and if present
@@ -267,8 +296,7 @@ def _should_force_list(path, key, value):
         # pop attribute off so that it doesn't get included in the response
         value.pop('@force_list')
         return True
-    else:
-        return False
+    return False
 
 class RawXWWWForm:
     @staticmethod
